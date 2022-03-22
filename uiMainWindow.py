@@ -1,7 +1,10 @@
+import sys
+
 from PySide2.QtWidgets import QWidget, QMainWindow
 from PySide2.QtCore import Qt, Slot
 from ui.Main import Ui_MainWindow
 from uiWelcome import uiWelcomeWindow
+from uiModule import uiModuleWindow
 
 class uiMainWindow(QMainWindow):
     
@@ -24,4 +27,30 @@ class uiMainWindow(QMainWindow):
         tab = self.ui.tabWidget.widget(index)
         tab.close()
             
+    @Slot()
+    def on_actionNew_triggered(self):
+        # add module tab for test
+        moduleWindow = uiModuleWindow(self)
+        moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
+        index = self.ui.tabWidget.addTab(moduleWindow, "NoName")
+        self.ui.tabWidget.setCurrentIndex(index)
         
+    @Slot()
+    def on_actionOpen_triggered(self):
+        i = 0
+        
+    @Slot()
+    def on_actionSave_triggered(self):
+        i = 0
+        
+    @Slot()
+    def on_actionSave_As_triggered(self):
+        i = 0
+        
+    @Slot()
+    def on_actionClose_triggered(self):
+        i = 0
+        
+    @Slot()
+    def on_actionExit_triggered(self):
+        sys.exit()

@@ -7,7 +7,7 @@ from uiMainWindow import uiMainWindow
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    #apply_stylesheet(app, theme='dark_blue.xml')
+    apply_stylesheet(app, theme='dark_teal.xml')
     mw = uiMainWindow()
     mw.show()
     app.exec_()
