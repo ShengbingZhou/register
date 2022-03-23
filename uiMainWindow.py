@@ -29,9 +29,9 @@ class uiMainWindow(QMainWindow):
             
     @Slot()
     def on_actionNew_triggered(self):
-        # add module tab for test
         moduleWindow = uiModuleWindow(self)
         moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
+        moduleWindow.newDatabase()
         index = self.ui.tabWidget.addTab(moduleWindow, "NoName")
         self.ui.tabWidget.setCurrentIndex(index)
         
