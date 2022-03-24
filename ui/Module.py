@@ -53,10 +53,22 @@ class Ui_ModuleWindow(object):
 
         self.horizontalLayout.addWidget(self.line)
 
-        self.pbAddBf = QPushButton(self.frame_2)
-        self.pbAddBf.setObjectName(u"pbAddBf")
+        self.pbAddRegMap = QPushButton(self.frame_2)
+        self.pbAddRegMap.setObjectName(u"pbAddRegMap")
 
-        self.horizontalLayout.addWidget(self.pbAddBf)
+        self.horizontalLayout.addWidget(self.pbAddRegMap)
+
+        self.pbAddReg = QPushButton(self.frame_2)
+        self.pbAddReg.setObjectName(u"pbAddReg")
+
+        self.horizontalLayout.addWidget(self.pbAddReg)
+
+        self.line_5 = QFrame(self.frame_2)
+        self.line_5.setObjectName(u"line_5")
+        self.line_5.setFrameShape(QFrame.VLine)
+        self.line_5.setFrameShadow(QFrame.Sunken)
+
+        self.horizontalLayout.addWidget(self.line_5)
 
         self.line_3 = QFrame(self.frame_2)
         self.line_3.setObjectName(u"line_3")
@@ -65,10 +77,10 @@ class Ui_ModuleWindow(object):
 
         self.horizontalLayout.addWidget(self.line_3)
 
-        self.pbAddReg = QPushButton(self.frame_2)
-        self.pbAddReg.setObjectName(u"pbAddReg")
+        self.pbAddBf = QPushButton(self.frame_2)
+        self.pbAddBf.setObjectName(u"pbAddBf")
 
-        self.horizontalLayout.addWidget(self.pbAddReg)
+        self.horizontalLayout.addWidget(self.pbAddBf)
 
         self.line_2 = QFrame(self.frame_2)
         self.line_2.setObjectName(u"line_2")
@@ -87,12 +99,29 @@ class Ui_ModuleWindow(object):
 
         self.frame_4 = QFrame(self.frame)
         self.frame_4.setObjectName(u"frame_4")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.frame_4.sizePolicy().hasHeightForWidth())
+        self.frame_4.setSizePolicy(sizePolicy1)
         self.frame_4.setFrameShape(QFrame.StyledPanel)
         self.frame_4.setFrameShadow(QFrame.Raised)
         self.horizontalLayout_2 = QHBoxLayout(self.frame_4)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.line_4 = QFrame(self.frame_4)
+        self.line_4.setObjectName(u"line_4")
+        self.line_4.setFrameShape(QFrame.VLine)
+        self.line_4.setFrameShadow(QFrame.Sunken)
+
+        self.horizontalLayout_2.addWidget(self.line_4)
+
         self.labelDescription = QLabel(self.frame_4)
         self.labelDescription.setObjectName(u"labelDescription")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.labelDescription.sizePolicy().hasHeightForWidth())
+        self.labelDescription.setSizePolicy(sizePolicy2)
 
         self.horizontalLayout_2.addWidget(self.labelDescription)
 
@@ -127,9 +156,10 @@ class Ui_ModuleWindow(object):
 
     def retranslateUi(self, ModuleWindow):
         ModuleWindow.setWindowTitle(QCoreApplication.translate("ModuleWindow", u"Form", None))
-        self.pbAddBf.setText(QCoreApplication.translate("ModuleWindow", u"+ Bitfield", None))
+        self.pbAddRegMap.setText(QCoreApplication.translate("ModuleWindow", u"+ RegisterMap", None))
         self.pbAddReg.setText(QCoreApplication.translate("ModuleWindow", u"+ Register", None))
-        self.pbSetColumns.setText(QCoreApplication.translate("ModuleWindow", u"Columns", None))
-        self.labelDescription.setText(QCoreApplication.translate("ModuleWindow", u"Description", None))
+        self.pbAddBf.setText(QCoreApplication.translate("ModuleWindow", u"+ Bitfield", None))
+        self.pbSetColumns.setText(QCoreApplication.translate("ModuleWindow", u"-> ColumnsVisibility", None))
+        self.labelDescription.setText(QCoreApplication.translate("ModuleWindow", u"TextLabel", None))
     # retranslateUi
 
