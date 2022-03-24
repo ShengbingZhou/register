@@ -1,5 +1,4 @@
 import sys
-import os
 
 from PySide2.QtWidgets import QApplication, QMainWindow
 from qt_material import apply_stylesheet

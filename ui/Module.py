@@ -46,11 +46,6 @@ class Ui_ModuleWindow(object):
         self.frame_2.setLineWidth(0)
         self.horizontalLayout = QHBoxLayout(self.frame_2)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.labelDescription = QLabel(self.frame_2)
-        self.labelDescription.setObjectName(u"labelDescription")
-
-        self.horizontalLayout.addWidget(self.labelDescription)
-
         self.line = QFrame(self.frame_2)
         self.line.setObjectName(u"line")
         self.line.setFrameShape(QFrame.VLine)
@@ -62,6 +57,13 @@ class Ui_ModuleWindow(object):
         self.pbAddBf.setObjectName(u"pbAddBf")
 
         self.horizontalLayout.addWidget(self.pbAddBf)
+
+        self.line_3 = QFrame(self.frame_2)
+        self.line_3.setObjectName(u"line_3")
+        self.line_3.setFrameShape(QFrame.VLine)
+        self.line_3.setFrameShadow(QFrame.Sunken)
+
+        self.horizontalLayout.addWidget(self.line_3)
 
         self.pbAddReg = QPushButton(self.frame_2)
         self.pbAddReg.setObjectName(u"pbAddReg")
@@ -83,6 +85,20 @@ class Ui_ModuleWindow(object):
 
         self.verticalLayout.addWidget(self.frame_2)
 
+        self.frame_4 = QFrame(self.frame)
+        self.frame_4.setObjectName(u"frame_4")
+        self.frame_4.setFrameShape(QFrame.StyledPanel)
+        self.frame_4.setFrameShadow(QFrame.Raised)
+        self.horizontalLayout_2 = QHBoxLayout(self.frame_4)
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.labelDescription = QLabel(self.frame_4)
+        self.labelDescription.setObjectName(u"labelDescription")
+
+        self.horizontalLayout_2.addWidget(self.labelDescription)
+
+
+        self.verticalLayout.addWidget(self.frame_4)
+
         self.frame_3 = QFrame(self.frame)
         self.frame_3.setObjectName(u"frame_3")
         self.frame_3.setFrameShape(QFrame.StyledPanel)
@@ -94,7 +110,7 @@ class Ui_ModuleWindow(object):
         self.tableView = QTableView(self.frame_3)
         self.tableView.setObjectName(u"tableView")
 
-        self.gridLayout_2.addWidget(self.tableView, 0, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.tableView, 1, 0, 1, 1)
 
 
         self.verticalLayout.addWidget(self.frame_3)
@@ -111,9 +127,9 @@ class Ui_ModuleWindow(object):
 
     def retranslateUi(self, ModuleWindow):
         ModuleWindow.setWindowTitle(QCoreApplication.translate("ModuleWindow", u"Form", None))
-        self.labelDescription.setText(QCoreApplication.translate("ModuleWindow", u"Description", None))
         self.pbAddBf.setText(QCoreApplication.translate("ModuleWindow", u"+ Bitfield", None))
         self.pbAddReg.setText(QCoreApplication.translate("ModuleWindow", u"+ Register", None))
         self.pbSetColumns.setText(QCoreApplication.translate("ModuleWindow", u"Columns", None))
+        self.labelDescription.setText(QCoreApplication.translate("ModuleWindow", u"Description", None))
     # retranslateUi
 
