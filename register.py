@@ -1,12 +1,13 @@
 import sys
+import os
+
+os.environ["QT_FONT_DPI"] = "96"
 
 from PySide2.QtWidgets import QApplication, QMainWindow
-from qt_material import apply_stylesheet
 from uiMainWindow import uiMainWindow
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    apply_stylesheet(app, theme='dark_teal.xml')
     mw = uiMainWindow()
     mw.show()
     app.exec_()

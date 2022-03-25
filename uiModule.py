@@ -15,6 +15,9 @@ class uiModuleWindow(QWidget):
         self.ui.setupUi(self)
         self.ui.pbSetColumns.setVisible(False)
         self.ui.treeView.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        with open ('style.qss') as file:
+            str = file.read()
+        self.setStyleSheet(str)
         
         self.treeViewItemTableNameRole = Qt.UserRole + 1
         self.treeViewItemMemoryMapIdRole = Qt.UserRole + 2

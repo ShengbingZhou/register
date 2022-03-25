@@ -17,7 +17,10 @@ class uiMainWindow(QMainWindow):
         self.ui.setupUi(self)
         self.setWindowTitle("Register Tool")
         self.ui.actionSave_As.setVisible(False)
-
+        with open ('style.qss') as file:
+            str = file.read()
+        self.setStyleSheet(str)
+        
         # add welcome tab
         self.welcomeWindow = uiWelcomeWindow(self)
         self.welcomeWindow.setAttribute(Qt.WA_DeleteOnClose)

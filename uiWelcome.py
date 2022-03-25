@@ -11,6 +11,9 @@ class uiWelcomeWindow(QWidget):
         self.ui = Ui_WelcomeWindow()
         self.ui.setupUi(self)
         self.icon = self.style().standardIcon(QStyle.SP_FileIcon)
+        with open ('style.qss') as file:
+            str = file.read()
+        self.setStyleSheet(str)
         
     def updateRecentFiles(self, fileName):
         self.conn = QSqlDatabase.addDatabase("QSQLITE", "recent_files.db")
