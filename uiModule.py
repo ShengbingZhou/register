@@ -244,6 +244,10 @@ class uiModuleWindow(QWidget):
                 
                 # setup UI model
                 self.__setupUiModel()
+                
+                # update flag
+                self.fileName = fileName
+                self.newModule = False
             else:
                 QMessageBox.warning(self, "Error", "Failed to open %s"%fileName)  
                 return False
