@@ -111,6 +111,20 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="pbAddBfEnum">
+            <property name="text">
+             <string>+ BitfieldEnum</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_6">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="pbSetColumns">
             <property name="text">
              <string>-&gt; ColumnsVisibility</string>

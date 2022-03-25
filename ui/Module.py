@@ -89,6 +89,18 @@ class Ui_ModuleWindow(object):
 
         self.horizontalLayout.addWidget(self.line_2)
 
+        self.pbAddBfEnum = QPushButton(self.frame_2)
+        self.pbAddBfEnum.setObjectName(u"pbAddBfEnum")
+
+        self.horizontalLayout.addWidget(self.pbAddBfEnum)
+
+        self.line_6 = QFrame(self.frame_2)
+        self.line_6.setObjectName(u"line_6")
+        self.line_6.setFrameShape(QFrame.VLine)
+        self.line_6.setFrameShadow(QFrame.Sunken)
+
+        self.horizontalLayout.addWidget(self.line_6)
+
         self.pbSetColumns = QPushButton(self.frame_2)
         self.pbSetColumns.setObjectName(u"pbSetColumns")
 
@@ -159,6 +171,7 @@ class Ui_ModuleWindow(object):
         self.pbAddRegMap.setText(QCoreApplication.translate("ModuleWindow", u"+ RegisterMap", None))
         self.pbAddReg.setText(QCoreApplication.translate("ModuleWindow", u"+ Register", None))
         self.pbAddBf.setText(QCoreApplication.translate("ModuleWindow", u"+ Bitfield", None))
+        self.pbAddBfEnum.setText(QCoreApplication.translate("ModuleWindow", u"+ BitfieldEnum", None))
         self.pbSetColumns.setText(QCoreApplication.translate("ModuleWindow", u"-> ColumnsVisibility", None))
         self.labelDescription.setText(QCoreApplication.translate("ModuleWindow", u"TextLabel", None))
     # retranslateUi
