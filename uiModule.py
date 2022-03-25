@@ -130,7 +130,7 @@ class uiModuleWindow(QWidget):
     def newDatabase(self):
         # create temp database
         now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-        newName = "temp_module_%s.db"%now
+        newName = "__temp_module_%s.db"%now
         shutil.copyfile("module_template.db", newName)
         self.newFileName = newName
         
