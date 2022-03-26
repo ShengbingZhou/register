@@ -425,6 +425,8 @@ class uiModuleWindow(QWidget):
             standardItem.parent().parent().appendRow(newRegMapItem)
         elif tableName == "Bitfield":
             standardItem.parent().parent().parent().appendRow(newRegMapItem)
+        elif tableName == "BitfieldEnum":
+            standardItem.parent().parent().parent().parent().appendRow(newRegMapItem)
         return
 
     @Slot()
@@ -449,6 +451,8 @@ class uiModuleWindow(QWidget):
             self.tableViewQueryModel.setQuery("%s%s"%(self.tableViewRegQuery, regMapId), self.conn)
         elif tableName == "Bitfield":
             standardItem.parent().parent().appendRow(newRegItem)
+        elif tableName == "BitfieldEnum":
+            standardItem.parent().parent().parent().appendRow(newRegItem)
         return
 
     @Slot()
@@ -473,6 +477,8 @@ class uiModuleWindow(QWidget):
         elif tableName == "Bitfield":
             standardItem.parent().appendRow(newBfItem)
             self.tableViewQueryModel.setQuery("%s%s"%(self.tableViewBfQuery, regId), self.conn)
+        elif tableName == "BitfieldEnum":
+            standardItem.parent().parent().appendRow(newBfItem)        
         return
 
     @Slot()
@@ -485,18 +491,18 @@ class uiModuleWindow(QWidget):
         bfId = int(current.data(self.treeViewItemBfIdRole))
         r = self.newBfEnumRow(self.bfEnumTableModel, bfId)
         
-        newBfItem = QStandardItem(r.value("name"))
-        newBfItem.setData("BitfieldEnum", self.treeViewItemTableNameRole)
-        newBfItem.setData(memoryMapId, self.treeViewItemMemoryMapIdRole)
-        newBfItem.setData(regMapId, self.treeViewItemRegMapIdRole)
-        newBfItem.setData(regId, self.treeViewItemRegIdRole)
-        newBfItem.setData(bfId, self.treeViewItemBfIdRole)
-        newBfItem.setData(r.value("id"), self.treeViewItemBfEnumIdRole)
+        newBfEnumItem = QStandardItem(r.value("name"))
+        newBfEnumItem.setData("BitfieldEnum", self.treeViewItemTableNameRole)
+        newBfEnumItem.setData(memoryMapId, self.treeViewItemMemoryMapIdRole)
+        newBfEnumItem.setData(regMapId, self.treeViewItemRegMapIdRole)
+        newBfEnumItem.setData(regId, self.treeViewItemRegIdRole)
+        newBfEnumItem.setData(bfId, self.treeViewItemBfIdRole)
+        newBfEnumItem.setData(r.value("id"), self.treeViewItemBfEnumIdRole)
         
         standardItem = self.standardModel.itemFromIndex(current)
         if tableName == "Bitfield":
-            standardItem.appendRow(newBfItem)
+            standardItem.appendRow(newBfEnumItem)
         elif tableName == "BitfieldEnum":
-            standardItem.parent().appendRow(newBfItem)
+            standardItem.parent().appendRow(newBfEnumItem)
             self.tableViewQueryModel.setQuery("%s%s"%(self.tableViewBfEnumQuery, bfId), self.conn)
         return

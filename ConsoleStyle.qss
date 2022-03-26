@@ -21,7 +21,12 @@ QPlainTextEdit {
 QTabWidget::pane {
     	border-top: 1px solid #000000;
 }
-
+QTreeView {
+	alternate-background-color: #E6FFFF;
+}
+QTreeView::Item {
+	height: 30px;
+}
 QTabBar::tab {
  	background-color:rgb(0, 0, 0);
  	border-style: outset;
