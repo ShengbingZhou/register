@@ -1,11 +1,13 @@
+import os
 import shutil
 import datetime
 
-from PySide2.QtWidgets import QWidget, QStyle, QAbstractItemView
+from PySide2.QtWidgets import QWidget, QStyle, QAbstractItemView, QMessageBox, QLineEdit
 from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize
 from PySide2.QtGui import QStandardItemModel, QStandardItem
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord
 from ui.Module import Ui_ModuleWindow
+from QSqlBitfieldTableModel import QSqlBitfieldTableModel
 
 class uiModuleWindow(QWidget):
     
@@ -15,6 +17,7 @@ class uiModuleWindow(QWidget):
         self.ui.setupUi(self)
         self.ui.pbSetColumns.setVisible(False)
         self.ui.treeView.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.ui.tableView.setAlternatingRowColors(True)
         with open ('style.qss') as file:
             str = file.read()
         self.setStyleSheet(str)
@@ -27,15 +30,19 @@ class uiModuleWindow(QWidget):
         self.treeViewItemBfIdRole = Qt.UserRole + 6
         self.treeViewItemBfEnumIdRole = Qt.UserRole + 7
         
-        self.tableViewQueryModel = QSqlQueryModel()
         self.tableViewRegQuery = "SELECT * FROM Register WHERE RegisterMapId="
-        self.tableViewBfQuery = "SELECT A.Name, A.Access, A.DefaultValue, A.Description, A.Width, B.RegisterOffset, B.BitfieldOffset, B.SliceWidth FROM Bitfield AS A JOIN BitfieldRef AS B ON A.id=B.BitfieldId WHERE B.RegisterId="
+        self.tableViewBfQuery = "SELECT A.id, B.RegisterId, A.Name, A.Access, A.DefaultValue, A.Description, A.Width, B.RegisterOffset, B.BitfieldOffset, B.SliceWidth FROM Bitfield AS A JOIN BitfieldRef AS B ON A.id=B.BitfieldId WHERE B.RegisterId="
         self.tableViewBfEnumQuery = "SELECT * FROM BitfieldEnum WHERE BitfieldId="
         
         self.newModule = True
         self.fileName = ''
         self.newFileName = ''
         return
+    
+    def closeEvent(self, event):
+        if os.path.isfile(self.newFileName):
+            os.remove(self.newFileName)
+        event.accept()
 
     def newInfoRow(self, model, updateDate):
         r = model.record()
@@ -44,7 +51,8 @@ class uiModuleWindow(QWidget):
         r.setValue("author", "Bing")
         r.setValue("lastupdatedate", updateDate)
         model.insertRecord(-1, r)
-        return
+        r = model.record(model.rowCount() - 1)
+        return r
 
     def newMemoryMapRow(self, model):
         r = model.record()
@@ -82,17 +90,7 @@ class uiModuleWindow(QWidget):
         r = model.record(model.rowCount() - 1)
         return r
     
-    def newBfRow(self, model, bfRefModel, regId, Width):        
-        queryModel = QSqlQueryModel()
-        
-        queryModel.setQuery("SELECT * FROM Register WHERE id=%s"%regId, model.database())
-        regRecord = queryModel.record(0)
-        regMapId = regRecord.value("RegisterMapId")
-        
-        queryModel.setQuery("SELECT * FROM RegisterMap WHERE id=%s"%regMapId, model.database())
-        regMapRecord = queryModel.record(0)
-        memMapId = regMapRecord.value("MemoyrMapId")
-        
+    def newBfRow(self, model, bfRefModel, regId, memMapId, Width):                
         r = model.record()
         r.remove(r.indexOf('id'))
         r.setValue("MemoryMapId", memMapId)
@@ -132,14 +130,39 @@ class uiModuleWindow(QWidget):
     
     def newDatabase(self):
         # create temp database
-        now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%_S_%f')
         newName = "__temp_module_%s.db"%now
         shutil.copyfile("module_template.db", newName)
         self.newFileName = newName
+        self.newModule = True
         
         # open new database
-        self.conn = QSqlDatabase.addDatabase("QSQLITE", newName)
-        self.conn.setDatabaseName(newName)
+        if self.__setupModel(newName):
+            info0Id = self.newInfoRow(self.infoTableModel, now).value("id")                 # create info row0
+            memoryMap0Id = self.newMemoryMapRow(self.memoryMaptableModel).value("id")       # create memorymap row0
+            regMap0Id = self.newRegMapRow(self.regMapTableModel, memoryMap0Id).value("id")  # create regmap row0
+            reg0Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 8).value("id")        # create register row0
+            reg1Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 8).value("id")        # create register row1
+            bf0Id = self.newBfRow(self.bfTableModel, self.bfRefTableModel, reg0Id, memoryMap0Id, 8).value("id") # create bitfield row0
+            bf1Id = self.newBfRow(self.bfTableModel, self.bfRefTableModel, reg1Id, memoryMap0Id, 8).value("id") # create bitfield row1
+            bfEnum0Id = self.newBfEnumRow(self.bfEnumTableModel, bf0Id).value("id")         # create bitfieldenum row0
+            self.__setupTreeView()
+        else:
+            False
+        return True
+        
+    def openDatabase(self, fileName):
+        self.fileName = fileName
+        self.newModule = False
+        if self.__setupModel(fileName):
+            self.__setupTreeView()
+        else:
+            return False
+        return True
+    
+    def __setupModel(self, fileName):
+        self.conn = QSqlDatabase.addDatabase("QSQLITE", fileName)
+        self.conn.setDatabaseName(fileName)
         if self.conn.open():
             self.infoTableModel = QSqlTableModel(self, self.conn)
             self.infoTableModel.setEditStrategy(QSqlTableModel.OnFieldChange) 
@@ -176,86 +199,14 @@ class uiModuleWindow(QWidget):
             self.bfEnumTableModel.setTable("BitfieldEnum")
             self.bfEnumTableModel.select()
             
-            # create info row0
-            self.newInfoRow(self.infoTableModel, now)
-            
-            # create memorymap row0
-            memoryMap0Id = self.newMemoryMapRow(self.memoryMaptableModel).value("id")
-            
-            # create regmap row0
-            regMap0Id = self.newRegMapRow(self.regMapTableModel, memoryMap0Id).value("id")
-            
-            # create register row0 & row1
-            reg0Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 8).value("id")
-            reg1Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 8).value("id")
-            
-            # create bitfield row0
-            bf0Id = self.newBfRow(self.bfTableModel, self.bfRefTableModel, reg0Id, 8).value("id")
-            bf1Id = self.newBfRow(self.bfTableModel, self.bfRefTableModel, reg1Id, 8).value("id")
-            
-            # create bitfieldenum row0
-            self.newBfEnumRow(self.bfEnumTableModel, bf0Id)
-            
-            # setup UI model
-            self.__setupUiModel()
+            self.bfQueryModel = QSqlBitfieldTableModel()
+            self.bfQueryModel.setConn(self.conn)
         else:
-            QMessageBox.warning(self, "Error", "Failed to open template file")
-        return
-        
-    def openDatabase(self, fileName):
-        try:
-            self.conn = QSqlDatabase.addDatabase("QSQLITE", fileName)
-            self.conn.setDatabaseName(fileName)
-            if self.conn.open():
-                self.infoTableModel = QSqlTableModel(self, self.conn)
-                self.infoTableModel.setEditStrategy(QSqlTableModel.OnFieldChange) 
-                self.infoTableModel.setTable("info")
-                self.infoTableModel.select()
-                
-                self.memoryMaptableModel = QSqlTableModel(self, self.conn)
-                self.memoryMaptableModel.setEditStrategy(QSqlTableModel.OnFieldChange)  
-                self.memoryMaptableModel.setTable("MemoryMap")
-                self.memoryMaptableModel.select()
-                
-                self.regMapTableModel = QSqlTableModel(self, self.conn)
-                self.regMapTableModel.setEditStrategy(QSqlTableModel.OnFieldChange)  
-                self.regMapTableModel.setTable("RegisterMap")
-                self.regMapTableModel.select()
-                
-                self.regTableModel = QSqlTableModel(self, self.conn)
-                self.regTableModel.setEditStrategy(QSqlTableModel.OnFieldChange)  
-                self.regTableModel.setTable("Register")
-                self.regTableModel.select()
-                
-                self.bfRefTableModel = QSqlTableModel(self, self.conn)
-                self.bfRefTableModel.setEditStrategy(QSqlTableModel.OnFieldChange)
-                self.bfRefTableModel.setTable("BitfieldRef")
-                self.bfRefTableModel.select()
-                
-                self.bfTableModel = QSqlTableModel(self, self.conn)
-                self.bfTableModel.setEditStrategy(QSqlTableModel.OnFieldChange) 
-                self.bfTableModel.setTable("Bitfield")
-                self.bfTableModel.select()
-                
-                self.bfEnumTableModel = QSqlTableModel(self, self.conn)
-                self.bfEnumTableModel.setEditStrategy(QSqlTableModel.OnFieldChange) 
-                self.bfEnumTableModel.setTable("BitfieldEnum")
-                self.bfEnumTableModel.select()
-                
-                # setup UI model
-                self.__setupUiModel()
-                
-                # update flag
-                self.fileName = fileName
-                self.newModule = False
-            else:
-                QMessageBox.warning(self, "Error", "Failed to open %s"%fileName)  
-                return False
-        except:
+            QMessageBox.warning(self, "Error", "Failed to open %s"%fileName)  
             return False
         return True
         
-    def __setupUiModel(self):
+    def __setupTreeView(self):
         # create standard model for treeview          
         self.standardModel = QStandardItemModel()
         root = self.standardModel.invisibleRootItem()
@@ -333,14 +284,20 @@ class uiModuleWindow(QWidget):
         treeViewSelectionModel.select(memoryMapItemIndex, QItemSelectionModel.ClearAndSelect)
         self.do_treeView_currentChanged(memoryMapItemIndex, None)
         
+    @Slot('QItemSelection', 'QItemSelection')
+    def do_tableView_selectionChanged(self, selected, deselected):
+        i = 0
+        return
+        
     @Slot()
     def do_treeView_currentChanged(self, current, previous):
         tableName = str(current.data(self.treeViewItemTableNameRole))
 
         if tableName == "MemoryMap": # memorymap selected, show memorymap table
             self.ui.tableView.setModel(self.memoryMaptableModel)
-            self.ui.tableView.hideColumn(0)
-            self.ui.tableView.showColumn(1)
+            self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+            self.ui.tableView.hideColumn(0) # id
+            self.ui.tableView.showColumn(1) # offset address
             self.ui.tableView.resizeColumnsToContents()
             
             self.ui.pbAddRegMap.setEnabled(True)
@@ -351,8 +308,9 @@ class uiModuleWindow(QWidget):
             
         elif tableName == "RegisterMap": # regmap or reg selected, show regmap table
             self.ui.tableView.setModel(self.regMapTableModel)
-            self.ui.tableView.hideColumn(0)
-            self.ui.tableView.hideColumn(1)
+            self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+            self.ui.tableView.hideColumn(0) # id
+            self.ui.tableView.hideColumn(1) # memmap id
             self.ui.tableView.resizeColumnsToContents()
             
             self.ui.pbAddRegMap.setEnabled(True)
@@ -363,10 +321,13 @@ class uiModuleWindow(QWidget):
             
         elif tableName == "Register": # reg selected, show reg table
             regMapId = int(current.data(self.treeViewItemRegMapIdRole))
-            self.tableViewQueryModel.setQuery("%s%s"%(self.tableViewRegQuery, regMapId), self.conn)
-            self.ui.tableView.setModel(self.tableViewQueryModel)
-            self.ui.tableView.hideColumn(0)
-            self.ui.tableView.hideColumn(1)
+            self.regTableModel.setFilter("RegisterMapId=%s"%regMapId)
+            self.regTableModel.select()
+            self.ui.tableView.setModel(self.regTableModel)
+            
+            self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+            self.ui.tableView.hideColumn(0) # id
+            self.ui.tableView.hideColumn(1) # regmap id
             self.ui.tableView.resizeColumnsToContents()
             
             self.ui.pbAddRegMap.setEnabled(True)
@@ -377,10 +338,12 @@ class uiModuleWindow(QWidget):
             
         elif tableName == "Bitfield": # bf selected, show bf table
             regId = int(current.data(self.treeViewItemRegIdRole))
-            self.tableViewQueryModel.setQuery("%s%s"%(self.tableViewBfQuery, regId), self.conn)
-            self.ui.tableView.setModel(self.tableViewQueryModel)
-            self.ui.tableView.showColumn(0)
-            self.ui.tableView.showColumn(1)
+            self.bfQueryModel.setQuery("%s%s"%(self.tableViewBfQuery, regId), self.conn)
+            self.ui.tableView.setModel(self.bfQueryModel)
+            
+            self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+            self.ui.tableView.hideColumn(0) # id
+            self.ui.tableView.hideColumn(1) # regid
             self.ui.tableView.resizeColumnsToContents()
             
             self.ui.pbAddRegMap.setEnabled(True)
@@ -390,11 +353,13 @@ class uiModuleWindow(QWidget):
             self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new bitfield. "%self.ui.pbAddBf.text())
             
         elif tableName == "BitfieldEnum": # bfenum selected, show bfenum table
-            bfId = int(current.data(self.treeViewItemBfIdRole))
-            self.tableViewQueryModel.setQuery("%s%s"%(self.tableViewBfEnumQuery, bfId), self.conn)
-            self.ui.tableView.setModel(self.tableViewQueryModel)
-            self.ui.tableView.hideColumn(0)
-            self.ui.tableView.hideColumn(1)
+            bfId = int(current.data(self.treeViewItemBfIdRole))            
+            self.regTableModel.setFilter("BitfieldId=%s"%bfId)
+            self.regTableModel.select()
+            self.ui.tableView.setModel(self.bfEnumTableModel)
+            self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+            self.ui.tableView.hideColumn(0) # id
+            self.ui.tableView.hideColumn(1) # bfid
             self.ui.tableView.resizeColumnsToContents()
             
             self.ui.pbAddRegMap.setEnabled(True)
@@ -448,7 +413,6 @@ class uiModuleWindow(QWidget):
             standardItem.appendRow(newRegItem)
         elif tableName == "Register":
             standardItem.parent().appendRow(newRegItem)
-            self.tableViewQueryModel.setQuery("%s%s"%(self.tableViewRegQuery, regMapId), self.conn)
         elif tableName == "Bitfield":
             standardItem.parent().parent().appendRow(newRegItem)
         elif tableName == "BitfieldEnum":
@@ -462,7 +426,7 @@ class uiModuleWindow(QWidget):
         memoryMapId = int(current.data(self.treeViewItemMemoryMapIdRole))
         regMapId = int(current.data(self.treeViewItemRegMapIdRole))
         regId = int(current.data(self.treeViewItemRegIdRole))
-        r = self.newBfRow(self.bfTableModel, self.bfRefTableModel, regId, 8)
+        r = self.newBfRow(self.bfTableModel, self.bfRefTableModel, regId, memoryMapId, 8)
         
         newBfItem = QStandardItem(r.value("name"))
         newBfItem.setData("Bitfield", self.treeViewItemTableNameRole)
@@ -476,7 +440,7 @@ class uiModuleWindow(QWidget):
             standardItem.appendRow(newBfItem)
         elif tableName == "Bitfield":
             standardItem.parent().appendRow(newBfItem)
-            self.tableViewQueryModel.setQuery("%s%s"%(self.tableViewBfQuery, regId), self.conn)
+            self.bfQueryModel.setQuery("%s%s"%(self.tableViewBfQuery, regId), self.conn)
         elif tableName == "BitfieldEnum":
             standardItem.parent().parent().appendRow(newBfItem)        
         return
@@ -504,5 +468,4 @@ class uiModuleWindow(QWidget):
             standardItem.appendRow(newBfEnumItem)
         elif tableName == "BitfieldEnum":
             standardItem.parent().appendRow(newBfEnumItem)
-            self.tableViewQueryModel.setQuery("%s%s"%(self.tableViewBfEnumQuery, bfId), self.conn)
         return

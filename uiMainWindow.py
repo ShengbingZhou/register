@@ -2,7 +2,7 @@ import sys
 import os
 import shutil
 
-from PySide2.QtWidgets import QWidget, QMainWindow, QFileDialog, QMessageBox, QTabBar
+from PySide2.QtWidgets import QWidget, QMainWindow, QFileDialog, QMessageBox, QTabBar, QStyle
 from PySide2.QtCore import Qt, Slot, QDir
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord
 from ui.Main import Ui_MainWindow
@@ -16,6 +16,7 @@ class uiMainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle("Register Tool")
+        self.setWindowIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.ui.actionSave_As.setVisible(False)
         with open ('style.qss') as file:
             str = file.read()
@@ -25,10 +26,24 @@ class uiMainWindow(QMainWindow):
         self.welcomeWindow = uiWelcomeWindow(self)
         self.welcomeWindow.setAttribute(Qt.WA_DeleteOnClose)
         self.welcomeWindow.updateRecentFiles('')
+        self.welcomeWindow.setMainWindow(self)
         index = self.ui.tabWidget.addTab(self.welcomeWindow, "Welcome")
         self.ui.tabWidget.setCurrentIndex(index)   
         self.ui.tabWidget.tabBar().setTabButton(0, QTabBar.RightSide, None)
-        
+    
+    def closeEvent(self, event):
+        for i in range(self.ui.tabWidget.count()):
+            tab = moduleWindow = self.ui.tabWidget.widget(i)
+            tab.close()
+        event.accept()
+    
+    def openFile(self, fileName):
+        moduleWindow = uiModuleWindow(self)
+        moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
+        if moduleWindow.openDatabase(fileName):
+            index = self.ui.tabWidget.addTab(moduleWindow, os.path.basename(fileName))
+            self.ui.tabWidget.setCurrentIndex(index)
+    
     @Slot(int)
     def on_tabWidget_tabCloseRequested(self, index):
         if (index < 0):
@@ -50,11 +65,7 @@ class uiMainWindow(QMainWindow):
     def on_actionOpen_triggered(self):
         fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open register file", QDir.homePath(), "Register Files (*)", "(*.*)")
         if fileName != '':
-            moduleWindow = uiModuleWindow(self)
-            moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
-            if moduleWindow.openDatabase(fileName):
-                index = self.ui.tabWidget.addTab(moduleWindow, os.path.basename(fileName))
-                self.ui.tabWidget.setCurrentIndex(index)
+            self.openFile(fileName)
         return
     
     @Slot()
@@ -86,12 +97,18 @@ class uiMainWindow(QMainWindow):
 
     @Slot()
     def on_actionSave_As_triggered(self):
-        i = 0
-        
+        return
+    
     @Slot()
     def on_actionClose_triggered(self):
-        i = 0
+        if self.ui.tabWidget.currentIndex() < 0:
+            return
+        tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
+        if tabText != "Welcome":
+            moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+            moduleWindow.close()
         
     @Slot()
     def on_actionExit_triggered(self):
+        self.close()
         sys.exit()
