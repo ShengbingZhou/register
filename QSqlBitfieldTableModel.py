@@ -27,6 +27,6 @@ class QSqlBitfieldTableModel(QSqlQueryModel):
         query = QSqlQuery(self.conn)
         result = query.exec_("UPDATE Bitfield SET %s='%s' WHERE id=%s"%(field, value, bfId))
         if result:
-            self.dataChanged.emit(self.index, self.index)
             self.setQuery(self.query().executedQuery(), self.conn)
+            self.dataChanged.emit(index, index, role)
         return result

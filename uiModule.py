@@ -2,10 +2,10 @@ import os
 import shutil
 import datetime
 
-from PySide2.QtWidgets import QWidget, QStyle, QAbstractItemView, QMessageBox, QLineEdit
+from PySide2.QtWidgets import QWidget, QStyle, QAbstractItemView, QMessageBox, QLineEdit, QMenu, QAction
 from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize
 from PySide2.QtGui import QStandardItemModel, QStandardItem
-from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord
+from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
 from ui.Module import Ui_ModuleWindow
 from QSqlBitfieldTableModel import QSqlBitfieldTableModel
 
@@ -147,6 +147,10 @@ class uiModuleWindow(QWidget):
             bf1Id = self.newBfRow(self.bfTableModel, self.bfRefTableModel, reg1Id, memoryMap0Id, 8).value("id") # create bitfield row1
             bfEnum0Id = self.newBfEnumRow(self.bfEnumTableModel, bf0Id).value("id")         # create bitfieldenum row0
             self.__setupTreeView()
+            self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.bfQueryModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.bfEnumTableModel.dataChanged.connect(self.do_tableView_dataChanged)
         else:
             False
         return True
@@ -156,6 +160,10 @@ class uiModuleWindow(QWidget):
         self.newModule = False
         if self.__setupModel(fileName):
             self.__setupTreeView()
+            self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.bfQueryModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.bfEnumTableModel.dataChanged.connect(self.do_tableView_dataChanged)     
         else:
             return False
         return True
@@ -278,6 +286,9 @@ class uiModuleWindow(QWidget):
         # connect slots
         treeViewSelectionModel = self.ui.treeView.selectionModel()
         treeViewSelectionModel.currentChanged.connect(self.do_treeView_currentChanged)
+
+        self.ui.treeView.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.treeView.customContextMenuRequested.connect(self.do_treeView_contextMenuRequested)
         
         # select memory map node
         memoryMapItemIndex = self.standardModel.indexFromItem(self.memoryMapItem)
@@ -286,9 +297,109 @@ class uiModuleWindow(QWidget):
         
     @Slot('QItemSelection', 'QItemSelection')
     def do_tableView_selectionChanged(self, selected, deselected):
-        i = 0
         return
+    
+    @Slot()
+    def do_treeView_contextMenuRequested(self, point):
+        index = self.ui.treeView.indexAt(point)
+        tableName = str(index.data(self.treeViewItemTableNameRole))
         
+        self.treeViewPopMenu = QMenu(self)
+        addRegMapAction = QAction("Add RegMap", self)
+        addRegAction = QAction("Add Reg", self)
+        addBfAction = QAction("Add Bitfield", self)
+        addBfEnumAction = QAction("Add Bitfield Enum", self)
+        
+        if tableName == "MemoryMap":
+            self.treeViewPopMenu.addAction(addRegMapAction)
+            addRegMapAction.triggered.connect(self.on_pbAddRegMap_clicked)
+        elif tableName == "RegisterMap":
+            self.treeViewPopMenu.addAction(addRegMapAction)
+            addRegMapAction.triggered.connect(self.on_pbAddRegMap_clicked)
+            self.treeViewPopMenu.addAction(addRegAction)
+            addRegAction.triggered.connect(self.on_pbAddReg_clicked)
+        elif tableName == "Register":
+            self.treeViewPopMenu.addAction(addRegMapAction)
+            addRegMapAction.triggered.connect(self.on_pbAddRegMap_clicked)
+            self.treeViewPopMenu.addAction(addRegAction)
+            addRegAction.triggered.connect(self.on_pbAddReg_clicked)
+            self.treeViewPopMenu.addAction(addBfAction)
+            addBfAction.triggered.connect(self.on_pbAddBf_clicked)
+        elif tableName == "Bitfield":
+            self.treeViewPopMenu.addAction(addRegMapAction)
+            addRegMapAction.triggered.connect(self.on_pbAddRegMap_clicked)
+            self.treeViewPopMenu.addAction(addRegAction)
+            addRegAction.triggered.connect(self.on_pbAddReg_clicked)
+            self.treeViewPopMenu.addAction(addBfAction)
+            addBfAction.triggered.connect(self.on_pbAddBf_clicked)
+            self.treeViewPopMenu.addAction(addBfEnumAction)
+            addBfEnumAction.triggered.connect(self.on_pbAddBfEnum_clicked)
+        elif tableName == "BitfieldEnum":
+            self.treeViewPopMenu.addAction(addRegMapAction)
+            addRegMapAction.triggered.connect(self.on_pbAddRegMap_clicked)
+            self.treeViewPopMenu.addAction(addRegAction)
+            addRegAction.triggered.connect(self.on_pbAddReg_clicked)
+            self.treeViewPopMenu.addAction(addBfAction)
+            addBfAction.triggered.connect(self.on_pbAddBf_clicked)
+            self.treeViewPopMenu.addAction(addBfEnumAction)
+            addBfEnumAction.triggered.connect(self.on_pbAddBfEnum_clicked)
+        self.treeViewPopMenu.addSeparator()
+        delAction = QAction("Delete", self)
+        self.treeViewPopMenu.addAction(delAction)
+        delAction.triggered.connect(self.do_delete_triggered)
+        
+        menuPosition = self.ui.treeView.viewport().mapToGlobal(point)
+        self.treeViewPopMenu.move(menuPosition)
+        self.treeViewPopMenu.show()
+    
+    @Slot()
+    def do_tableView_dataChanged(self, topLeft, bottomRight, roles):
+        current = self.ui.treeView.selectedIndexes().pop()
+        tableName = str(current.data(self.treeViewItemTableNameRole))
+        
+        if tableName == "RegisterMap":
+            fieldName = self.regMapTableModel.record().fieldName(bottomRight.column())
+            if (fieldName == "Name"):
+                regMapId = self.regMapTableModel.data(self.regMapTableModel.index(bottomRight.row(), 0), Qt.DisplayRole)
+                parentItem = self.standardModel.itemFromIndex(current.parent())
+                for i in range(parentItem.rowCount()):
+                    child = current.sibling(i, 0)
+                    if regMapId == int(child.data(self.treeViewItemRegMapIdRole)):
+                        regMapName = self.regMapTableModel.record(bottomRight.row()).value("Name")
+                        self.standardModel.itemFromIndex(child).setData(regMapName, Qt.DisplayRole)
+        elif tableName == "Register":
+            fieldName = self.regTableModel.record().fieldName(bottomRight.column())
+            if (fieldName == "Name"):
+                regId = self.regTableModel.data(self.regTableModel.index(bottomRight.row(), 0), Qt.DisplayRole)
+                parentItem = self.standardModel.itemFromIndex(current.parent())
+                for i in range(parentItem.rowCount()):
+                    child = current.sibling(i, 0)
+                    if regId == int(child.data(self.treeViewItemRegIdRole)):
+                        regName = self.regTableModel.record(bottomRight.row()).value("Name")
+                        self.standardModel.itemFromIndex(child).setData(regName, Qt.DisplayRole)
+        elif tableName == "Bitfield":
+            fieldName = self.bfQueryModel.record().fieldName(bottomRight.column())
+            if (fieldName == "Name"):
+                bfId = self.bfQueryModel.data(self.bfQueryModel.index(bottomRight.row(), 0), Qt.DisplayRole)
+                parentItem = self.standardModel.itemFromIndex(current.parent())
+                for i in range(parentItem.rowCount()):
+                    child = current.sibling(i, 0)
+                    if bfId == int(child.data(self.treeViewItemBfIdRole)):
+                        bfName = self.bfQueryModel.record(bottomRight.row()).value("Name")
+                        self.standardModel.itemFromIndex(child).setData(bfName, Qt.DisplayRole)
+        elif tableName == "BitfieldEnum":
+            fieldName = self.bfEnumTableModel.record().fieldName(bottomRight.column())
+            if (fieldName == "Name"):
+                bfEnumId = self.bfEnumTableModel.data(self.bfEnumTableModel.index(bottomRight.row(), 0), Qt.DisplayRole)
+                parentItem = self.standardModel.itemFromIndex(current.parent())
+                for i in range(parentItem.rowCount()):
+                    child = current.sibling(i, 0)
+                    if bfEnumId == int(child.data(self.treeViewItemBfEnumIdRole)):
+                        bfEnumName = self.bfEnumTableModel.record(bottomRight.row()).value("Name")
+                        self.standardModel.itemFromIndex(child).setData(bfEnumName, Qt.DisplayRole)
+        self.ui.tableView.resizeColumnsToContents()
+        return
+    
     @Slot()
     def do_treeView_currentChanged(self, current, previous):
         tableName = str(current.data(self.treeViewItemTableNameRole))
@@ -468,4 +579,25 @@ class uiModuleWindow(QWidget):
             standardItem.appendRow(newBfEnumItem)
         elif tableName == "BitfieldEnum":
             standardItem.parent().appendRow(newBfEnumItem)
+        return
+    
+    @Slot()
+    def do_delete_triggered(self):
+        current = self.ui.treeView.selectedIndexes().pop()
+        tableName = str(current.data(self.treeViewItemTableNameRole))
+
+        if tableName == "RegisterMap":
+            regMapId = int(current.data(self.treeViewItemRegMapIdRole))
+            parentItem = self.standardModel.itemFromIndex(current.parent())
+            parentItem.removeRow(current.row())
+            query = QSqlQuery(self.conn)
+            result = query.exec_("DELETE RegisterMap WHERE id=%s"%(regMapId))
+            self.regMapTableModel.select()
+            #self.regMapTableModel.setQuery(self.regMapTableModel.query().executedQuery(), self.conn)
+        elif tableName == "Register":
+            i = 0
+        elif tableName == "Bitfield":
+            i = 0
+        elif tableName == "BitfieldEnum":
+            i = 0
         return
