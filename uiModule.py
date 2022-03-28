@@ -74,17 +74,32 @@ class uiModuleWindow(QWidget):
         r = model.record()
         r.remove(r.indexOf('id'))
         r.setValue("MemoryMapId", memoryMapId)
-        r.setValue("OffsetAddress", 0)
-        id = 0
-        if model.rowCount() > 0:
-            query = QSqlQuery(self.conn)
-            query.exec_("SELECT max(id) FROM RegisterMap")
-            query.next()
-            id = query.record().value(0)
+        r.setValue("OffsetAddress", 0)        
+        r.setValue("Name", "RegMap")
+        r.setValue("DisplayOrder", -1)
+        
+        if model.rowCount() == 0:
+            order = 0
+            exactRow = 0
+            model.insertRecord(-1, r)            
+        elif row >= model.rowCount() or row == -1:
+            order = model.record(model.rowCount() - 1).value("DisplayOrder") + 1
+            exactRow = model.rowCount()
+            model.insertRecord(-1, r)
+        else:
+            order = 0 if row == 0 else model.record(row - 1).value("DisplayOrder") + 1
+            exactRow = row
+            model.insertRecord(row, r)
+  
+        query = QSqlQuery(self.conn)
+        query.exec_("UPDATE RegisterMap SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))  
+        
+        id = model.record(exactRow).value("id")
+        r.setValue("id", id)
         r.setValue("Name", "RegMap%s"%id)
-        model.insertRecord(row, r)
-        rrow = model.rowCount() - 1 if row == -1 else row
-        r = model.record(rrow)
+        r.setValue("DisplayOrder", order)
+        model.setRecord(exactRow, r)        
+        r = model.record(exactRow)
         return r
         
     def newRegRow(self, model, regMapId, OffsetAddress, Width):
@@ -243,7 +258,7 @@ class uiModuleWindow(QWidget):
             
             # register map
             regMapQueryModel = QSqlQueryModel()
-            regMapQueryModel.setQuery("SELECT * FROM RegisterMap WHERE memoryMapId=%s"%memoryMapRecord.value("id"), self.conn)
+            regMapQueryModel.setQuery("SELECT * FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memoryMapRecord.value("id"), self.conn)
             for i in range(regMapQueryModel.rowCount()):
                 regMapRecord = regMapQueryModel.record(i)
                 regMapitem = QStandardItem(regMapRecord.value("name"))
@@ -501,7 +516,10 @@ class uiModuleWindow(QWidget):
         current = self.ui.treeView.selectedIndexes().pop()
         tableName = str(current.data(self.treeViewItemTableNameRole))
         memoryMapId = int(current.data(self.treeViewItemMemoryMapIdRole))
-        newRegMapRowIndex = -1 if tableName != "RegisterMap" else current.row() + 1
+        if tableName != "RegisterMap":
+            newRegMapRowIndex = -1
+        else:
+            newRegMapRowIndex = current.row() + 1
         r = self.newRegMapRow(self.regMapTableModel, memoryMapId, newRegMapRowIndex)
         
         newRegMapItem = QStandardItem(r.value("name"))
