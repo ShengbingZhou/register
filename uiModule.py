@@ -92,7 +92,7 @@ class uiModuleWindow(QWidget):
             model.insertRecord(row, r)
   
         query = QSqlQuery(self.conn)
-        query.exec_("UPDATE RegisterMap SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))  
+        query.exec_("UPDATE RegisterMap SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))          
         
         id = model.record(exactRow).value("id")
         r.setValue("id", id)
@@ -100,6 +100,8 @@ class uiModuleWindow(QWidget):
         r.setValue("DisplayOrder", order)
         model.setRecord(exactRow, r)        
         r = model.record(exactRow)
+        model.select()
+        
         return r
         
     def newRegRow(self, model, regMapId, OffsetAddress, Width):
@@ -212,6 +214,7 @@ class uiModuleWindow(QWidget):
             self.regMapTableModel = QSqlTableModel(self, self.conn)
             self.regMapTableModel.setEditStrategy(QSqlTableModel.OnFieldChange)  
             self.regMapTableModel.setTable("RegisterMap")
+            self.regMapTableModel.setSort(2, Qt.AscendingOrder) # DisplayOrder column
             self.regMapTableModel.select()
             
             self.regTableModel = QSqlTableModel(self, self.conn)
