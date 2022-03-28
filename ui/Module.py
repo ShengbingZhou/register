@@ -58,17 +58,17 @@ class Ui_ModuleWindow(object):
 
         self.horizontalLayout.addWidget(self.pbAddRegMap)
 
-        self.pbAddReg = QPushButton(self.frame_2)
-        self.pbAddReg.setObjectName(u"pbAddReg")
-
-        self.horizontalLayout.addWidget(self.pbAddReg)
-
         self.line_5 = QFrame(self.frame_2)
         self.line_5.setObjectName(u"line_5")
         self.line_5.setFrameShape(QFrame.VLine)
         self.line_5.setFrameShadow(QFrame.Sunken)
 
         self.horizontalLayout.addWidget(self.line_5)
+
+        self.pbAddReg = QPushButton(self.frame_2)
+        self.pbAddReg.setObjectName(u"pbAddReg")
+
+        self.horizontalLayout.addWidget(self.pbAddReg)
 
         self.line_3 = QFrame(self.frame_2)
         self.line_3.setObjectName(u"line_3")

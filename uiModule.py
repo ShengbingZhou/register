@@ -70,17 +70,21 @@ class uiModuleWindow(QWidget):
         r = model.record(model.rowCount() - 1)
         return r
     
-    def newRegMapRow(self, model, memoryMapId):
+    def newRegMapRow(self, model, memoryMapId, row):
         r = model.record()
         r.remove(r.indexOf('id'))
         r.setValue("MemoryMapId", memoryMapId)
         r.setValue("OffsetAddress", 0)
         id = 0
         if model.rowCount() > 0:
-            id = model.record(model.rowCount() - 1).value("id")
+            query = QSqlQuery(self.conn)
+            query.exec_("SELECT max(id) FROM RegisterMap")
+            query.next()
+            id = query.record().value(0)
         r.setValue("Name", "RegMap%s"%id)
-        model.insertRecord(-1, r)
-        r = model.record(model.rowCount() - 1)
+        model.insertRecord(row, r)
+        rrow = model.rowCount() - 1 if row == -1 else row
+        r = model.record(rrow)
         return r
         
     def newRegRow(self, model, regMapId, OffsetAddress, Width):
@@ -148,7 +152,7 @@ class uiModuleWindow(QWidget):
         if self.__setupModel(newName):
             info0Id = self.newInfoRow(self.infoTableModel, now).value("id")                 # create info row0
             memoryMap0Id = self.newMemoryMapRow(self.memoryMaptableModel).value("id")       # create memorymap row0
-            regMap0Id = self.newRegMapRow(self.regMapTableModel, memoryMap0Id).value("id")  # create regmap row0
+            regMap0Id = self.newRegMapRow(self.regMapTableModel, memoryMap0Id, -1).value("id")  # create regmap row0
             reg0Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 8).value("id")        # create register row0
             reg1Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 8).value("id")        # create register row1
             bf0Id = self.newBfRow(self.bfTableModel, self.bfRefTableModel, reg0Id, memoryMap0Id, 8).value("id") # create bitfield row0
@@ -372,7 +376,8 @@ class uiModuleWindow(QWidget):
                 parentItem = self.standardModel.itemFromIndex(current.parent())
                 for i in range(parentItem.rowCount()):
                     child = current.sibling(i, 0)
-                    if regMapId == int(child.data(self.treeViewItemRegMapIdRole)):
+                    childId = child.data(self.treeViewItemRegMapIdRole)
+                    if childId != None and regMapId == int(childId):
                         regMapName = self.regMapTableModel.record(bottomRight.row()).value("Name")
                         self.standardModel.itemFromIndex(child).setData(regMapName, Qt.DisplayRole)
         elif tableName == "Register":
@@ -382,7 +387,8 @@ class uiModuleWindow(QWidget):
                 parentItem = self.standardModel.itemFromIndex(current.parent())
                 for i in range(parentItem.rowCount()):
                     child = current.sibling(i, 0)
-                    if regId == int(child.data(self.treeViewItemRegIdRole)):
+                    childId = child.data(self.treeViewItemRegIdRole)
+                    if childId != None and regId == int(childId):           
                         regName = self.regTableModel.record(bottomRight.row()).value("Name")
                         self.standardModel.itemFromIndex(child).setData(regName, Qt.DisplayRole)
         elif tableName == "Bitfield":
@@ -392,7 +398,8 @@ class uiModuleWindow(QWidget):
                 parentItem = self.standardModel.itemFromIndex(current.parent())
                 for i in range(parentItem.rowCount()):
                     child = current.sibling(i, 0)
-                    if bfId == int(child.data(self.treeViewItemBfIdRole)):
+                    childId = child.data(self.treeViewItemBfIdRole)
+                    if childId != None and bfId == int(childId):
                         bfName = self.bfQueryModel.record(bottomRight.row()).value("Name")
                         self.standardModel.itemFromIndex(child).setData(bfName, Qt.DisplayRole)
         elif tableName == "BitfieldEnum":
@@ -402,7 +409,8 @@ class uiModuleWindow(QWidget):
                 parentItem = self.standardModel.itemFromIndex(current.parent())
                 for i in range(parentItem.rowCount()):
                     child = current.sibling(i, 0)
-                    if bfEnumId == int(child.data(self.treeViewItemBfEnumIdRole)):
+                    childId = child.data(self.treeViewItemBfEnumIdRole)
+                    if childId != None and bfEnumId == int(childId):
                         bfEnumName = self.bfEnumTableModel.record(bottomRight.row()).value("Name")
                         self.standardModel.itemFromIndex(child).setData(bfEnumName, Qt.DisplayRole)
         self.ui.tableView.resizeColumnsToContents()
@@ -493,7 +501,8 @@ class uiModuleWindow(QWidget):
         current = self.ui.treeView.selectedIndexes().pop()
         tableName = str(current.data(self.treeViewItemTableNameRole))
         memoryMapId = int(current.data(self.treeViewItemMemoryMapIdRole))
-        r = self.newRegMapRow(self.regMapTableModel, memoryMapId)
+        newRegMapRowIndex = -1 if tableName != "RegisterMap" else current.row() + 1
+        r = self.newRegMapRow(self.regMapTableModel, memoryMapId, newRegMapRowIndex)
         
         newRegMapItem = QStandardItem(r.value("name"))
         newRegMapItem.setData("RegisterMap", self.treeViewItemTableNameRole)
@@ -504,7 +513,15 @@ class uiModuleWindow(QWidget):
         if tableName == "MemoryMap":
             standardItem.appendRow(newRegMapItem)
         elif tableName == "RegisterMap":
-            standardItem.parent().appendRow(newRegMapItem)
+            if (current.row() + 1) == standardItem.parent().rowCount(): # current is last one
+                standardItem.parent().appendRow(newRegMapItem)
+                item = standardItem.parent().child(current.row() + 1)
+                self.ui.treeView.selectionModel().setCurrentIndex(item.index(), QItemSelectionModel.ClearAndSelect)
+            else:
+                standardItem.parent().insertRows(current.row() + 1, 1)
+                standardItem.parent().setChild(current.row() + 1, newRegMapItem)
+                item = standardItem.parent().child(current.row() + 1)
+                self.ui.treeView.selectionModel().setCurrentIndex(item.index(), QItemSelectionModel.ClearAndSelect)
         elif tableName == "Register":
             standardItem.parent().parent().appendRow(newRegMapItem)
         elif tableName == "Bitfield":
@@ -625,7 +642,8 @@ class uiModuleWindow(QWidget):
             self.bfEnumTableModel.select()
         
         # remove from tree
-        parentItem = self.standardModel.itemFromIndex(current.parent())
-        parentItem.removeRow(current.row())
+        if tableName != "MemoryMap":
+            parentItem = self.standardModel.itemFromIndex(current.parent())
+            parentItem.removeRow(current.row())
         
         return

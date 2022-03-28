@@ -76,16 +76,16 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="pbAddReg">
-            <property name="text">
-             <string>+ Register</string>
+           <widget class="Line" name="line_5">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="Line" name="line_5">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
+           <widget class="QPushButton" name="pbAddReg">
+            <property name="text">
+             <string>+ Register</string>
             </property>
            </widget>
           </item>
