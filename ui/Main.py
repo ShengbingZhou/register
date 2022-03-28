@@ -36,6 +36,8 @@ class Ui_MainWindow(object):
         self.actionCopy.setObjectName(u"actionCopy")
         self.actionPaste = QAction(MainWindow)
         self.actionPaste.setObjectName(u"actionPaste")
+        self.actionAbout = QAction(MainWindow)
+        self.actionAbout.setObjectName(u"actionAbout")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.horizontalLayout = QHBoxLayout(self.centralwidget)
@@ -75,6 +77,7 @@ class Ui_MainWindow(object):
         self.menuEdit.addAction(self.actionCut)
         self.menuEdit.addAction(self.actionCopy)
         self.menuEdit.addAction(self.actionPaste)
+        self.menuHelp.addAction(self.actionAbout)
 
         self.retranslateUi(MainWindow)
 
@@ -95,6 +98,7 @@ class Ui_MainWindow(object):
         self.actionCut.setText(QCoreApplication.translate("MainWindow", u"Cut", None))
         self.actionCopy.setText(QCoreApplication.translate("MainWindow", u"Copy", None))
         self.actionPaste.setText(QCoreApplication.translate("MainWindow", u"Paste", None))
+        self.actionAbout.setText(QCoreApplication.translate("MainWindow", u"About", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
         self.menuEdit.setTitle(QCoreApplication.translate("MainWindow", u"Edit", None))
         self.menuHelp.setTitle(QCoreApplication.translate("MainWindow", u"Help", None))

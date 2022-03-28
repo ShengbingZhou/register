@@ -43,7 +43,8 @@ class uiMainWindow(QMainWindow):
         if moduleWindow.openDatabase(fileName):
             index = self.ui.tabWidget.addTab(moduleWindow, os.path.basename(fileName))
             self.ui.tabWidget.setCurrentIndex(index)
-    
+            if self.welcomeWindow != None:
+                self.welcomeWindow.updateRecentFiles(fileName)
     @Slot(int)
     def on_tabWidget_tabCloseRequested(self, index):
         if (index < 0):
@@ -51,6 +52,10 @@ class uiMainWindow(QMainWindow):
         tab = self.ui.tabWidget.widget(index)
         tab.close()
         return
+
+    @Slot()
+    def on_actionAbout_triggered(self):
+        QMessageBox.information(self, "About", "Copyright by @ShengbingZhou (shengbingzhou@outlook.com) \n\n Source code link: https://github.dev/ShengbingZhou/register \n\n", QMessageBox.Yes)
 
     @Slot()
     def on_actionNew_triggered(self):
@@ -87,6 +92,8 @@ class uiMainWindow(QMainWindow):
                     moduleWindow.fileName = fileName
                     moduleWindow.newModule = False
                     self.ui.tabWidget.setTabText(self.ui.tabWidget.currentIndex(), os.path.basename(fileName))
+                    
+                    # update recent file list
                     if self.welcomeWindow != None:
                         self.welcomeWindow.updateRecentFiles(fileName)
             else:

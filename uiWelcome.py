@@ -32,6 +32,9 @@ class uiWelcomeWindow(QWidget):
             maxRow = 20
             
             if os.path.isfile(fileName):
+                for i in range(recentFilesTableModel.rowCount()):
+                    if recentFilesTableModel.record(i).value("path") == fileName:
+                        recentFilesTableModel.removeRows(i, 1)
                 r = recentFilesTableModel.record()
                 r.remove(r.indexOf('id'))
                 r.setValue("path", fileName)

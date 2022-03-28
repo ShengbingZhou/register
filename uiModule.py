@@ -3,7 +3,7 @@ import shutil
 import datetime
 
 from PySide2.QtWidgets import QWidget, QStyle, QAbstractItemView, QMessageBox, QLineEdit, QMenu, QAction
-from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize
+from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize, QEvent
 from PySide2.QtGui import QStandardItemModel, QStandardItem
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
 from ui.Module import Ui_ModuleWindow
@@ -18,6 +18,7 @@ class uiModuleWindow(QWidget):
         self.ui.pbSetColumns.setVisible(False)
         self.ui.treeView.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.ui.tableView.setAlternatingRowColors(True)
+        self.ui.treeView.installEventFilter(self)
         with open ('style.qss') as file:
             str = file.read()
         self.setStyleSheet(str)
@@ -38,6 +39,13 @@ class uiModuleWindow(QWidget):
         self.fileName = ''
         self.newFileName = ''
         return
+    
+    def eventFilter(self, obj, event):
+        if obj == self.ui.treeView:
+            if  event.type() == QEvent.KeyPress:
+                if event.key() == Qt.Key_Delete:
+                    self.do_delete_triggered()
+        return super(uiModuleWindow, self).eventFilter(obj, event)
     
     def closeEvent(self, event):
         if os.path.isfile(self.newFileName):
@@ -305,10 +313,10 @@ class uiModuleWindow(QWidget):
         tableName = str(index.data(self.treeViewItemTableNameRole))
         
         self.treeViewPopMenu = QMenu(self)
-        addRegMapAction = QAction("Add RegMap", self)
-        addRegAction = QAction("Add Reg", self)
-        addBfAction = QAction("Add Bitfield", self)
-        addBfEnumAction = QAction("Add Bitfield Enum", self)
+        addRegMapAction = QAction("+ RegMap", self)
+        addRegAction = QAction("+ Reg", self)
+        addBfAction = QAction("+ Bitfield", self)
+        addBfEnumAction = QAction("+ Bitfield Enum", self)
         
         if tableName == "MemoryMap":
             self.treeViewPopMenu.addAction(addRegMapAction)
@@ -585,19 +593,39 @@ class uiModuleWindow(QWidget):
     def do_delete_triggered(self):
         current = self.ui.treeView.selectedIndexes().pop()
         tableName = str(current.data(self.treeViewItemTableNameRole))
-
+        
+        # remove from table
         if tableName == "RegisterMap":
             regMapId = int(current.data(self.treeViewItemRegMapIdRole))
-            parentItem = self.standardModel.itemFromIndex(current.parent())
-            parentItem.removeRow(current.row())
-            query = QSqlQuery(self.conn)
-            result = query.exec_("DELETE RegisterMap WHERE id=%s"%(regMapId))
+            for i in range(self.regMapTableModel.rowCount()):
+                if self.regMapTableModel.record(i).value("id") == regMapId:
+                    self.regMapTableModel.removeRows(i, 1)
+                    break
             self.regMapTableModel.select()
-            #self.regMapTableModel.setQuery(self.regMapTableModel.query().executedQuery(), self.conn)
         elif tableName == "Register":
-            i = 0
+            regId = int(current.data(self.treeViewItemRegIdRole))
+            for i in range(self.regTableModel.rowCount()):
+                if self.regTableModel.record(i).value("id") == regId:
+                    self.regTableModel.removeRows(i, 1)
+                    break
+            self.regTableModel.select()
         elif tableName == "Bitfield":
-            i = 0
+            bfId = int(current.data(self.treeViewItemBfIdRole))
+            for i in range(self.bfTableModel.rowCount()):
+                if self.bfTableModel.record(i).value("id") == bfId:
+                    self.bfTableModel.removeRows(i, 1)
+                    break
+            self.bfTableModel.select()
         elif tableName == "BitfieldEnum":
-            i = 0
+            bfEnumId = int(current.data(self.treeViewItemBfEnumIdRole))
+            for i in range(self.bfEnumTableModel.rowCount()):
+                if self.bfEnumTableModel.record(i).value("id") == bfEnumId:
+                    self.bfEnumTableModel.removeRows(i, 1)
+                    break
+            self.bfEnumTableModel.select()
+        
+        # remove from tree
+        parentItem = self.standardModel.itemFromIndex(current.parent())
+        parentItem.removeRow(current.row())
+        
         return
