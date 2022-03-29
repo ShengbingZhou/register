@@ -22,9 +22,7 @@ class uiWelcomeWindow(QWidget):
         self.ui.listView.doubleClicked.connect(self.do_listView_doubleCliced)
 
     def updateRecentFiles(self, fileName):
-        now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%_S_%f')
-        newConnName = "__recent_files_%s.db"%now
-        self.conn = QSqlDatabase.addDatabase("QSQLITE", newConnName)
+        self.conn = QSqlDatabase.addDatabase("QSQLITE", "recent_files.db")
         self.conn.setDatabaseName("recent_files.db")
         if self.conn.open():
             recentFilesTableModel = QSqlTableModel(self, self.conn)

@@ -206,9 +206,14 @@ class uiModuleWindow(QWidget):
         return True
         
     def openDatabase(self, fileName):
+        # create temp database
+        now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%_S_%f')
+        newName = "__temp_module_%s.db"%now
+        shutil.copyfile(fileName, newName)
+        self.newFileName = newName
         self.fileName = fileName
         self.newModule = False
-        if self.__setupModel(fileName):
+        if self.__setupModel(newName):
             self.__setupTreeView()
             self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
@@ -223,32 +228,23 @@ class uiModuleWindow(QWidget):
         if self.newModule == True:
             fileName, filterUsed = QFileDialog.getSaveFileName(self, "Save register file", QDir.homePath(), "Register Files (*)", "(*.*)")
             if fileName !='':
+                if os.path.exists(fileName):
+                    os.remove(fileName)
                 shutil.copy(self.newFileName, fileName)
                 self.fileName = fileName
                 self.newModule = False
         else:
             if self.newFileName != '':
+                if os.path.exists(fileName):
+                    os.remove(fileName)
                 shutil.copy(self.newFileName, self.fileName)
                 fileName = self.fileName
         return fileName
     
     def __setupModel(self, fileName):  
         self.conn = QSqlDatabase.addDatabase("QSQLITE", fileName)
-        #self.conn.setDatabaseName(":memory:");
         self.conn.setDatabaseName(fileName)
         if self.conn.open():
-            
-            # create table
-            #query = QSqlQuery(self.conn)
-            #query.exec_("CREATE TABLE sqlite_sequence(name,seq)")
-            #query.exec_("CREATE TABLE 'info' ( 'id' INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 'version' INTEGER, 'author' TEXT, 'lastupdatedate' TEXT )")
-            #query.exec_("CREATE TABLE 'MemoryMap' ( 'id' INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 'OffsetAddress' INTEGER, 'Notes' TEXT )")
-            #query.exec_("CREATE TABLE 'RegisterMap' ( 'id' INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 'MemoryMapId' INTEGER, 'DisplayOrder' INTEGER, 'OffsetAddress' INTEGER, 'Name' TEXT, 'Description' TEXT, 'Exist' INTEGER, 'Notes' TEXT, FOREIGN KEY('MemoryMapId') REFERENCES 'MemoryMap'('id') ON DELETE CASCADE )")
-            #query.exec_("CREATE TABLE 'Register' ( 'id' INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 'RegisterMapId' INTEGER, 'DisplayOrder' INTEGER, 'OffsetAddress' INTEGER, 'Name' TEXT, 'Array' TEXT, 'Description' TEXT, 'Comments' TEXT, 'Width' INTEGER, 'Exist' INTEGER, 'Notes' TEXT, FOREIGN KEY('RegisterMapId') REFERENCES 'RegisterMap'('id') ON DELETE CASCADE )")
-            #query.exec_("CREATE TABLE 'BitfieldRef' ( 'id' INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 'RegisterId' INTEGER, 'BitfieldId' INTEGER, 'RegisterOffset' INTEGER, 'BitfieldOffset' INTEGER, 'SliceWidth' INTEGER, FOREIGN KEY('RegisterId') REFERENCES 'Register'('id') ON DELETE CASCADE )")
-            #query.exec_("CREATE TABLE 'Bitfield' ( 'id' INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 'MemoryMapId' INTEGER, 'DisplayOrder' INTEGER, 'Name' TEXT, 'Access' NUMERIC, 'DefaultValue' INTEGER, 'Description' TEXT, 'Width' INTEGER, 'Exist' INTEGER, 'Notes' TEXT, FOREIGN KEY('MemoryMapId') REFERENCES 'MemoryMap'('id') ON DELETE CASCADE )")
-            #query.exec_("CREATE TABLE 'BitfieldEnum' ( 'id' INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 'BitfieldId' INTEGER, 'DisplayOrder' INTEGER, 'Name' TEXT, 'Description' TEXT, 'Value' INTEGER, 'Visibility' TEXT, 'Exist' INTEGER, 'Notes' TEXT )")
-        
             self.infoTableModel = QSqlTableModel(self, self.conn)
             self.infoTableModel.setEditStrategy(QSqlTableModel.OnFieldChange) 
             self.infoTableModel.setTable("info")
