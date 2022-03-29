@@ -2,8 +2,8 @@ import sys
 import os
 import shutil
 
-from PySide2.QtWidgets import QWidget, QMainWindow, QFileDialog, QMessageBox, QTabBar, QStyle, QDesktopWidget
-from PySide2.QtCore import Qt, Slot, QDir
+from PySide2.QtWidgets import QWidget, QMainWindow, QMessageBox, QTabBar, QStyle, QDesktopWidget
+from PySide2.QtCore import Qt, Slot
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord
 from PySide2.QtGui import QIcon
 from ui.Main import Ui_MainWindow
@@ -87,26 +87,11 @@ class uiMainWindow(QMainWindow):
         tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
         if tabText != "Welcome":
             moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-            if moduleWindow.newModule == True:
-                fileName, filterUsed = QFileDialog.getSaveFileName(self, "Save register file", QDir.homePath(), "Register Files (*)", "(*.*)")
-                if fileName !='':
-                    try:
-                        # TODO: push db?
-                        shutil.copy(moduleWindow.newFileName, fileName)
-                    except:
-                        QMessageBox.warning(self, "Error", "Save Error", QMessageBox.Yes)
-                        return
-                    moduleWindow.fileName = fileName
-                    moduleWindow.newModule = False
-                    self.ui.tabWidget.setTabText(self.ui.tabWidget.currentIndex(), os.path.basename(fileName))
-                    
-                    # update recent file list
-                    if self.welcomeWindow != None:
-                        self.welcomeWindow.updateRecentFiles(fileName)
-            else:
-                # TODO: push db?
-                if moduleWindow.newFileName != '':
-                    shutil.copy(moduleWindow.newFileName, moduleWindow.fileName)
+            fileName = moduleWindow.saveDatabase()
+            if fileName != '':
+                self.ui.tabWidget.setTabText(self.ui.tabWidget.currentIndex(), os.path.basename(fileName))
+                if self.welcomeWindow != None:
+                    self.welcomeWindow.updateRecentFiles(fileName)
         return
 
     @Slot()

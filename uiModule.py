@@ -2,8 +2,8 @@ import os
 import shutil
 import datetime
 
-from PySide2.QtWidgets import QWidget, QStyle, QAbstractItemView, QMessageBox, QLineEdit, QMenu, QAction
-from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize, QEvent
+from PySide2.QtWidgets import QWidget, QStyle, QAbstractItemView, QMessageBox, QLineEdit, QMenu, QAction, QFileDialog
+from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize, QEvent, QDir
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
 from ui.Module import Ui_ModuleWindow
@@ -90,8 +90,7 @@ class uiModuleWindow(QWidget):
     def newRegMap_Reg_Bf_BfEnum_Row(self, row, r, newNamePrefix, model, table):
         if model.rowCount() == 0:
             # find max DisplayOrder value from table, as model data may be just part of table
-            query = QSqlQuery(self.conn)
-            query.exec_("SELECT max(DisplayOrder) FROM %s"%table)
+            query = QSqlQuery("SELECT max(DisplayOrder) FROM %s"%table, self.conn)
             query.next()
             o = query.record().value(0)
             order = 0 if o == '' else int(o) + 1
@@ -100,8 +99,7 @@ class uiModuleWindow(QWidget):
         elif row >= model.rowCount() or row == -1:
             if row == -1: # current selected node in treeView is from 'table'
                 # model may be not matched to current selected node from other table, like "RegMap1" is selected while reg model is matched to "RegMap0"
-                query = QSqlQuery(self.conn)
-                query.exec_("SELECT max(DisplayOrder) FROM %s"%table)
+                query = QSqlQuery("SELECT max(DisplayOrder) FROM %s"%table, self.conn)
                 query.next()
                 o = query.record().value(0)
                 order = 0 if o == '' else int(o) + 1
@@ -186,7 +184,7 @@ class uiModuleWindow(QWidget):
         newName = "__temp_module_%s.db"%now
         shutil.copyfile("module_template.db", newName)
         self.newFileName = newName
-        self.newModule = True
+        self.newModule = True     
         
         # open new database
         if self.__setupModel(newName):
@@ -220,10 +218,37 @@ class uiModuleWindow(QWidget):
             return False
         return True
     
-    def __setupModel(self, fileName):
+    def saveDatabase(self):
+        fileName = ''
+        if self.newModule == True:
+            fileName, filterUsed = QFileDialog.getSaveFileName(self, "Save register file", QDir.homePath(), "Register Files (*)", "(*.*)")
+            if fileName !='':
+                shutil.copy(self.newFileName, fileName)
+                self.fileName = fileName
+                self.newModule = False
+        else:
+            if self.newFileName != '':
+                shutil.copy(self.newFileName, self.fileName)
+                fileName = self.fileName
+        return fileName
+    
+    def __setupModel(self, fileName):  
         self.conn = QSqlDatabase.addDatabase("QSQLITE", fileName)
+        #self.conn.setDatabaseName(":memory:");
         self.conn.setDatabaseName(fileName)
         if self.conn.open():
+            
+            # create table
+            #query = QSqlQuery(self.conn)
+            #query.exec_("CREATE TABLE sqlite_sequence(name,seq)")
+            #query.exec_("CREATE TABLE 'info' ( 'id' INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 'version' INTEGER, 'author' TEXT, 'lastupdatedate' TEXT )")
+            #query.exec_("CREATE TABLE 'MemoryMap' ( 'id' INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 'OffsetAddress' INTEGER, 'Notes' TEXT )")
+            #query.exec_("CREATE TABLE 'RegisterMap' ( 'id' INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 'MemoryMapId' INTEGER, 'DisplayOrder' INTEGER, 'OffsetAddress' INTEGER, 'Name' TEXT, 'Description' TEXT, 'Exist' INTEGER, 'Notes' TEXT, FOREIGN KEY('MemoryMapId') REFERENCES 'MemoryMap'('id') ON DELETE CASCADE )")
+            #query.exec_("CREATE TABLE 'Register' ( 'id' INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 'RegisterMapId' INTEGER, 'DisplayOrder' INTEGER, 'OffsetAddress' INTEGER, 'Name' TEXT, 'Array' TEXT, 'Description' TEXT, 'Comments' TEXT, 'Width' INTEGER, 'Exist' INTEGER, 'Notes' TEXT, FOREIGN KEY('RegisterMapId') REFERENCES 'RegisterMap'('id') ON DELETE CASCADE )")
+            #query.exec_("CREATE TABLE 'BitfieldRef' ( 'id' INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 'RegisterId' INTEGER, 'BitfieldId' INTEGER, 'RegisterOffset' INTEGER, 'BitfieldOffset' INTEGER, 'SliceWidth' INTEGER, FOREIGN KEY('RegisterId') REFERENCES 'Register'('id') ON DELETE CASCADE )")
+            #query.exec_("CREATE TABLE 'Bitfield' ( 'id' INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 'MemoryMapId' INTEGER, 'DisplayOrder' INTEGER, 'Name' TEXT, 'Access' NUMERIC, 'DefaultValue' INTEGER, 'Description' TEXT, 'Width' INTEGER, 'Exist' INTEGER, 'Notes' TEXT, FOREIGN KEY('MemoryMapId') REFERENCES 'MemoryMap'('id') ON DELETE CASCADE )")
+            #query.exec_("CREATE TABLE 'BitfieldEnum' ( 'id' INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE, 'BitfieldId' INTEGER, 'DisplayOrder' INTEGER, 'Name' TEXT, 'Description' TEXT, 'Value' INTEGER, 'Visibility' TEXT, 'Exist' INTEGER, 'Notes' TEXT )")
+        
             self.infoTableModel = QSqlTableModel(self, self.conn)
             self.infoTableModel.setEditStrategy(QSqlTableModel.OnFieldChange) 
             self.infoTableModel.setTable("info")

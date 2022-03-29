@@ -1,4 +1,5 @@
 import os
+import datetime
 
 from PySide2.QtWidgets import QWidget, QStyle, QAbstractItemView
 from PySide2.QtCore import Qt, Slot
@@ -21,7 +22,9 @@ class uiWelcomeWindow(QWidget):
         self.ui.listView.doubleClicked.connect(self.do_listView_doubleCliced)
 
     def updateRecentFiles(self, fileName):
-        self.conn = QSqlDatabase.addDatabase("QSQLITE", "recent_files.db")
+        now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%_S_%f')
+        newConnName = "__recent_files_%s.db"%now
+        self.conn = QSqlDatabase.addDatabase("QSQLITE", newConnName)
         self.conn.setDatabaseName("recent_files.db")
         if self.conn.open():
             recentFilesTableModel = QSqlTableModel(self, self.conn)
