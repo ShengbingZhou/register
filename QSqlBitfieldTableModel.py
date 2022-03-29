@@ -13,9 +13,7 @@ class QSqlBitfieldTableModel(QSqlQueryModel):
     def data(self, index, role):
         value = QSqlQueryModel.data(self, index, role)
         if role == Qt.BackgroundColorRole:
-            existValue = QSqlQueryModel.data(self, QSqlQueryModel.index(self, index.row(), self.record().indexOf("Exist")), Qt.DisplayRole)
-            exist = str(existValue).lower()
-            if exist == '0' or exist == "n" or exist == 'no':
+            if QSqlBitfieldTableModel.exist(self.record(index.row())) == False:
                 value = QColor('grey') 
         return value
 
@@ -36,3 +34,11 @@ class QSqlBitfieldTableModel(QSqlQueryModel):
             self.setQuery(self.query().executedQuery(), self.conn)
             self.dataChanged.emit(index, index, role)
         return result
+    
+    @staticmethod
+    def exist(record):
+        exist = str(record.value("Exist")).lower()
+        if exist == '0' or exist == "n" or exist == 'no':
+            return False
+        else:
+            return True

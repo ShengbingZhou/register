@@ -4,10 +4,11 @@ import datetime
 
 from PySide2.QtWidgets import QWidget, QStyle, QAbstractItemView, QMessageBox, QLineEdit, QMenu, QAction, QFileDialog
 from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize, QEvent, QDir
-from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon
+from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
 from ui.Module import Ui_ModuleWindow
 from QSqlBitfieldTableModel import QSqlBitfieldTableModel
+from QCustomizedSqlTableModel import QCustomizedSqlTableModel
 
 class uiModuleWindow(QWidget):
     
@@ -255,13 +256,13 @@ class uiModuleWindow(QWidget):
             self.memoryMaptableModel.setTable("MemoryMap")
             self.memoryMaptableModel.select()
             
-            self.regMapTableModel = QSqlTableModel(self, self.conn)
+            self.regMapTableModel = QCustomizedSqlTableModel(self, self.conn)
             self.regMapTableModel.setEditStrategy(QSqlTableModel.OnFieldChange)  
             self.regMapTableModel.setTable("RegisterMap")
             self.regMapTableModel.setSort(self.regMapTableModel.fieldIndex("DisplayOrder"), Qt.AscendingOrder)
             self.regMapTableModel.select()
             
-            self.regTableModel = QSqlTableModel(self, self.conn)
+            self.regTableModel = QCustomizedSqlTableModel(self, self.conn)
             self.regTableModel.setEditStrategy(QSqlTableModel.OnFieldChange)  
             self.regTableModel.setTable("Register")
             self.regTableModel.setSort(self.regTableModel.fieldIndex("DisplayOrder"), Qt.AscendingOrder)
@@ -272,13 +273,13 @@ class uiModuleWindow(QWidget):
             self.bfRefTableModel.setTable("BitfieldRef")
             self.bfRefTableModel.select()
             
-            self.bfTableModel = QSqlTableModel(self, self.conn)
+            self.bfTableModel = QCustomizedSqlTableModel(self, self.conn)
             self.bfTableModel.setEditStrategy(QSqlTableModel.OnFieldChange) 
             self.bfTableModel.setTable("Bitfield")
             self.bfTableModel.setSort(self.bfTableModel.fieldIndex("DisplayOrder"), Qt.AscendingOrder)
             self.bfTableModel.select()
             
-            self.bfEnumTableModel = QSqlTableModel(self, self.conn)
+            self.bfEnumTableModel = QCustomizedSqlTableModel(self, self.conn)
             self.bfEnumTableModel.setEditStrategy(QSqlTableModel.OnFieldChange) 
             self.bfEnumTableModel.setTable("BitfieldEnum")
             self.bfEnumTableModel.setSort(self.bfEnumTableModel.fieldIndex("DisplayOrder"), Qt.AscendingOrder)
@@ -316,6 +317,8 @@ class uiModuleWindow(QWidget):
                 regMapitem.setData(memoryMapRecord.value("id"), self.treeViewItemMemoryMapIdRole)
                 regMapitem.setData(regMapRecord.value("id"), self.treeViewItemRegMapIdRole)
                 self.memoryMapItem.appendRow(regMapitem)
+                if QSqlBitfieldTableModel.exist(regMapRecord) == False:
+                    regMapitem.setData(QColor('grey'), Qt.BackgroundColorRole)
                 
                 # register
                 regQueryModel = QSqlQueryModel()
@@ -328,7 +331,9 @@ class uiModuleWindow(QWidget):
                     regItem.setData(regMapRecord.value("id"), self.treeViewItemRegMapIdRole)
                     regItem.setData(regRecord.value("id"), self.treeViewItemRegIdRole)
                     regMapitem.appendRow(regItem)
-                    
+                    if QSqlBitfieldTableModel.exist(regRecord) == False:
+                        regItem.setData(QColor('grey'), Qt.BackgroundColorRole)
+                        
                     # bitfield
                     bfQueryModel = QSqlQueryModel()
                     bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE EXISTS (SELECT * FROM BitfieldRef WHERE Bitfield.id=BitfieldRef.BitfieldId AND BitfieldRef.RegisterId=%s) ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
@@ -341,7 +346,9 @@ class uiModuleWindow(QWidget):
                         bfItem.setData(regRecord.value("id"), self.treeViewItemRegIdRole)
                         bfItem.setData(bfRecord.value("id"), self.treeViewItemBfIdRole)
                         regItem.appendRow(bfItem)
-                        
+                        if QSqlBitfieldTableModel.exist(bfRecord) == False:
+                            bfItem.setData(QColor('grey'), Qt.BackgroundColorRole)
+                            
                         #bitfield enum
                         bfEnumQueryModel = QSqlQueryModel()
                         bfEnumQueryModel.setQuery("SELECT * FROM BitfieldEnum WHERE BitfieldId=%s ORDER BY DisplayOrder ASC"%bfRecord.value("id"), self.conn)
@@ -355,7 +362,9 @@ class uiModuleWindow(QWidget):
                             bfEnumItem.setData(bfRecord.value("id"), self.treeViewItemBfIdRole)
                             bfEnumItem.setData(bfEnumRecord.value("id"), self.treeViewItemBfEnumIdRole)
                             bfItem.appendRow(bfEnumItem)
-
+                            if QSqlBitfieldTableModel.exist(bfEnumRecord) == False:
+                                bfEnumItem.setData(QColor('grey'), Qt.BackgroundColorRole)
+                                
         # show tree view nodes
         self.ui.treeView.setModel(self.standardModel)
         self.ui.treeView.expandAll()
@@ -452,7 +461,7 @@ class uiModuleWindow(QWidget):
         # update display name field of tree node to latest "Name" field
         if model != None:
             fieldName = model.record().fieldName(bottomRight.column())
-            if (fieldName == "Name"):
+            if fieldName == "Name":
                 itemId = model.data(model.index(bottomRight.row(), 0), Qt.DisplayRole)
                 parentItem = self.standardModel.itemFromIndex(current.parent())
                 for i in range(parentItem.rowCount()):
@@ -460,7 +469,18 @@ class uiModuleWindow(QWidget):
                     childId = child.data(idRole)
                     if childId != None and int(childId) == itemId:
                         newName = model.record(bottomRight.row()).value("Name")
-                        self.standardModel.itemFromIndex(child).setData(newName, Qt.DisplayRole)            
+                        self.standardModel.itemFromIndex(child).setData(newName, Qt.DisplayRole)
+            elif fieldName == "Exist":
+                itemId = model.data(model.index(bottomRight.row(), 0), Qt.DisplayRole) # 'id' is column 0
+                parentItem = self.standardModel.itemFromIndex(current.parent())
+                for i in range(parentItem.rowCount()):
+                    child = current.sibling(i, 0)
+                    childId = child.data(idRole)
+                    if childId != None and int(childId) == itemId:
+                        if QSqlBitfieldTableModel.exist(model.record(bottomRight.row())) == False:
+                            self.standardModel.itemFromIndex(child).setData(QColor('grey'), Qt.BackgroundColorRole)
+                        else:
+                            self.standardModel.itemFromIndex(child).setData(None, Qt.BackgroundColorRole)
         self.ui.tableView.resizeColumnsToContents()
         return
     
