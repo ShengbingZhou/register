@@ -2,8 +2,8 @@ import sys
 import os
 import shutil
 
-from PySide2.QtWidgets import QWidget, QMainWindow, QMessageBox, QTabBar, QStyle, QDesktopWidget
-from PySide2.QtCore import Qt, Slot
+from PySide2.QtWidgets import QWidget, QMainWindow, QMessageBox, QTabBar, QStyle, QDesktopWidget, QFileDialog
+from PySide2.QtCore import Qt, Slot, QDir
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord
 from PySide2.QtGui import QIcon
 from ui.Main import Ui_MainWindow
