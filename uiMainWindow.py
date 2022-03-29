@@ -2,7 +2,7 @@ import sys
 import os
 import shutil
 
-from PySide2.QtWidgets import QWidget, QMainWindow, QFileDialog, QMessageBox, QTabBar, QStyle
+from PySide2.QtWidgets import QWidget, QMainWindow, QFileDialog, QMessageBox, QTabBar, QStyle, QDesktopWidget
 from PySide2.QtCore import Qt, Slot, QDir
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord
 from PySide2.QtGui import QIcon
@@ -20,6 +20,11 @@ class uiMainWindow(QMainWindow):
         #self.setWindowIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.setWindowIcon(QIcon('icon/module32.png'))
         self.ui.actionSave_As.setVisible(False)
+        self.resize(1440, 900)
+        rect = self.frameGeometry()
+        centerPoint = QDesktopWidget().availableGeometry().center()
+        rect.moveCenter(centerPoint)
+        self.move(rect.topLeft())
         with open ('style.qss') as file:
             str = file.read()
         self.setStyleSheet(str)

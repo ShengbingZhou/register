@@ -32,7 +32,7 @@ class uiModuleWindow(QWidget):
         self.treeViewItemBfEnumIdRole = Qt.UserRole + 7
         
         self.tableViewRegQuery = "SELECT * FROM Register WHERE RegisterMapId="
-        self.tableViewBfQuery = "SELECT A.id, B.RegisterId, A.DisplayOrder, A.Name, A.Access, A.DefaultValue, A.Description, A.Width, B.RegisterOffset, B.BitfieldOffset, B.SliceWidth FROM Bitfield AS A JOIN BitfieldRef AS B ON A.id=B.BitfieldId WHERE B.RegisterId="
+        self.tableViewBfQuery = "SELECT A.id, B.RegisterId, A.DisplayOrder, A.Name, A.Access, A.DefaultValue, A.Description, A.Width, B.RegisterOffset, B.BitfieldOffset, B.SliceWidth, A.Exist, A.Notes FROM Bitfield AS A JOIN BitfieldRef AS B ON A.id=B.BitfieldId WHERE B.RegisterId="
         self.tableViewBfEnumQuery = "SELECT * FROM BitfieldEnum WHERE BitfieldId="
         
         self.moduleIcon = QIcon('icon/module32.png')
@@ -40,6 +40,11 @@ class uiModuleWindow(QWidget):
         self.regIcon = QIcon('icon/reg32.png')
         self.bfIcon = QIcon('icon/bf32.png')
         self.bfenumIcon = QIcon('icon/bfenum32.png')
+        
+        self.ui.pbAddRegMap.setIcon(QIcon('icon/add32.png'))
+        self.ui.pbAddReg.setIcon(QIcon('icon/add32.png'))
+        self.ui.pbAddBf.setIcon(QIcon('icon/add32.png'))
+        self.ui.pbAddBfEnum.setIcon(QIcon('icon/add32.png'))
         
         self.newModule = True
         self.fileName = ''
@@ -408,50 +413,33 @@ class uiModuleWindow(QWidget):
         current = self.ui.treeView.selectedIndexes().pop()
         tableName = str(current.data(self.treeViewItemTableNameRole))
         
+        model = None
+        idRole = None
         if tableName == "RegisterMap":
-            fieldName = self.regMapTableModel.record().fieldName(bottomRight.column())
-            if (fieldName == "Name"):
-                regMapId = self.regMapTableModel.data(self.regMapTableModel.index(bottomRight.row(), 0), Qt.DisplayRole)
-                parentItem = self.standardModel.itemFromIndex(current.parent())
-                for i in range(parentItem.rowCount()):
-                    child = current.sibling(i, 0)
-                    childId = child.data(self.treeViewItemRegMapIdRole)
-                    if childId != None and regMapId == int(childId):
-                        regMapName = self.regMapTableModel.record(bottomRight.row()).value("Name")
-                        self.standardModel.itemFromIndex(child).setData(regMapName, Qt.DisplayRole)
+            model = self.regMapTableModel
+            idRole = self.treeViewItemRegMapIdRole
         elif tableName == "Register":
-            fieldName = self.regTableModel.record().fieldName(bottomRight.column())
-            if (fieldName == "Name"):
-                regId = self.regTableModel.data(self.regTableModel.index(bottomRight.row(), 0), Qt.DisplayRole)
-                parentItem = self.standardModel.itemFromIndex(current.parent())
-                for i in range(parentItem.rowCount()):
-                    child = current.sibling(i, 0)
-                    childId = child.data(self.treeViewItemRegIdRole)
-                    if childId != None and regId == int(childId):           
-                        regName = self.regTableModel.record(bottomRight.row()).value("Name")
-                        self.standardModel.itemFromIndex(child).setData(regName, Qt.DisplayRole)
+            model = self.regTableModel
+            idRole = self.treeViewItemRegIdRole
         elif tableName == "Bitfield":
-            fieldName = self.bfQueryModel.record().fieldName(bottomRight.column())
-            if (fieldName == "Name"):
-                bfId = self.bfQueryModel.data(self.bfQueryModel.index(bottomRight.row(), 0), Qt.DisplayRole)
-                parentItem = self.standardModel.itemFromIndex(current.parent())
-                for i in range(parentItem.rowCount()):
-                    child = current.sibling(i, 0)
-                    childId = child.data(self.treeViewItemBfIdRole)
-                    if childId != None and bfId == int(childId):
-                        bfName = self.bfQueryModel.record(bottomRight.row()).value("Name")
-                        self.standardModel.itemFromIndex(child).setData(bfName, Qt.DisplayRole)
+            model = self.bfQueryModel
+            idRole = self.treeViewItemBfIdRole
         elif tableName == "BitfieldEnum":
-            fieldName = self.bfEnumTableModel.record().fieldName(bottomRight.column())
+            model = self.bfEnumTableModel
+            idRole = self.treeViewItemBfEnumIdRole
+        
+        # update display name field of tree node to latest "Name" field
+        if model != None:
+            fieldName = model.record().fieldName(bottomRight.column())
             if (fieldName == "Name"):
-                bfEnumId = self.bfEnumTableModel.data(self.bfEnumTableModel.index(bottomRight.row(), 0), Qt.DisplayRole)
+                itemId = model.data(model.index(bottomRight.row(), 0), Qt.DisplayRole)
                 parentItem = self.standardModel.itemFromIndex(current.parent())
                 for i in range(parentItem.rowCount()):
                     child = current.sibling(i, 0)
-                    childId = child.data(self.treeViewItemBfEnumIdRole)
-                    if childId != None and bfEnumId == int(childId):
-                        bfEnumName = self.bfEnumTableModel.record(bottomRight.row()).value("Name")
-                        self.standardModel.itemFromIndex(child).setData(bfEnumName, Qt.DisplayRole)
+                    childId = child.data(idRole)
+                    if childId != None and int(childId) == itemId:
+                        newName = model.record(bottomRight.row()).value("Name")
+                        self.standardModel.itemFromIndex(child).setData(newName, Qt.DisplayRole)            
         self.ui.tableView.resizeColumnsToContents()
         return
     
@@ -464,6 +452,7 @@ class uiModuleWindow(QWidget):
             self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
             self.ui.tableView.hideColumn(0) # id
             self.ui.tableView.showColumn(1) # offset address
+            self.ui.tableView.showColumn(2) # notes
             self.ui.tableView.resizeColumnsToContents()
             
             self.ui.pbAddRegMap.setEnabled(True)
