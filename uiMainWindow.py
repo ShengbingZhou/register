@@ -5,6 +5,7 @@ import shutil
 from PySide2.QtWidgets import QWidget, QMainWindow, QFileDialog, QMessageBox, QTabBar, QStyle
 from PySide2.QtCore import Qt, Slot, QDir
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord
+from PySide2.QtGui import QIcon
 from ui.Main import Ui_MainWindow
 from uiWelcome import uiWelcomeWindow
 from uiModule import uiModuleWindow
@@ -16,7 +17,8 @@ class uiMainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle("Register Tool")
-        self.setWindowIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+        #self.setWindowIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+        self.setWindowIcon(QIcon('icon/module32.png'))
         self.ui.actionSave_As.setVisible(False)
         with open ('style.qss') as file:
             str = file.read()
