@@ -243,7 +243,7 @@ class uiModuleWindow(QWidget):
         
     def openDatabase(self, fileName):
         # create temp database
-        now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%_S_%f')
+        now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%_%S_%f')
         newName = "__temp_module_%s.db"%now
         shutil.copyfile(fileName, newName)
         self.newFileName = newName
@@ -262,7 +262,7 @@ class uiModuleWindow(QWidget):
     def saveDatabase(self):
         fileName = ''
         if self.newModule == True:
-            fileName, filterUsed = QFileDialog.getSaveFileName(self, "Save register file", QDir.homePath(), "Register Files (*)", "(*.*)")
+            fileName, filterUsed = QFileDialog.getSaveFileName(self, "Save register file", QDir.homePath(), "Register Files (*)", "(*)")
             if fileName !='':
                 if os.path.exists(fileName):
                     os.remove(fileName)
