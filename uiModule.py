@@ -67,6 +67,7 @@ class uiModuleWindow(QWidget):
             reply = QMessageBox.information(self, "Save register ?", "Register design is created but never saved, do you want to save?", QMessageBox.Yes | QMessageBox.No)
             if reply == QMessageBox.Yes:
                 self.mainWindow.on_actionSave_triggered()
+        self.conn.close()
         if os.path.isfile(self.newFileName):
             os.remove(self.newFileName)
         event.accept()
