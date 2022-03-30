@@ -127,6 +127,21 @@ class Ui_ModuleWindow(object):
 
         self.horizontalLayout_2.addWidget(self.line_4)
 
+        self.pbReadAll = QPushButton(self.frame_4)
+        self.pbReadAll.setObjectName(u"pbReadAll")
+
+        self.horizontalLayout_2.addWidget(self.pbReadAll)
+
+        self.pbReadSelected = QPushButton(self.frame_4)
+        self.pbReadSelected.setObjectName(u"pbReadSelected")
+
+        self.horizontalLayout_2.addWidget(self.pbReadSelected)
+
+        self.pbWriteAll = QPushButton(self.frame_4)
+        self.pbWriteAll.setObjectName(u"pbWriteAll")
+
+        self.horizontalLayout_2.addWidget(self.pbWriteAll)
+
         self.labelDescription = QLabel(self.frame_4)
         self.labelDescription.setObjectName(u"labelDescription")
         sizePolicy2 = QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
@@ -173,6 +188,9 @@ class Ui_ModuleWindow(object):
         self.pbAddBf.setText(QCoreApplication.translate("ModuleWindow", u"+ Bitfield", None))
         self.pbAddBfEnum.setText(QCoreApplication.translate("ModuleWindow", u"+ BitfieldEnum", None))
         self.pbSetColumns.setText(QCoreApplication.translate("ModuleWindow", u"-> ColumnsVisibility", None))
+        self.pbReadAll.setText(QCoreApplication.translate("ModuleWindow", u"Read All", None))
+        self.pbReadSelected.setText(QCoreApplication.translate("ModuleWindow", u"Read Selected", None))
+        self.pbWriteAll.setText(QCoreApplication.translate("ModuleWindow", u"Write All", None))
         self.labelDescription.setText(QCoreApplication.translate("ModuleWindow", u"TextLabel", None))
     # retranslateUi
 

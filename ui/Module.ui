@@ -157,6 +157,27 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="pbReadAll">
+            <property name="text">
+             <string>Read All</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pbReadSelected">
+            <property name="text">
+             <string>Read Selected</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pbWriteAll">
+            <property name="text">
+             <string>Write All</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QLabel" name="labelDescription">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Ignored" vsizetype="Preferred">
