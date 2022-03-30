@@ -3,7 +3,7 @@ import datetime
 
 from PySide2.QtWidgets import QWidget, QStyle, QAbstractItemView
 from PySide2.QtCore import Qt, Slot
-from PySide2.QtGui import QStandardItemModel, QStandardItem
+from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel
 from ui.Welcome import Ui_WelcomeWindow
 from uiModule import uiModuleWindow
@@ -15,7 +15,7 @@ class uiWelcomeWindow(QWidget):
         self.ui = Ui_WelcomeWindow()
         self.ui.setupUi(self)
         self.ui.listView.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.icon = self.style().standardIcon(QStyle.SP_FileIcon)
+        self.icon = QIcon('icon/file32.png')
         with open ('style.qss') as file:
             str = file.read()
         self.setStyleSheet(str)
