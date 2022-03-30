@@ -39,17 +39,32 @@
      <x>0</x>
      <y>0</y>
      <width>1045</width>
-     <height>21</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>File</string>
     </property>
+    <widget class="QMenu" name="menuImport">
+     <property name="title">
+      <string>Import</string>
+     </property>
+     <addaction name="actionImportYoda"/>
+     <addaction name="actionImportIP_XACT"/>
+    </widget>
+    <widget class="QMenu" name="menuExport">
+     <property name="title">
+      <string>Export</string>
+     </property>
+     <addaction name="actionExportIP_XACT"/>
+    </widget>
     <addaction name="actionNew"/>
     <addaction name="actionOpen"/>
+    <addaction name="menuImport"/>
     <addaction name="actionSave"/>
     <addaction name="actionSave_As"/>
+    <addaction name="menuExport"/>
     <addaction name="actionClose"/>
     <addaction name="actionExit"/>
    </widget>
@@ -67,8 +82,16 @@
     </property>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actionDesignView"/>
+    <addaction name="actionDebugView"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
+   <addaction name="menuView"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -120,6 +143,31 @@
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="actionImportYoda">
+   <property name="text">
+    <string>Yoda</string>
+   </property>
+  </action>
+  <action name="actionImportIP_XACT">
+   <property name="text">
+    <string>IP-XACT</string>
+   </property>
+  </action>
+  <action name="actionExportIP_XACT">
+   <property name="text">
+    <string>IP-XACT</string>
+   </property>
+  </action>
+  <action name="actionDesignView">
+   <property name="text">
+    <string>Design</string>
+   </property>
+  </action>
+  <action name="actionDebugView">
+   <property name="text">
+    <string>Debug</string>
    </property>
   </action>
  </widget>

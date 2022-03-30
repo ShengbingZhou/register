@@ -9,6 +9,7 @@ from PySide2.QtGui import QIcon
 from ui.Main import Ui_MainWindow
 from uiWelcome import uiWelcomeWindow
 from uiModule import uiModuleWindow
+from RegisterConst import RegisterConst
 
 class uiMainWindow(QMainWindow):
     
@@ -20,6 +21,7 @@ class uiMainWindow(QMainWindow):
         #self.setWindowIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.setWindowIcon(QIcon('icon/module32.png'))
         self.ui.actionSave_As.setVisible(False)
+        self.ui.menuEdit.setTitle('')
         self.resize(1440, 900)
         rect = self.frameGeometry()
         centerPoint = QDesktopWidget().availableGeometry().center()
@@ -29,12 +31,14 @@ class uiMainWindow(QMainWindow):
             str = file.read()
         self.setStyleSheet(str)
         
+        #self.ui.actionNew.setIcon(QIcon("icon/new32.png"))
+        
         # add welcome tab
         self.welcomeWindow = uiWelcomeWindow(self)
         self.welcomeWindow.setAttribute(Qt.WA_DeleteOnClose)
         self.welcomeWindow.updateRecentFiles('')
         self.welcomeWindow.setMainWindow(self)
-        index = self.ui.tabWidget.addTab(self.welcomeWindow, "Welcome")
+        index = self.ui.tabWidget.addTab(self.welcomeWindow, RegisterConst.WelcomeTabText)
         self.ui.tabWidget.setCurrentIndex(index)   
         self.ui.tabWidget.tabBar().setTabButton(0, QTabBar.RightSide, None)
     
@@ -45,6 +49,9 @@ class uiMainWindow(QMainWindow):
         event.accept()
     
     def openFile(self, fileName):
+        if os.path.isfile(fileName) == False:
+            QMessageBox.warning(self, "Error", "Failed to open %s as it doesn't exist."%fileName)
+            return
         moduleWindow = uiModuleWindow(self)
         moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
         if moduleWindow.openDatabase(fileName):
@@ -52,6 +59,7 @@ class uiMainWindow(QMainWindow):
             self.ui.tabWidget.setCurrentIndex(index)
             if self.welcomeWindow != None:
                 self.welcomeWindow.updateRecentFiles(fileName)
+
     @Slot(int)
     def on_tabWidget_tabCloseRequested(self, index):
         if (index < 0):
@@ -66,11 +74,13 @@ class uiMainWindow(QMainWindow):
 
     @Slot()
     def on_actionNew_triggered(self):
+        # create module tab
         moduleWindow = uiModuleWindow(self)
         moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
         moduleWindow.newDatabase()
         index = self.ui.tabWidget.addTab(moduleWindow, "NoName")
         self.ui.tabWidget.setCurrentIndex(index)
+        moduleWindow.setMainWindow(self)
         return
 
     @Slot()
@@ -81,11 +91,26 @@ class uiMainWindow(QMainWindow):
         return
     
     @Slot()
+    def on_actionImportYoda_triggered(self):
+        QMessageBox.information(self, "Import yoda file", "TODO", QMessageBox.Yes)
+        return
+
+    @Slot()
+    def on_actionImportIP_XACT_triggered(self):
+        QMessageBox.information(self, "Import IP-XACT file", "TODO", QMessageBox.Yes)
+        return
+    
+    @Slot()
+    def on_actionExportIP_XACT_triggered(self):
+        QMessageBox.information(self, "Export IP-XACT file", "TODO", QMessageBox.Yes)
+        return    
+    
+    @Slot()
     def on_actionSave_triggered(self):
         if self.ui.tabWidget.currentIndex() < 0:
             return
         tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
-        if tabText != "Welcome":
+        if tabText != RegisterConst.WelcomeTabText:
             moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
             fileName = moduleWindow.saveDatabase()
             if fileName != '':
@@ -99,11 +124,31 @@ class uiMainWindow(QMainWindow):
         return
     
     @Slot()
+    def on_actionDesignView_triggered(self):
+        if self.ui.tabWidget.currentIndex() < 0:
+            return
+        tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
+        if tabText != RegisterConst.WelcomeTabText:
+            moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+            moduleWindow.setView(RegisterConst.DesignView)
+        return
+    
+    @Slot()
+    def on_actionDebugView_triggered(self):
+        if self.ui.tabWidget.currentIndex() < 0:
+            return
+        tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
+        if tabText != RegisterConst.WelcomeTabText:
+            moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+            moduleWindow.setView(RegisterConst.DebugView)
+        return
+    
+    @Slot()
     def on_actionClose_triggered(self):
         if self.ui.tabWidget.currentIndex() < 0:
             return
         tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
-        if tabText != "Welcome":
+        if tabText != RegisterConst.WelcomeTabText:
             moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
             moduleWindow.close()
         

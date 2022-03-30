@@ -1,8 +1,9 @@
 from PySide2.QtSql import QSqlDatabase, QSqlQueryModel, QSqlQuery
 from PySide2.QtCore import Qt, QAbstractTableModel
 from PySide2.QtGui import QColor
+from RegisterConst import RegisterConst
 
-class QSqlBitfieldTableModel(QSqlQueryModel):
+class QSqlQueryRegDebugTableModel(QSqlQueryModel):
 
     def __init__(self):
         QSqlQueryModel.__init__(self)
@@ -13,7 +14,7 @@ class QSqlBitfieldTableModel(QSqlQueryModel):
     def data(self, index, role):
         value = QSqlQueryModel.data(self, index, role)
         if role == Qt.BackgroundColorRole:
-            if QSqlBitfieldTableModel.exist(self.record(index.row())) == False:
+            if RegisterConst.recordExist(self.record(index.row())) == False:
                 value = QColor('grey') 
         return value
 
@@ -34,11 +35,3 @@ class QSqlBitfieldTableModel(QSqlQueryModel):
             self.setQuery(self.query().executedQuery(), self.conn)
             self.dataChanged.emit(index, index, role)
         return result
-    
-    @staticmethod
-    def exist(record):
-        exist = str(record.value("Exist")).lower()
-        if exist == '0' or exist == "n" or exist == 'no':
-            return False
-        else:
-            return True
