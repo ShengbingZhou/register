@@ -85,7 +85,7 @@ class uiMainWindow(QMainWindow):
 
     @Slot()
     def on_actionOpen_triggered(self):
-        fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open register file", QDir.homePath(), "Register Files (*)", "(*.*)")
+        fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open register file", QDir.homePath(), "Register File (*.*)")
         if fileName != '':
             self.openFile(fileName)
         return

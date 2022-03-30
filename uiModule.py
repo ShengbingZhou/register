@@ -262,7 +262,7 @@ class uiModuleWindow(QWidget):
     def saveDatabase(self):
         fileName = ''
         if self.newModule == True:
-            fileName, filterUsed = QFileDialog.getSaveFileName(self, "Save register file", QDir.homePath(), "Register Files (*)", "(*)")
+            fileName, filterUsed = QFileDialog.getSaveFileName(self, "Save register file", QDir.homePath(), "Register File (*.*)")
             if fileName !='':
                 if os.path.exists(fileName):
                     os.remove(fileName)
