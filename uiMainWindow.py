@@ -18,7 +18,6 @@ class uiMainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle("Register Tool")
-        #self.setWindowIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.setWindowIcon(QIcon('icon/module32.png'))
         self.ui.actionSave_As.setVisible(False)
         self.ui.menuEdit.setTitle('')

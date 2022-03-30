@@ -18,6 +18,12 @@ class QRegDebugTableModel(QStandardItemModel):
     def setRegMapId(self, id):
         self.id = id
        
+    def flags(self, index):
+        flags = QStandardItemModel.flags(self, index)                
+        if index.column() != 3: # value
+            flags &= ~Qt.ItemIsEditable
+        return flags
+       
     def data(self, index, role):
         value = QStandardItemModel.data(self, index, role)
         if role == Qt.BackgroundColorRole:

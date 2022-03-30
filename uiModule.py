@@ -36,10 +36,10 @@ class uiModuleWindow(QWidget):
         self.treeViewItemBfRefIdRole = Qt.UserRole + 5
         self.treeViewItemBfIdRole = Qt.UserRole + 6
         self.treeViewItemBfEnumIdRole = Qt.UserRole + 7
-        
-        self.tableViewRegQuery = "SELECT * FROM Register WHERE RegisterMapId="
-        self.tableViewBfQuery = "SELECT A.id, B.RegisterId, A.DisplayOrder, A.Name, A.Access, A.DefaultValue, A.Description, A.Width, B.RegisterOffset, B.BitfieldOffset, B.SliceWidth, A.Exist, A.Notes FROM Bitfield AS A JOIN BitfieldRef AS B ON A.id=B.BitfieldId WHERE B.RegisterId="
-        self.tableViewBfEnumQuery = "SELECT * FROM BitfieldEnum WHERE BitfieldId="
+
+        self.tableViewBfQuery = "SELECT A.id, B.RegisterId, A.DisplayOrder, A.Name, A.Access, A.DefaultValue, A.Description, " \
+                                "A.Width, B.RegisterOffset, B.BitfieldOffset, B.SliceWidth, A.Exist, A.Notes " \
+                                "FROM Bitfield AS A JOIN BitfieldRef AS B ON A.id=B.BitfieldId WHERE B.RegisterId="
         
         self.moduleIcon = QIcon('icon/module32.png')
         self.regMapIcon = QIcon('icon/regmap32.png')
@@ -337,7 +337,7 @@ class uiModuleWindow(QWidget):
 
         # memory map
         memoryMapQueryModel = QSqlQueryModel()
-        memoryMapQueryModel.setQuery("SELECT * FROM MemoryMap", self.conn)
+        memoryMapQueryModel.setQuery("SELECT id FROM MemoryMap", self.conn)
         for l in range(memoryMapQueryModel.rowCount()):
             memoryMapRecord = memoryMapQueryModel.record(l)
             self.memoryMapItem = QStandardItem(self.moduleIcon, "MemoryMap")
@@ -347,7 +347,7 @@ class uiModuleWindow(QWidget):
             
             # register map
             regMapQueryModel = QSqlQueryModel()
-            regMapQueryModel.setQuery("SELECT * FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memoryMapRecord.value("id"), self.conn)
+            regMapQueryModel.setQuery("SELECT id, Name FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memoryMapRecord.value("id"), self.conn)
             for i in range(regMapQueryModel.rowCount()):
                 regMapRecord = regMapQueryModel.record(i)
                 regMapitem = QStandardItem(self.regMapIcon, regMapRecord.value("name"))
@@ -360,7 +360,7 @@ class uiModuleWindow(QWidget):
                 
                 # register
                 regQueryModel = QSqlQueryModel()
-                regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
+                regQueryModel.setQuery("SELECT id, Name FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
                 for j in range(regQueryModel.rowCount()):
                     regRecord = regQueryModel.record(j)
                     regItem = QStandardItem(self.regIcon, regRecord.value("name"))
@@ -374,7 +374,8 @@ class uiModuleWindow(QWidget):
                     
                     # bitfield
                     bfQueryModel = QSqlQueryModel()
-                    bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE EXISTS (SELECT * FROM BitfieldRef WHERE Bitfield.id=BitfieldRef.BitfieldId AND BitfieldRef.RegisterId=%s) ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
+                    bfQueryModel.setQuery("SELECT id, Name FROM Bitfield WHERE EXISTS (SELECT * FROM BitfieldRef WHERE Bitfield.id=BitfieldRef.BitfieldId AND " \
+                                          "BitfieldRef.RegisterId=%s) ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
                     for k in range(bfQueryModel.rowCount()):
                         bfRecord = bfQueryModel.record(k)
                         bfItem = QStandardItem(self.bfIcon, bfRecord.value("name"))
@@ -389,7 +390,7 @@ class uiModuleWindow(QWidget):
                             
                         #bitfield enum
                         bfEnumQueryModel = QSqlQueryModel()
-                        bfEnumQueryModel.setQuery("SELECT * FROM BitfieldEnum WHERE BitfieldId=%s ORDER BY DisplayOrder ASC"%bfRecord.value("id"), self.conn)
+                        bfEnumQueryModel.setQuery("SELECT id, Name FROM BitfieldEnum WHERE BitfieldId=%s ORDER BY DisplayOrder ASC"%bfRecord.value("id"), self.conn)
                         for j in range(bfEnumQueryModel.rowCount()):
                             bfEnumRecord = bfEnumQueryModel.record(j)
                             bfEnumItem = QStandardItem(self.bfenumIcon, bfEnumRecord.value("name"))
@@ -453,7 +454,8 @@ class uiModuleWindow(QWidget):
 
                 # bitfield
                 bfQueryModel = QSqlQueryModel()
-                bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE EXISTS (SELECT * FROM BitfieldRef WHERE Bitfield.id=BitfieldRef.BitfieldId AND BitfieldRef.RegisterId=%s) ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
+                bfQueryModel.setQuery("SELECT Name, Value FROM Bitfield WHERE EXISTS (SELECT * FROM BitfieldRef WHERE Bitfield.id=BitfieldRef.BitfieldId AND " \
+                                      "BitfieldRef.RegisterId=%s) ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
                 for k in range(bfQueryModel.rowCount()):
                     bfRecord = bfQueryModel.record(k)
                     if RegisterConst.recordExist(bfRecord) == True:
