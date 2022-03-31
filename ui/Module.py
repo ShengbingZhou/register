@@ -17,7 +17,7 @@ class Ui_ModuleWindow(object):
     def setupUi(self, ModuleWindow):
         if not ModuleWindow.objectName():
             ModuleWindow.setObjectName(u"ModuleWindow")
-        ModuleWindow.resize(1014, 675)
+        ModuleWindow.resize(1331, 819)
         self.gridLayout = QGridLayout(ModuleWindow)
         self.gridLayout.setObjectName(u"gridLayout")
         self.splitter = QSplitter(ModuleWindow)
@@ -39,77 +39,15 @@ class Ui_ModuleWindow(object):
         self.verticalLayout = QVBoxLayout(self.frame)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-        self.frame_2 = QFrame(self.frame)
-        self.frame_2.setObjectName(u"frame_2")
-        self.frame_2.setFrameShape(QFrame.StyledPanel)
-        self.frame_2.setFrameShadow(QFrame.Raised)
-        self.frame_2.setLineWidth(0)
-        self.horizontalLayout = QHBoxLayout(self.frame_2)
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.line = QFrame(self.frame_2)
-        self.line.setObjectName(u"line")
-        self.line.setFrameShape(QFrame.VLine)
-        self.line.setFrameShadow(QFrame.Sunken)
-
-        self.horizontalLayout.addWidget(self.line)
-
-        self.pbAddRegMap = QPushButton(self.frame_2)
-        self.pbAddRegMap.setObjectName(u"pbAddRegMap")
-
-        self.horizontalLayout.addWidget(self.pbAddRegMap)
-
-        self.line_5 = QFrame(self.frame_2)
-        self.line_5.setObjectName(u"line_5")
-        self.line_5.setFrameShape(QFrame.VLine)
-        self.line_5.setFrameShadow(QFrame.Sunken)
-
-        self.horizontalLayout.addWidget(self.line_5)
-
-        self.pbAddReg = QPushButton(self.frame_2)
-        self.pbAddReg.setObjectName(u"pbAddReg")
-
-        self.horizontalLayout.addWidget(self.pbAddReg)
-
-        self.line_3 = QFrame(self.frame_2)
-        self.line_3.setObjectName(u"line_3")
-        self.line_3.setFrameShape(QFrame.VLine)
-        self.line_3.setFrameShadow(QFrame.Sunken)
-
-        self.horizontalLayout.addWidget(self.line_3)
-
-        self.pbAddBf = QPushButton(self.frame_2)
-        self.pbAddBf.setObjectName(u"pbAddBf")
-
-        self.horizontalLayout.addWidget(self.pbAddBf)
-
-        self.line_2 = QFrame(self.frame_2)
-        self.line_2.setObjectName(u"line_2")
-        self.line_2.setFrameShape(QFrame.VLine)
-        self.line_2.setFrameShadow(QFrame.Sunken)
-
-        self.horizontalLayout.addWidget(self.line_2)
-
-        self.pbAddBfEnum = QPushButton(self.frame_2)
-        self.pbAddBfEnum.setObjectName(u"pbAddBfEnum")
-
-        self.horizontalLayout.addWidget(self.pbAddBfEnum)
-
-        self.line_6 = QFrame(self.frame_2)
-        self.line_6.setObjectName(u"line_6")
-        self.line_6.setFrameShape(QFrame.VLine)
-        self.line_6.setFrameShadow(QFrame.Sunken)
-
-        self.horizontalLayout.addWidget(self.line_6)
-
-        self.pbSetColumns = QPushButton(self.frame_2)
-        self.pbSetColumns.setObjectName(u"pbSetColumns")
-
-        self.horizontalLayout.addWidget(self.pbSetColumns)
-
-
-        self.verticalLayout.addWidget(self.frame_2)
-
-        self.frame_4 = QFrame(self.frame)
+        self.frame_3 = QFrame(self.frame)
+        self.frame_3.setObjectName(u"frame_3")
+        self.frame_3.setFrameShape(QFrame.NoFrame)
+        self.frame_3.setFrameShadow(QFrame.Raised)
+        self.frame_3.setLineWidth(0)
+        self.gridLayout_2 = QGridLayout(self.frame_3)
+        self.gridLayout_2.setObjectName(u"gridLayout_2")
+        self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.frame_4 = QFrame(self.frame_3)
         self.frame_4.setObjectName(u"frame_4")
         sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         sizePolicy1.setHorizontalStretch(0)
@@ -118,51 +56,89 @@ class Ui_ModuleWindow(object):
         self.frame_4.setSizePolicy(sizePolicy1)
         self.frame_4.setFrameShape(QFrame.StyledPanel)
         self.frame_4.setFrameShadow(QFrame.Raised)
-        self.horizontalLayout_2 = QHBoxLayout(self.frame_4)
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.line_4 = QFrame(self.frame_4)
-        self.line_4.setObjectName(u"line_4")
-        self.line_4.setFrameShape(QFrame.VLine)
-        self.line_4.setFrameShadow(QFrame.Sunken)
+        self.frame_4.setLineWidth(0)
+        self.gridDebugLayout = QGridLayout(self.frame_4)
+        self.gridDebugLayout.setObjectName(u"gridDebugLayout")
+        self.pbAddRegMap = QPushButton(self.frame_4)
+        self.pbAddRegMap.setObjectName(u"pbAddRegMap")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.pbAddRegMap.sizePolicy().hasHeightForWidth())
+        self.pbAddRegMap.setSizePolicy(sizePolicy2)
+        self.pbAddRegMap.setMinimumSize(QSize(200, 0))
 
-        self.horizontalLayout_2.addWidget(self.line_4)
+        self.gridDebugLayout.addWidget(self.pbAddRegMap, 0, 0, 1, 1)
 
-        self.pbReadAll = QPushButton(self.frame_4)
-        self.pbReadAll.setObjectName(u"pbReadAll")
+        self.pbAddReg = QPushButton(self.frame_4)
+        self.pbAddReg.setObjectName(u"pbAddReg")
+        sizePolicy2.setHeightForWidth(self.pbAddReg.sizePolicy().hasHeightForWidth())
+        self.pbAddReg.setSizePolicy(sizePolicy2)
+        self.pbAddReg.setMinimumSize(QSize(200, 0))
 
-        self.horizontalLayout_2.addWidget(self.pbReadAll)
+        self.gridDebugLayout.addWidget(self.pbAddReg, 0, 1, 1, 1)
+
+        self.pbAddBfEnum = QPushButton(self.frame_4)
+        self.pbAddBfEnum.setObjectName(u"pbAddBfEnum")
+        sizePolicy2.setHeightForWidth(self.pbAddBfEnum.sizePolicy().hasHeightForWidth())
+        self.pbAddBfEnum.setSizePolicy(sizePolicy2)
+        self.pbAddBfEnum.setMinimumSize(QSize(200, 0))
+
+        self.gridDebugLayout.addWidget(self.pbAddBfEnum, 0, 3, 1, 1)
+
+        self.pbAddBf = QPushButton(self.frame_4)
+        self.pbAddBf.setObjectName(u"pbAddBf")
+        sizePolicy2.setHeightForWidth(self.pbAddBf.sizePolicy().hasHeightForWidth())
+        self.pbAddBf.setSizePolicy(sizePolicy2)
+        self.pbAddBf.setMinimumSize(QSize(200, 0))
+
+        self.gridDebugLayout.addWidget(self.pbAddBf, 0, 2, 1, 1)
 
         self.pbReadSelected = QPushButton(self.frame_4)
         self.pbReadSelected.setObjectName(u"pbReadSelected")
+        sizePolicy2.setHeightForWidth(self.pbReadSelected.sizePolicy().hasHeightForWidth())
+        self.pbReadSelected.setSizePolicy(sizePolicy2)
+        self.pbReadSelected.setMinimumSize(QSize(200, 0))
 
-        self.horizontalLayout_2.addWidget(self.pbReadSelected)
+        self.gridDebugLayout.addWidget(self.pbReadSelected, 1, 1, 1, 1)
 
         self.pbWriteAll = QPushButton(self.frame_4)
         self.pbWriteAll.setObjectName(u"pbWriteAll")
+        sizePolicy2.setHeightForWidth(self.pbWriteAll.sizePolicy().hasHeightForWidth())
+        self.pbWriteAll.setSizePolicy(sizePolicy2)
+        self.pbWriteAll.setMinimumSize(QSize(200, 0))
 
-        self.horizontalLayout_2.addWidget(self.pbWriteAll)
+        self.gridDebugLayout.addWidget(self.pbWriteAll, 1, 2, 1, 1)
+
+        self.pbReadAll = QPushButton(self.frame_4)
+        self.pbReadAll.setObjectName(u"pbReadAll")
+        sizePolicy2.setHeightForWidth(self.pbReadAll.sizePolicy().hasHeightForWidth())
+        self.pbReadAll.setSizePolicy(sizePolicy2)
+        self.pbReadAll.setMinimumSize(QSize(200, 0))
+
+        self.gridDebugLayout.addWidget(self.pbReadAll, 1, 0, 1, 1)
+
+        self.pbSetColumns = QPushButton(self.frame_4)
+        self.pbSetColumns.setObjectName(u"pbSetColumns")
+        sizePolicy2.setHeightForWidth(self.pbSetColumns.sizePolicy().hasHeightForWidth())
+        self.pbSetColumns.setSizePolicy(sizePolicy2)
+        self.pbSetColumns.setMinimumSize(QSize(200, 0))
+
+        self.gridDebugLayout.addWidget(self.pbSetColumns, 0, 4, 1, 1)
 
         self.labelDescription = QLabel(self.frame_4)
         self.labelDescription.setObjectName(u"labelDescription")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.labelDescription.sizePolicy().hasHeightForWidth())
-        self.labelDescription.setSizePolicy(sizePolicy2)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.labelDescription.sizePolicy().hasHeightForWidth())
+        self.labelDescription.setSizePolicy(sizePolicy3)
 
-        self.horizontalLayout_2.addWidget(self.labelDescription)
+        self.gridDebugLayout.addWidget(self.labelDescription, 2, 0, 1, 5)
 
 
-        self.verticalLayout.addWidget(self.frame_4)
+        self.gridLayout_2.addWidget(self.frame_4, 0, 0, 1, 1)
 
-        self.frame_3 = QFrame(self.frame)
-        self.frame_3.setObjectName(u"frame_3")
-        self.frame_3.setFrameShape(QFrame.StyledPanel)
-        self.frame_3.setFrameShadow(QFrame.Raised)
-        self.frame_3.setLineWidth(0)
-        self.gridLayout_2 = QGridLayout(self.frame_3)
-        self.gridLayout_2.setObjectName(u"gridLayout_2")
-        self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
         self.tableView = QTableView(self.frame_3)
         self.tableView.setObjectName(u"tableView")
 
@@ -185,12 +161,12 @@ class Ui_ModuleWindow(object):
         ModuleWindow.setWindowTitle(QCoreApplication.translate("ModuleWindow", u"Form", None))
         self.pbAddRegMap.setText(QCoreApplication.translate("ModuleWindow", u"+ RegisterMap", None))
         self.pbAddReg.setText(QCoreApplication.translate("ModuleWindow", u"+ Register", None))
-        self.pbAddBf.setText(QCoreApplication.translate("ModuleWindow", u"+ Bitfield", None))
         self.pbAddBfEnum.setText(QCoreApplication.translate("ModuleWindow", u"+ BitfieldEnum", None))
-        self.pbSetColumns.setText(QCoreApplication.translate("ModuleWindow", u"-> ColumnsVisibility", None))
-        self.pbReadAll.setText(QCoreApplication.translate("ModuleWindow", u"Read All", None))
+        self.pbAddBf.setText(QCoreApplication.translate("ModuleWindow", u"+ Bitfield", None))
         self.pbReadSelected.setText(QCoreApplication.translate("ModuleWindow", u"Read Selected", None))
         self.pbWriteAll.setText(QCoreApplication.translate("ModuleWindow", u"Write All", None))
+        self.pbReadAll.setText(QCoreApplication.translate("ModuleWindow", u"Read All", None))
+        self.pbSetColumns.setText(QCoreApplication.translate("ModuleWindow", u"-> ColumnsVisibility", None))
         self.labelDescription.setText(QCoreApplication.translate("ModuleWindow", u"TextLabel", None))
     # retranslateUi
 

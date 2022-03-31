@@ -26,11 +26,14 @@ class QSqlQueryBfTableModel(QSqlQueryModel):
         return flags
 
     def setData(self, index, value, role):
-        bfId = self.data(QSqlQueryModel.index(self, index.row(), 0), Qt.DisplayRole)
+        bfId  = self.data(QSqlQueryModel.index(self, index.row(), 0), Qt.DisplayRole)
         regId = self.data(QSqlQueryModel.index(self, index.row(), 1), Qt.DisplayRole)
         field = self.record().fieldName(index.column())
         query = QSqlQuery(self.conn)
-        result = query.exec_("UPDATE Bitfield SET %s='%s' WHERE id=%s"%(field, value, bfId))
+        if field == "RegisterOffset" or field == "BitfieldOffset" or field == "SliceWidth":
+            result = query.exec_("UPDATE BitfieldRef SET %s='%s' WHERE RegisterId=%s AND BitfieldId=%s"%(field, value, regId, bfId))
+        else:
+            result = query.exec_("UPDATE Bitfield SET %s='%s' WHERE id=%s"%(field, value, bfId))
         if result:
             self.setQuery(self.query().executedQuery(), self.conn)
             self.dataChanged.emit(index, index, role)

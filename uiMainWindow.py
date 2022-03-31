@@ -17,7 +17,7 @@ class uiMainWindow(QMainWindow):
         super().__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setWindowTitle("Register Tool")
+        self.setWindowTitle("Register Tool v%s"%(RegisterConst.Version))
         self.setWindowIcon(QIcon('icon/module32.png'))
         self.ui.actionSave_As.setVisible(False)
         self.ui.menuEdit.setTitle('')
