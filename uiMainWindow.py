@@ -30,6 +30,7 @@ class uiMainWindow(QMainWindow):
             str = file.read()
         self.setStyleSheet(str)
         
+        # TODO: add icon for action items?
         #self.ui.actionNew.setIcon(QIcon("icon/new32.png"))
         
         # add welcome tab
