@@ -470,14 +470,14 @@ class uiModuleWindow(QWidget):
 
     @Slot('QItemSelection', 'QItemSelection')
     def do_tableView_selectionChanged(self, selected, deselected):
-        tableCurrents = selected.indexes()
-        tableCurrent = None if len(tableCurrents) == 0 else tableCurrents[0]
-        if tableCurrent != None:
-            if tableCurrent.row() != self.__treeView_selectedRow: # bugfix: self.ui.treeView.selectedIndexes()[0] is not treeView's current index
+        if self.view == RegisterConst.DesignView:
+            tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()
+            tableViewCurrent = None if len(tableViewCurrents) == 0 else tableViewCurrents[0]
+            if tableViewCurrent != None:
                 treeViewCurrent = self.ui.treeView.selectedIndexes()[0]
-                sibling = treeViewCurrent.sibling(tableCurrent.row(), 0)
-                self.ui.treeView.selectionModel().setCurrentIndex(sibling, QItemSelectionModel.ClearAndSelect)
-                
+                if tableViewCurrent.row() != self.__treeViewCurrentRow:
+                    sibling = treeViewCurrent.sibling(tableViewCurrent.row(), 0)
+                    self.ui.treeView.selectionModel().setCurrentIndex(sibling, QItemSelectionModel.ClearAndSelect)                
         return
     
     @Slot()
@@ -613,12 +613,12 @@ class uiModuleWindow(QWidget):
                     self.ui.tableView.hideColumn(1) # memmap id
                     self.ui.tableView.hideColumn(2) # order
                     self.ui.tableView.resizeColumnsToContents()
-                    self.ui.pbAddRegMap.setEnabled(True)
+                    self.ui.pbAddRegMap.setEnabled(False)
                     self.ui.pbAddReg.setEnabled(True)
                     self.ui.pbAddBf.setEnabled(False)
                     self.ui.pbAddBfEnum.setEnabled(False)
-                self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new register map, " \
-                                                 "or <font color=\"red\">%s</font> to add register."%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text()))
+                    self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new register map, " \
+                                                     "or <font color=\"red\">%s</font> to add register."%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text()))
                 
             elif tableName == "Register": # reg selected, show reg table
                 regMapId = int(current.data(RegisterConst.RegMapIdRole))
@@ -632,14 +632,14 @@ class uiModuleWindow(QWidget):
                     self.ui.tableView.hideColumn(1) # regmap id
                     self.ui.tableView.hideColumn(2) # order
                     self.ui.tableView.resizeColumnsToContents()
-                    self.ui.pbAddRegMap.setEnabled(True)
-                    self.ui.pbAddReg.setEnabled(True)
+                    self.ui.pbAddRegMap.setEnabled(False)
+                    self.ui.pbAddReg.setEnabled(False)
                     self.ui.pbAddBf.setEnabled(True)
                     self.ui.pbAddBfEnum.setEnabled(False)
                     self.ui.labelDescription.setText("Tips: Click "\
-                                                    "<font color=\"red\">%s</font> to add new register map, or " \
-                                                    "<font color=\"red\">%s</font> to add register, or " \
-                                                    "<font color=\"red\">%s</font> to add bitfield"%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text(), self.ui.pbAddBf.text()))
+                                                     "<font color=\"red\">%s</font> to add new register map, or " \
+                                                     "<font color=\"red\">%s</font> to add register, or " \
+                                                     "<font color=\"red\">%s</font> to add bitfield"%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text(), self.ui.pbAddBf.text()))
                 
             elif tableName == "Bitfield": # bf selected, show bf table
                 regId = int(current.data(RegisterConst.RegIdRole))
@@ -653,9 +653,9 @@ class uiModuleWindow(QWidget):
                     self.ui.tableView.hideColumn(1) # regid
                     self.ui.tableView.hideColumn(2) # order
                     self.ui.tableView.resizeColumnsToContents()
-                    self.ui.pbAddRegMap.setEnabled(True)
-                    self.ui.pbAddReg.setEnabled(True)
-                    self.ui.pbAddBf.setEnabled(True)
+                    self.ui.pbAddRegMap.setEnabled(False)
+                    self.ui.pbAddReg.setEnabled(False)
+                    self.ui.pbAddBf.setEnabled(False)
                     self.ui.pbAddBfEnum.setEnabled(True)
 
                 regQ = QSqlQuery("SELECT Width FROM Register WHERE id=%s"%(regId), self.conn)
@@ -672,23 +672,22 @@ class uiModuleWindow(QWidget):
                         _bfId = bfRefQ.value("BitfieldId")
      
                         if sliceW > 0 and regB > (regOff + sliceW - 1):
-                            text = text + "<font size=10>"
                             for i in range(regOff + sliceW, regB + 1):
                                 text = text + "0"
                                 regB = regB - 1
                                 if regB < 0:
                                     break
-                            text = text + "</font>-"
+                            text = text + "-"
 
                         if sliceW > 0 and regB >= 0:
-                            text = text + "<span style='text-decoration:underline'><font color='red' size=10>" if _bfId == bfId else text + "<font size=10>"
+                            text = text + "<span style='text-decoration:underline'><font color='red'>" if _bfId == bfId else text + "<span style='text-decoration:underline'><font>"
                             for j in range(regOff, regOff + sliceW):
                                 text = text + "0"
                                 regB = regB - 1
                                 if regB < 0:
                                     break
-                            text = text + "</font></span>-" if _bfId == bfId else text + "</font>-"
-                    text = text + "bit0"
+                            text = text + "</font></span>-" if _bfId == bfId else text + "</font></span>-"
+                    text = text + "(bit0)"
                 self.ui.labelDescription.setText(text)
                 
             elif tableName == "BitfieldEnum": # bfenum selected, show bfenum table
@@ -709,11 +708,11 @@ class uiModuleWindow(QWidget):
                     self.ui.pbAddBfEnum.setEnabled(True)
                     self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new bitfield enum. "%self.ui.pbAddBfEnum.text())
 
-            # select table row
-            self.__treeView_selectedRow = current.row()
-            tableCurrents = self.ui.tableView.selectionModel().selectedIndexes()
-            tableCurrent = None if len(tableCurrents) == 0 else tableCurrents[0]
-            if tableCurrent == None or tableCurrent.row() != self.__treeView_selectedRow:
+            # select tableView row
+            self.__treeViewCurrentRow = current.row()
+            tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()
+            tableViewCurrent = None if len(tableViewCurrents) == 0 else tableViewCurrents[0]
+            if tableViewCurrent == None or tableViewCurrent.row() != current.row():
                 self.ui.tableView.selectRow(current.row())
         else: # debug view
             tableName = str(current.data(RegisterConst.NameRole))
