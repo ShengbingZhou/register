@@ -10,7 +10,7 @@ from ui.Module import Ui_ModuleWindow
 from RegisterConst import RegisterConst
 from QSqlQueryBfTableModel import QSqlQueryBfTableModel
 from QSqlHighlightTableModel import QSqlHighlightTableModel
-from QRegDebugTableModel import QRegDebugTableModel
+from QRegDebugTableModel import QRegDebugTableModel, QRegDebugValueEditDelegate
 
 class uiModuleWindow(QWidget):
     
@@ -43,6 +43,10 @@ class uiModuleWindow(QWidget):
         self.ui.pbAddReg.setIcon(QIcon('icon/add32.png'))
         self.ui.pbAddBf.setIcon(QIcon('icon/add32.png'))
         self.ui.pbAddBfEnum.setIcon(QIcon('icon/add32.png'))
+
+        self.ui.pbReadAll.setIcon(QIcon('icon/rdall32.png'))
+        self.ui.pbReadSelected.setIcon(QIcon('icon/rdsel32.png'))
+        self.ui.pbWriteAll.setIcon(QIcon('icon/wrall32.png'))
         
         # default as design view, no matter it is a new module or just opened module
         self.view = RegisterConst.DesignView
@@ -76,17 +80,18 @@ class uiModuleWindow(QWidget):
     def setView(self, view):
         if (view != self.view):
             self.view = view
+            isDebugView = (self.view == RegisterConst.DebugView)
+            self.ui.pbAddRegMap.setVisible(not isDebugView)
+            self.ui.pbAddReg.setVisible(not isDebugView)
+            self.ui.pbAddBf.setVisible(not isDebugView)
+            self.ui.pbAddBfEnum.setVisible(not isDebugView)
+            self.ui.labelDescription.setVisible(not isDebugView)
+            self.ui.tableView.setAlternatingRowColors(not isDebugView)
+            self.ui.pbReadAll.setVisible(isDebugView)
+            self.ui.pbReadSelected.setVisible(isDebugView)
+            self.ui.pbWriteAll.setVisible(isDebugView)
             if (self.view == RegisterConst.DebugView):
-                self.setupDebugTableView()
-                self.ui.tableView.setAlternatingRowColors(False)
-                self.ui.pbReadAll.setVisible(True)
-                self.ui.pbReadSelected.setVisible(True)
-                self.ui.pbWriteAll.setVisible(True)            
-            else:
-                self.ui.tableView.setAlternatingRowColors(True)
-                self.ui.pbReadAll.setVisible(False)
-                self.ui.pbReadSelected.setVisible(False)
-                self.ui.pbWriteAll.setVisible(False)                
+                self.setupDebugViewModels()    
             self.do_treeView_currentChanged(self.ui.treeView.selectedIndexes().pop(), None)
 
     def newInfoRow(self, model, updateDate):
@@ -159,7 +164,7 @@ class uiModuleWindow(QWidget):
         r.setValue("DisplayOrder", -1)
         r = self.newRegMap_Reg_Bf_BfEnum_Row(row, r, "RegMap", model, "RegisterMap")
         return r
-        
+
     def newRegRow(self, model, regMapId, OffsetAddress, Width, row):
         r = model.record()
         r.remove(r.indexOf('id'))
@@ -172,11 +177,13 @@ class uiModuleWindow(QWidget):
         r.setValue("DisplayOrder", -1)
         r = self.newRegMap_Reg_Bf_BfEnum_Row(row, r, "Reg", model, "Register")
         return r
-    
+
     def newBfRow(self, model, bfRefModel, regId, memMapId, Width, row):                
         r = model.record()
         r.remove(r.indexOf('id'))
         r.setValue("MemoryMapId", memMapId)
+        r.setValue("Access", "r/w")
+        r.setValue("DefaultValue", 0)
         r.setValue("Width", Width)
         r.setValue("Description", "This is no name bitfield")
         r.setValue("Value", 0)
@@ -215,22 +222,23 @@ class uiModuleWindow(QWidget):
         self.newModule = True     
         
         # open new database
-        if self.setupModel(newName):
-            info0Id = self.newInfoRow(self.infoTableModel, now).value("id")                 # create info row0
-            memoryMap0Id = self.newMemoryMapRow(self.memoryMaptableModel).value("id")       # create memorymap row0
-            regMap0Id = self.newRegMapRow(self.regMapTableModel, memoryMap0Id, -1).value("id")  # create regmap row0
-            reg0Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 8, -1).value("id")        # create register row0
-            reg1Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 8, -1).value("id")        # create register row1
-            bf0Id = self.newBfRow(self.bfTableModel, self.bfRefTableModel, reg0Id, memoryMap0Id, 8, -1).value("id") # create bitfield row0
-            bf1Id = self.newBfRow(self.bfTableModel, self.bfRefTableModel, reg1Id, memoryMap0Id, 8, -1).value("id") # create bitfield row1
-            bfEnum0Id = self.newBfEnumRow(self.bfEnumTableModel, bf0Id, -1).value("id")         # create bitfieldenum row0
+        self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
+        if self.setupDesignViewModels(newName):
+            info0Id = self.newInfoRow(self.infoTableModel, now).value("id")                 # create info   row0
+            memMap0Id = self.newMemoryMapRow(self.memoryMaptableModel).value("id")          # create memmap row0
+            regMap0Id = self.newRegMapRow(self.regMapTableModel, memMap0Id, -1).value("id") # create regmap row0
+            reg0Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 8, -1).value("id")    # create register row0
+            reg1Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 8, -1).value("id")    # create register row1
+            bf0Id = self.newBfRow(self.bfTableModel, self.bfRefTableModel, reg0Id, memMap0Id, 8, -1).value("id") # create bitfield row0
+            bf1Id = self.newBfRow(self.bfTableModel, self.bfRefTableModel, reg1Id, memMap0Id, 8, -1).value("id") # create bitfield row1
+            bfEnum0Id = self.newBfEnumRow(self.bfEnumTableModel, bf0Id, -1).value("id")     # create bitfieldenum row0
             self.setupTreeView()
             self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.bfQueryModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.bfEnumTableModel.dataChanged.connect(self.do_tableView_dataChanged)
         else:
-            False
+            return False
         return True
         
     def openDatabase(self, fileName):
@@ -241,7 +249,10 @@ class uiModuleWindow(QWidget):
         self.newFileName = newName
         self.fileName = fileName
         self.newModule = False
-        if self.setupModel(newName):
+
+        # open existing database
+        self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
+        if self.setupDesignViewModels(newName):
             self.setupTreeView()
             self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
@@ -269,7 +280,7 @@ class uiModuleWindow(QWidget):
                 fileName = self.fileName
         return fileName
     
-    def setupModel(self, fileName):  
+    def setupDesignViewModels(self, fileName):  
         self.conn = QSqlDatabase.addDatabase("QSQLITE", fileName)
         self.conn.setDatabaseName(fileName)
         if self.conn.open():
@@ -314,9 +325,6 @@ class uiModuleWindow(QWidget):
             
             self.bfQueryModel = QSqlQueryBfTableModel()
             self.bfQueryModel.setConn(self.conn)
-            
-            # debug model is a list, each member is mapped to a regmap
-            self.regDebugModels = []
         else:
             QMessageBox.warning(self, "Error", "Failed to open %s"%fileName)  
             return False
@@ -412,7 +420,7 @@ class uiModuleWindow(QWidget):
         treeViewSelectionModel.select(memoryMapItemIndex, QItemSelectionModel.ClearAndSelect)
         self.do_treeView_currentChanged(memoryMapItemIndex, None)
     
-    def setupDebugTableView(self):
+    def setupDebugViewModels(self):
         # clear existing item
         for model in self.regDebugModels:
             model.clear()
@@ -466,11 +474,11 @@ class uiModuleWindow(QWidget):
     
     @Slot()
     def do_treeView_contextMenuRequested(self, point):
-        # do not allow to edit design in debug view
+        # do not allow to edit design by context menu in debug view
         if self.view == RegisterConst.DebugView:
             return
         
-        # allow to edit in design view
+        # allow to edit by context menu in design view
         index = self.ui.treeView.indexAt(point)
         tableName = str(index.data(RegisterConst.NameRole))
         
@@ -542,7 +550,8 @@ class uiModuleWindow(QWidget):
             model = self.bfEnumTableModel
             idRole = RegisterConst.BfEnumIdRole
         
-        # update display name field of tree node to latest "Name" field
+        # update treeview node accordingly
+        # update tree node name if "Name" is changed, or change tree node background color if "Exist" is changed
         if model != None:
             fieldName = model.record().fieldName(bottomRight.column())
             if fieldName == "Name":
@@ -565,6 +574,7 @@ class uiModuleWindow(QWidget):
                             self.treeViewTableModel.itemFromIndex(child).setData(QColor('grey'), Qt.BackgroundColorRole)
                         else:
                             self.treeViewTableModel.itemFromIndex(child).setData(None, Qt.BackgroundColorRole)
+
         self.ui.tableView.resizeColumnsToContents()
         return
     
@@ -598,7 +608,8 @@ class uiModuleWindow(QWidget):
                 self.ui.pbAddReg.setEnabled(True)
                 self.ui.pbAddBf.setEnabled(False)
                 self.ui.pbAddBfEnum.setEnabled(False)
-                self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new register map. "%self.ui.pbAddRegMap.text())
+                self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new register map, " \
+                                                 "or <font color=\"red\">%s</font> to add register."%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text()))
                 
             elif tableName == "Register": # reg selected, show reg table
                 regMapId = int(current.data(RegisterConst.RegMapIdRole))
@@ -611,15 +622,19 @@ class uiModuleWindow(QWidget):
                 self.ui.tableView.hideColumn(1) # regmap id
                 self.ui.tableView.hideColumn(2) # order
                 self.ui.tableView.resizeColumnsToContents()
-                
+
                 self.ui.pbAddRegMap.setEnabled(True)
                 self.ui.pbAddReg.setEnabled(True)
                 self.ui.pbAddBf.setEnabled(True)
                 self.ui.pbAddBfEnum.setEnabled(False)
-                self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new register. "%self.ui.pbAddReg.text())
+                self.ui.labelDescription.setText("Tips: Click "\
+                                                 "<font color=\"red\">%s</font> to add new register map, or " \
+                                                 "<font color=\"red\">%s</font> to add register, or " \
+                                                 "<font color=\"red\">%s</font> to add bitfield"%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text(), self.ui.pbAddBf.text()))
                 
             elif tableName == "Bitfield": # bf selected, show bf table
                 regId = int(current.data(RegisterConst.RegIdRole))
+                bfId  = int(current.data(RegisterConst.BfIdRole))
                 self.bfQueryModel.setQuery("%s%s ORDER BY A.DisplayOrder ASC"%(self.tableDesignViewBfQuerySql, regId), self.conn)
                 self.ui.tableView.setModel(self.bfQueryModel)
                 
@@ -628,12 +643,45 @@ class uiModuleWindow(QWidget):
                 self.ui.tableView.hideColumn(1) # regid
                 self.ui.tableView.hideColumn(2) # order
                 self.ui.tableView.resizeColumnsToContents()
-                
+                self.ui.tableView.selectRow(current.row())
+
                 self.ui.pbAddRegMap.setEnabled(True)
                 self.ui.pbAddReg.setEnabled(True)
                 self.ui.pbAddBf.setEnabled(True)
                 self.ui.pbAddBfEnum.setEnabled(True)
-                self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new bitfield. "%self.ui.pbAddBf.text())
+
+                regQ = QSqlQuery("SELECT Width FROM Register WHERE id=%s"%(regId), self.conn)
+                text = ""
+                while regQ.next():
+                    regW = regQ.value(0)
+                    regB = regW - 1
+                    text = "Tips: (bit%s)- "%(regW - 1)
+                    bfRefQ = QSqlQuery("SELECT * FROM BitfieldRef WHERE RegisterId=%s ORDER BY RegisterOffset DESC"%(regId), self.conn)
+                    while bfRefQ.next():
+                        regOff = bfRefQ.value("RegisterOffset")
+                        bfOff = bfRefQ.value("BitfieldOffset")
+                        sliceW = bfRefQ.value("SliceWidth")
+                        _bfId = bfRefQ.value("BitfieldId")
+     
+                        if sliceW > 0 and regB > (regOff + sliceW - 1):
+                            text = text + "<font size=10>"
+                            for i in range(regOff + sliceW, regB + 1):
+                                text = text + "0"
+                                regB = regB - 1
+                                if regB < 0:
+                                    break
+                            text = text + "</font>-"
+
+                        if sliceW > 0 and regB >= 0:
+                            text = text + "<span style='text-decoration:underline'><font color='red' size=10>" if _bfId == bfId else text + "<font size=10>"
+                            for j in range(regOff, regOff + sliceW):
+                                text = text + "0"
+                                regB = regB - 1
+                                if regB < 0:
+                                    break
+                            text = text + "</font></span>-" if _bfId == bfId else text + "</font>-"
+                    text = text + " -bit0"
+                self.ui.labelDescription.setText(text)
                 
             elif tableName == "BitfieldEnum": # bfenum selected, show bfenum table
                 bfId = int(current.data(RegisterConst.BfIdRole))            
@@ -664,11 +712,6 @@ class uiModuleWindow(QWidget):
                         self.ui.tableView.showColumn(2)
                         self.ui.tableView.resizeColumnsToContents()
                         break
-            
-            self.ui.pbAddRegMap.setEnabled(False)
-            self.ui.pbAddReg.setEnabled(False)
-            self.ui.pbAddBf.setEnabled(False)
-            self.ui.pbAddBfEnum.setEnabled(False)            
         return
         
     @Slot()
