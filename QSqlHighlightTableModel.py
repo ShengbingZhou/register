@@ -17,3 +17,6 @@ class QSqlHighlightTableModel(QSqlTableModel):
 
     def flags(self, index):
         return QSqlTableModel.flags(self, index)
+
+    def setParentId(self, id):
+        self.parentId = id

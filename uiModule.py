@@ -470,6 +470,14 @@ class uiModuleWindow(QWidget):
 
     @Slot('QItemSelection', 'QItemSelection')
     def do_tableView_selectionChanged(self, selected, deselected):
+        tableCurrents = selected.indexes()
+        tableCurrent = None if len(tableCurrents) == 0 else tableCurrents[0]
+        if tableCurrent != None:
+            if tableCurrent.row() != self.__treeView_selectedRow: # bugfix: self.ui.treeView.selectedIndexes()[0] is not treeView's current index
+                treeViewCurrent = self.ui.treeView.selectedIndexes()[0]
+                sibling = treeViewCurrent.sibling(tableCurrent.row(), 0)
+                self.ui.treeView.selectionModel().setCurrentIndex(sibling, QItemSelectionModel.ClearAndSelect)
+                
         return
     
     @Slot()
@@ -583,79 +591,79 @@ class uiModuleWindow(QWidget):
         if self.view == RegisterConst.DesignView:
             tableName = str(current.data(RegisterConst.NameRole))
             if tableName == "MemoryMap": # memorymap selected, show memorymap table
-                self.ui.tableView.setModel(self.memoryMaptableModel)
-                self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
-                self.ui.tableView.hideColumn(0) # id
-                self.ui.tableView.showColumn(1) # offset address
-                self.ui.tableView.showColumn(2) # notes
-                self.ui.tableView.resizeColumnsToContents()
-                
-                self.ui.pbAddRegMap.setEnabled(True)
-                self.ui.pbAddReg.setEnabled(False)
-                self.ui.pbAddBf.setEnabled(False)
-                self.ui.pbAddBfEnum.setEnabled(False)
-                self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new register map. "%self.ui.pbAddRegMap.text())
+                if self.ui.tableView.model() != self.memoryMaptableModel:
+                    self.ui.tableView.setModel(self.memoryMaptableModel)
+                    self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    self.ui.tableView.hideColumn(0) # id
+                    self.ui.tableView.showColumn(1) # offset address
+                    self.ui.tableView.showColumn(2) # notes
+                    self.ui.tableView.resizeColumnsToContents()
+                    
+                    self.ui.pbAddRegMap.setEnabled(True)
+                    self.ui.pbAddReg.setEnabled(False)
+                    self.ui.pbAddBf.setEnabled(False)
+                    self.ui.pbAddBfEnum.setEnabled(False)
+                    self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new register map. "%self.ui.pbAddRegMap.text())
                 
             elif tableName == "RegisterMap": # regmap or reg selected, show regmap table
-                self.ui.tableView.setModel(self.regMapTableModel)
-                self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
-                self.ui.tableView.hideColumn(0) # id
-                self.ui.tableView.hideColumn(1) # memmap id
-                self.ui.tableView.hideColumn(2) # order
-                self.ui.tableView.resizeColumnsToContents()
-                
-                self.ui.pbAddRegMap.setEnabled(True)
-                self.ui.pbAddReg.setEnabled(True)
-                self.ui.pbAddBf.setEnabled(False)
-                self.ui.pbAddBfEnum.setEnabled(False)
+                if self.ui.tableView.model() != self.regMapTableModel:
+                    self.ui.tableView.setModel(self.regMapTableModel)
+                    self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    self.ui.tableView.hideColumn(0) # id
+                    self.ui.tableView.hideColumn(1) # memmap id
+                    self.ui.tableView.hideColumn(2) # order
+                    self.ui.tableView.resizeColumnsToContents()
+                    self.ui.pbAddRegMap.setEnabled(True)
+                    self.ui.pbAddReg.setEnabled(True)
+                    self.ui.pbAddBf.setEnabled(False)
+                    self.ui.pbAddBfEnum.setEnabled(False)
                 self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new register map, " \
                                                  "or <font color=\"red\">%s</font> to add register."%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text()))
                 
             elif tableName == "Register": # reg selected, show reg table
                 regMapId = int(current.data(RegisterConst.RegMapIdRole))
-                self.regTableModel.setFilter("RegisterMapId=%s"%regMapId)
-                self.regTableModel.select()
-                self.ui.tableView.setModel(self.regTableModel)
-                
-                self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
-                self.ui.tableView.hideColumn(0) # id
-                self.ui.tableView.hideColumn(1) # regmap id
-                self.ui.tableView.hideColumn(2) # order
-                self.ui.tableView.resizeColumnsToContents()
-
-                self.ui.pbAddRegMap.setEnabled(True)
-                self.ui.pbAddReg.setEnabled(True)
-                self.ui.pbAddBf.setEnabled(True)
-                self.ui.pbAddBfEnum.setEnabled(False)
-                self.ui.labelDescription.setText("Tips: Click "\
-                                                 "<font color=\"red\">%s</font> to add new register map, or " \
-                                                 "<font color=\"red\">%s</font> to add register, or " \
-                                                 "<font color=\"red\">%s</font> to add bitfield"%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text(), self.ui.pbAddBf.text()))
+                if self.ui.tableView.model() != self.regTableModel or regMapId != self.regTableModel.parentId:
+                    self.regTableModel.setParentId(regMapId)
+                    self.regTableModel.setFilter("RegisterMapId=%s"%regMapId)
+                    self.regTableModel.select()
+                    self.ui.tableView.setModel(self.regTableModel)
+                    self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    self.ui.tableView.hideColumn(0) # id
+                    self.ui.tableView.hideColumn(1) # regmap id
+                    self.ui.tableView.hideColumn(2) # order
+                    self.ui.tableView.resizeColumnsToContents()
+                    self.ui.pbAddRegMap.setEnabled(True)
+                    self.ui.pbAddReg.setEnabled(True)
+                    self.ui.pbAddBf.setEnabled(True)
+                    self.ui.pbAddBfEnum.setEnabled(False)
+                    self.ui.labelDescription.setText("Tips: Click "\
+                                                    "<font color=\"red\">%s</font> to add new register map, or " \
+                                                    "<font color=\"red\">%s</font> to add register, or " \
+                                                    "<font color=\"red\">%s</font> to add bitfield"%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text(), self.ui.pbAddBf.text()))
                 
             elif tableName == "Bitfield": # bf selected, show bf table
                 regId = int(current.data(RegisterConst.RegIdRole))
                 bfId  = int(current.data(RegisterConst.BfIdRole))
-                self.bfQueryModel.setQuery("%s%s ORDER BY A.DisplayOrder ASC"%(self.tableDesignViewBfQuerySql, regId), self.conn)
-                self.ui.tableView.setModel(self.bfQueryModel)
-                
-                self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
-                self.ui.tableView.hideColumn(0) # id
-                self.ui.tableView.hideColumn(1) # regid
-                self.ui.tableView.hideColumn(2) # order
-                self.ui.tableView.resizeColumnsToContents()
-                self.ui.tableView.selectRow(current.row())
-
-                self.ui.pbAddRegMap.setEnabled(True)
-                self.ui.pbAddReg.setEnabled(True)
-                self.ui.pbAddBf.setEnabled(True)
-                self.ui.pbAddBfEnum.setEnabled(True)
+                if self.ui.tableView.model() != self.bfQueryModel or regId != self.bfQueryModel.parentId:
+                    self.bfQueryModel.setParentId(regId)
+                    self.bfQueryModel.setQuery("%s%s ORDER BY A.DisplayOrder ASC"%(self.tableDesignViewBfQuerySql, regId), self.conn)
+                    self.ui.tableView.setModel(self.bfQueryModel)
+                    self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    self.ui.tableView.hideColumn(0) # id
+                    self.ui.tableView.hideColumn(1) # regid
+                    self.ui.tableView.hideColumn(2) # order
+                    self.ui.tableView.resizeColumnsToContents()
+                    self.ui.pbAddRegMap.setEnabled(True)
+                    self.ui.pbAddReg.setEnabled(True)
+                    self.ui.pbAddBf.setEnabled(True)
+                    self.ui.pbAddBfEnum.setEnabled(True)
 
                 regQ = QSqlQuery("SELECT Width FROM Register WHERE id=%s"%(regId), self.conn)
                 text = ""
                 while regQ.next():
                     regW = regQ.value(0)
                     regB = regW - 1
-                    text = "Tips: (bit%s)- "%(regW - 1)
+                    text = "Tips: (bit%s)-"%(regW - 1)
                     bfRefQ = QSqlQuery("SELECT * FROM BitfieldRef WHERE RegisterId=%s ORDER BY RegisterOffset DESC"%(regId), self.conn)
                     while bfRefQ.next():
                         regOff = bfRefQ.value("RegisterOffset")
@@ -680,25 +688,33 @@ class uiModuleWindow(QWidget):
                                 if regB < 0:
                                     break
                             text = text + "</font></span>-" if _bfId == bfId else text + "</font>-"
-                    text = text + " -bit0"
+                    text = text + "bit0"
                 self.ui.labelDescription.setText(text)
                 
             elif tableName == "BitfieldEnum": # bfenum selected, show bfenum table
-                bfId = int(current.data(RegisterConst.BfIdRole))            
-                self.bfEnumTableModel.setFilter("BitfieldId=%s"%bfId)
-                self.bfEnumTableModel.select()
-                self.ui.tableView.setModel(self.bfEnumTableModel)
-                self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
-                self.ui.tableView.hideColumn(0) # id
-                self.ui.tableView.hideColumn(1) # bfid
-                self.ui.tableView.hideColumn(2) # order
-                self.ui.tableView.resizeColumnsToContents()
-                
-                self.ui.pbAddRegMap.setEnabled(True)
-                self.ui.pbAddReg.setEnabled(True)
-                self.ui.pbAddBf.setEnabled(True)
-                self.ui.pbAddBfEnum.setEnabled(True)
-                self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new bitfield enum. "%self.ui.pbAddBfEnum.text())
+                bfId = int(current.data(RegisterConst.BfIdRole))      
+                if self.ui.tableView.model() != self.bfEnumTableModel or bfId != self.bfEnumTableModel.parentId:
+                    self.bfEnumTableModel.setParentId(bfId)
+                    self.bfEnumTableModel.setFilter("BitfieldId=%s"%bfId)
+                    self.bfEnumTableModel.select()
+                    self.ui.tableView.setModel(self.bfEnumTableModel)
+                    self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    self.ui.tableView.hideColumn(0) # id
+                    self.ui.tableView.hideColumn(1) # bfid
+                    self.ui.tableView.hideColumn(2) # order
+                    self.ui.tableView.resizeColumnsToContents()
+                    self.ui.pbAddRegMap.setEnabled(True)
+                    self.ui.pbAddReg.setEnabled(True)
+                    self.ui.pbAddBf.setEnabled(True)
+                    self.ui.pbAddBfEnum.setEnabled(True)
+                    self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new bitfield enum. "%self.ui.pbAddBfEnum.text())
+
+            # select table row
+            self.__treeView_selectedRow = current.row()
+            tableCurrents = self.ui.tableView.selectionModel().selectedIndexes()
+            tableCurrent = None if len(tableCurrents) == 0 else tableCurrents[0]
+            if tableCurrent == None or tableCurrent.row() != self.__treeView_selectedRow:
+                self.ui.tableView.selectRow(current.row())
         else: # debug view
             tableName = str(current.data(RegisterConst.NameRole))
             if tableName != "MemoryMap":          

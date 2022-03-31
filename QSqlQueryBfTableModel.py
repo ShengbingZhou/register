@@ -38,3 +38,6 @@ class QSqlQueryBfTableModel(QSqlQueryModel):
             self.setQuery(self.query().executedQuery(), self.conn)
             self.dataChanged.emit(index, index, role)
         return result
+
+    def setParentId(self, id):
+        self.parentId = id
