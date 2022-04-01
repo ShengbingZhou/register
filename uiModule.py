@@ -1,13 +1,11 @@
 import os
 import shutil
 import datetime
-from xmlrpc.client import boolean
-
 from PySide2.QtWidgets import QWidget, QStyle, QAbstractItemView, QMessageBox, QLineEdit, QMenu, QAction, QFileDialog
 from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize, QEvent, QDir, QFile, QUrl
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
-from PySide2.QtXmlPatterns import QXmlQuery, QXmlSerializer
+from PySide2.QtXmlPatterns import QXmlQuery, QXmlSerializer, QXmlResultItems
 from ui.Module import Ui_ModuleWindow
 from RegisterConst import RegisterConst
 from QSqlQueryBfTableModel import QSqlQueryBfTableModel
@@ -297,11 +295,23 @@ class uiModuleWindow(QWidget):
         if self.setupDesignViewModels(newName):
             info0Id = self.newInfoRow(self.infoTableModel, now).value("id")                 # create info   row0
             memMap0Id = self.newMemoryMapRow(self.memoryMaptableModel).value("id")          # create memmap row0
-            
-            sp1 = QFile(newName)
-            #query = QXmlQuery(sp1, QUrl.fromLocalFile(sp1.fileName()))
-            #serializer = QXmlSerializer(query, myOutputDevice);
-            #query.evaluateTo(serializer)
+
+            sp1 = QFile("lark_yoda.sp1")
+            if sp1.open(QFile.ReadOnly):
+                query = QXmlQuery()
+                query.setFocus(sp1)
+                #query.setQuery("Module/MemoryMap/RegisterMaps/RegisterMap")
+                query.setQuery("Module")
+                result = QXmlResultItems()
+                query.evaluateTo(result)
+                while result.next() != None:
+                    i = result.current().toNodeModelIndex().stringValue()
+                    i = 0;
+                    #query.setQuery("./Name/text()")
+                    #query.evaluateTo(r)
+                    #query = QXmlQuery(sp1, QUrl.fromLocalFile(sp1.fileName()))
+                    #serializer = QXmlSerializer(query, myOutputDevice);
+                    #query.evaluateTo(serializer)
 
             self.setupTreeView()
             self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
