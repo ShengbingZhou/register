@@ -57,8 +57,22 @@ class uiMainWindow(QMainWindow):
         if moduleWindow.openDatabase(fileName):
             index = self.ui.tabWidget.addTab(moduleWindow, os.path.basename(fileName))
             self.ui.tabWidget.setCurrentIndex(index)
+            moduleWindow.setMainWindow(self)
             if self.welcomeWindow != None:
                 self.welcomeWindow.updateRecentFiles(fileName)
+        return
+        
+    def importYodaSp1File(self, fileName):
+        if os.path.isfile(fileName) == False:
+            QMessageBox.warning(self, "Error", "Failed to open %s as it doesn't exist."%fileName)
+            return
+        moduleWindow = uiModuleWindow(self)
+        moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
+        if moduleWindow.importYodaSp1(fileName):
+            index = self.ui.tabWidget.addTab(moduleWindow, "NoName")
+            self.ui.tabWidget.setCurrentIndex(index)
+            moduleWindow.setMainWindow(self)
+        return 
 
     @Slot(int)
     def on_tabWidget_tabCloseRequested(self, index):
@@ -74,13 +88,12 @@ class uiMainWindow(QMainWindow):
 
     @Slot()
     def on_actionNew_triggered(self):
-        # create module tab
         moduleWindow = uiModuleWindow(self)
         moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
-        moduleWindow.newDatabase()
-        index = self.ui.tabWidget.addTab(moduleWindow, "NoName")
-        self.ui.tabWidget.setCurrentIndex(index)
-        moduleWindow.setMainWindow(self)
+        if moduleWindow.newDatabase():
+            index = self.ui.tabWidget.addTab(moduleWindow, "NoName")
+            self.ui.tabWidget.setCurrentIndex(index)
+            moduleWindow.setMainWindow(self)
         return
 
     @Slot()
@@ -92,7 +105,9 @@ class uiMainWindow(QMainWindow):
     
     @Slot()
     def on_actionImportYoda_triggered(self):
-        QMessageBox.information(self, "Import yoda file", "TODO", QMessageBox.Yes)
+        fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open Yoda (.sp1) file", QDir.homePath(), "Register File (*)")
+        if fileName != '':
+            self.importYodaSp1File(fileName)
         return
 
     @Slot()

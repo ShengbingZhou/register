@@ -17,7 +17,7 @@ class QRegDebugTableModel(QStandardItemModel):
         if index.column() != 3: # value
             flags &= ~Qt.ItemIsEditable
         return flags
-       
+
     def data(self, index, role):
         value = QStandardItemModel.data(self, index, role)
         if role == Qt.BackgroundColorRole:

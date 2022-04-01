@@ -1,11 +1,13 @@
 import os
 import shutil
 import datetime
+from xmlrpc.client import boolean
 
 from PySide2.QtWidgets import QWidget, QStyle, QAbstractItemView, QMessageBox, QLineEdit, QMenu, QAction, QFileDialog
-from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize, QEvent, QDir
+from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize, QEvent, QDir, QFile, QUrl
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
+from PySide2.QtXmlPatterns import QXmlQuery, QXmlSerializer
 from ui.Module import Ui_ModuleWindow
 from RegisterConst import RegisterConst
 from QSqlQueryBfTableModel import QSqlQueryBfTableModel
@@ -282,6 +284,32 @@ class uiModuleWindow(QWidget):
                 fileName = self.fileName
         return fileName
     
+    def importYodaSp1(self, fileName):
+        # create temp database
+        now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
+        newName = "__temp_module_%s.db"%now
+        shutil.copyfile("module_template.db", newName)
+        self.newFileName = newName
+        self.newModule = True  
+
+        # import .sp1 file
+        self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
+        if self.setupDesignViewModels(newName):
+            info0Id = self.newInfoRow(self.infoTableModel, now).value("id")                 # create info   row0
+            memMap0Id = self.newMemoryMapRow(self.memoryMaptableModel).value("id")          # create memmap row0
+            
+            sp1 = QFile(newName)
+            #query = QXmlQuery(sp1, QUrl.fromLocalFile(sp1.fileName()))
+            #serializer = QXmlSerializer(query, myOutputDevice);
+            #query.evaluateTo(serializer)
+
+            self.setupTreeView()
+            self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.bfQueryModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.bfEnumTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+        return True
+
     def setupDesignViewModels(self, fileName):  
         self.conn = QSqlDatabase.addDatabase("QSQLITE", fileName)
         self.conn.setDatabaseName(fileName)
@@ -629,7 +657,7 @@ class uiModuleWindow(QWidget):
                 regMapType = current.data(RegisterConst.RegMapTypeRole)
                 regMapType = RegisterConst.RegMap if regMapType == None or regMapType == '' else int(regMapType) # default as regmap if not set
                 self.ui.pbAddReg.setEnabled(regMapType == RegisterConst.RegMap)
-                
+
             elif tableName == "Register": # reg selected, show reg table
                 regMapId = int(current.data(RegisterConst.RegMapIdRole))
                 if self.ui.tableView.model() != self.regTableModel or regMapId != self.regTableModel.parentId:

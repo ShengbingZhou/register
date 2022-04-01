@@ -19,6 +19,9 @@ class RegisterConst:
     RegMap = 0
     RegMod = 1
 
+    # reg access value option
+    RegAccessValues = ['r', 'w', 'rw', 'rc', 'wc']
+
     # special role
     NameRole        = Qt.UserRole + 1
     MemoryMapIdRole = Qt.UserRole + 2
