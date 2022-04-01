@@ -1,11 +1,13 @@
 import os
 import shutil
 import datetime
+
 from PySide2.QtWidgets import QWidget, QStyle, QAbstractItemView, QMessageBox, QLineEdit, QMenu, QAction, QFileDialog
 from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize, QEvent, QDir, QFile, QUrl
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
 from PySide2.QtXmlPatterns import QXmlQuery, QXmlSerializer, QXmlResultItems
+from PySide2.QtXml import QDomDocument, QDomNodeList
 from ui.Module import Ui_ModuleWindow
 from RegisterConst import RegisterConst
 from QSqlQueryBfTableModel import QSqlQueryBfTableModel
@@ -148,21 +150,26 @@ class uiModuleWindow(QWidget):
 
         id = model.record(exactRow).value("id")
         r.setValue("id", id)
-        r.setValue("Name", "%s%s"%(newNamePrefix,id))
+        if newNamePrefix != None:
+            r.setValue("Name", "%s%s"%(newNamePrefix,id))
         r.setValue("DisplayOrder", order)
         model.setRecord(exactRow, r)
         r = model.record(exactRow)
         model.select()
         return r
     
-    def newRegMapRow(self, model, memoryMapId, row, type = RegisterConst.RegMap):
+    def newRegMapRow(self, model, memoryMapId, row, type = RegisterConst.RegMap, name = None):
         r = model.record()
         r.remove(r.indexOf('id'))
         r.setValue("MemoryMapId", memoryMapId)
         r.setValue("OffsetAddress", 0)
         r.setValue("Type", type)
-        namePrefix = "RegMap" if type == RegisterConst.RegMap else "RegMod"
-        r.setValue("Name", namePrefix)
+        if name == None:
+            namePrefix = "RegMap" if type == RegisterConst.RegMap else "RegMod"
+            r.setValue("Name", namePrefix)
+        else:
+            namePrefix = None
+            r.setValue("Name", name)
         r.setValue("DisplayOrder", -1)
         r = self.newRegMap_Reg_Bf_BfEnum_Row(row, r, namePrefix, model, "RegisterMap")
         return r
@@ -296,22 +303,15 @@ class uiModuleWindow(QWidget):
             info0Id = self.newInfoRow(self.infoTableModel, now).value("id")                 # create info   row0
             memMap0Id = self.newMemoryMapRow(self.memoryMaptableModel).value("id")          # create memmap row0
 
-            sp1 = QFile("lark_yoda.sp1")
+            sp1 = QFile(fileName)
             if sp1.open(QFile.ReadOnly):
-                query = QXmlQuery()
-                query.setFocus(sp1)
-                #query.setQuery("Module/MemoryMap/RegisterMaps/RegisterMap")
-                query.setQuery("Module")
-                result = QXmlResultItems()
-                query.evaluateTo(result)
-                while result.next() != None:
-                    i = result.current().toNodeModelIndex().stringValue()
-                    i = 0;
-                    #query.setQuery("./Name/text()")
-                    #query.evaluateTo(r)
-                    #query = QXmlQuery(sp1, QUrl.fromLocalFile(sp1.fileName()))
-                    #serializer = QXmlSerializer(query, myOutputDevice);
-                    #query.evaluateTo(serializer)
+                doc = QDomDocument()
+                doc.setContent(sp1)
+                regMap = doc.elementsByTagName("RegisterMap")
+                for i in range(regMap.count()):
+                    regMapName = regMap.at(i).namedItem("Name").toElement().text()
+                    regMapId = self.newRegMapRow(self.regMapTableModel, memMap0Id, -1, RegisterConst.RegMap, regMapName).value("id")
+                sp1.close()
 
             self.setupTreeView()
             self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
