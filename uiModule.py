@@ -25,9 +25,9 @@ class uiModuleWindow(QWidget):
         self.ui.treeView.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.ui.treeView.installEventFilter(self)
         self.ui.tableView.setAlternatingRowColors(True)
-        with open ('style.qss') as file:
-            str = file.read()
-        self.setStyleSheet(str)
+        with open (RegisterConst.StyleFile) as file:
+            style = file.read()
+        self.setStyleSheet(style)
 
         self.tableDesignViewBfQuerySql = "SELECT A.id, B.RegisterId, A.DisplayOrder, A.Name, A.Access, A.DefaultValue, A.Description, " \
                                          "A.Width, B.RegisterOffset, B.BitfieldOffset, B.SliceWidth, A.Exist, A.Notes " \
@@ -155,14 +155,16 @@ class uiModuleWindow(QWidget):
         model.select()
         return r
     
-    def newRegMapRow(self, model, memoryMapId, row):
+    def newRegMapRow(self, model, memoryMapId, row, type = RegisterConst.RegMap):
         r = model.record()
         r.remove(r.indexOf('id'))
         r.setValue("MemoryMapId", memoryMapId)
-        r.setValue("OffsetAddress", 0)        
-        r.setValue("Name", "RegMap")
+        r.setValue("OffsetAddress", 0)
+        r.setValue("Type", type)
+        namePrefix = "RegMap" if type == RegisterConst.RegMap else "RegMod"
+        r.setValue("Name", namePrefix)
         r.setValue("DisplayOrder", -1)
-        r = self.newRegMap_Reg_Bf_BfEnum_Row(row, r, "RegMap", model, "RegisterMap")
+        r = self.newRegMap_Reg_Bf_BfEnum_Row(row, r, namePrefix, model, "RegisterMap")
         return r
 
     def newRegRow(self, model, regMapId, OffsetAddress, Width, row):
@@ -353,13 +355,14 @@ class uiModuleWindow(QWidget):
             
             # register map
             regMapQueryModel = QSqlQueryModel()
-            regMapQueryModel.setQuery("SELECT id, Name FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memoryMapRecord.value("id"), self.conn)
+            regMapQueryModel.setQuery("SELECT id, Name, Type FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memoryMapRecord.value("id"), self.conn)
             for i in range(regMapQueryModel.rowCount()):
                 regMapRecord = regMapQueryModel.record(i)
                 regMapitem = QStandardItem(self.regMapIcon, regMapRecord.value("name"))
                 regMapitem.setData("RegisterMap", RegisterConst.NameRole)
                 regMapitem.setData(memoryMapRecord.value("id"), RegisterConst.MemoryMapIdRole)
                 regMapitem.setData(regMapRecord.value("id"), RegisterConst.RegMapIdRole)
+                regMapitem.setData(regMapRecord.value("Type"), RegisterConst.RegMapTypeRole)
                 self.memoryMapItem.appendRow(regMapitem)
                 if RegisterConst.recordExist(regMapRecord) == False:
                     regMapitem.setData(QColor('grey'), Qt.BackgroundColorRole)
@@ -498,6 +501,7 @@ class uiModuleWindow(QWidget):
         
         self.treeViewPopMenu = QMenu(self)
         addRegMapAction = QAction("+ RegMap", self)
+        addRegModAction = QAction("+ RegMod", self)
         addRegAction = QAction("+ Reg", self)
         addBfAction = QAction("+ Bitfield", self)
         addBfEnumAction = QAction("+ Bitfield Enum", self)
@@ -505,36 +509,34 @@ class uiModuleWindow(QWidget):
         if tableName == "MemoryMap":
             self.treeViewPopMenu.addAction(addRegMapAction)
             addRegMapAction.triggered.connect(self.on_pbAddRegMap_clicked)
+            self.treeViewPopMenu.addAction(addRegModAction)
+            addRegModAction.triggered.connect(self.do_pbAddRegMod_clicked)
         elif tableName == "RegisterMap":
-            self.treeViewPopMenu.addAction(addRegMapAction)
-            addRegMapAction.triggered.connect(self.on_pbAddRegMap_clicked)
-            self.treeViewPopMenu.addAction(addRegAction)
-            addRegAction.triggered.connect(self.on_pbAddReg_clicked)
+            regMapType = index.data(RegisterConst.RegMapTypeRole)
+            regMapType = RegisterConst.RegMap if regMapType == None or regMapType == '' else int(regMapType) # default as regmap if not set
+            if regMapType == RegisterConst.RegMap:
+                self.treeViewPopMenu.addAction(addRegAction)
+                addRegAction.triggered.connect(self.on_pbAddReg_clicked)
         elif tableName == "Register":
-            self.treeViewPopMenu.addAction(addRegMapAction)
-            addRegMapAction.triggered.connect(self.on_pbAddRegMap_clicked)
-            self.treeViewPopMenu.addAction(addRegAction)
-            addRegAction.triggered.connect(self.on_pbAddReg_clicked)
             self.treeViewPopMenu.addAction(addBfAction)
             addBfAction.triggered.connect(self.on_pbAddBf_clicked)
         elif tableName == "Bitfield":
-            self.treeViewPopMenu.addAction(addRegMapAction)
-            addRegMapAction.triggered.connect(self.on_pbAddRegMap_clicked)
-            self.treeViewPopMenu.addAction(addRegAction)
-            addRegAction.triggered.connect(self.on_pbAddReg_clicked)
-            self.treeViewPopMenu.addAction(addBfAction)
-            addBfAction.triggered.connect(self.on_pbAddBf_clicked)
             self.treeViewPopMenu.addAction(addBfEnumAction)
             addBfEnumAction.triggered.connect(self.on_pbAddBfEnum_clicked)
-        elif tableName == "BitfieldEnum":
-            self.treeViewPopMenu.addAction(addRegMapAction)
-            addRegMapAction.triggered.connect(self.on_pbAddRegMap_clicked)
-            self.treeViewPopMenu.addAction(addRegAction)
-            addRegAction.triggered.connect(self.on_pbAddReg_clicked)
-            self.treeViewPopMenu.addAction(addBfAction)
-            addBfAction.triggered.connect(self.on_pbAddBf_clicked)
-            self.treeViewPopMenu.addAction(addBfEnumAction)
-            addBfEnumAction.triggered.connect(self.on_pbAddBfEnum_clicked)
+
+        # do not allow to add anything if bitfield is selected to make usage simple
+        # elif tableName == "BitfieldEnum":
+        #    self.treeViewPopMenu.addAction(addRegMapAction)
+        #    addRegMapAction.triggered.connect(self.on_pbAddRegMap_clicked)
+        #    self.treeViewPopMenu.addAction(addRegModAction)
+        #    addRegModAction.triggered.connect(self.do_pbAddRegMod_clicked)
+        #    self.treeViewPopMenu.addAction(addRegAction)
+        #    addRegAction.triggered.connect(self.on_pbAddReg_clicked)
+        #    self.treeViewPopMenu.addAction(addBfAction)
+        #    addBfAction.triggered.connect(self.on_pbAddBf_clicked)
+        #    self.treeViewPopMenu.addAction(addBfEnumAction)
+        #    addBfEnumAction.triggered.connect(self.on_pbAddBfEnum_clicked)
+        ###
         self.treeViewPopMenu.addSeparator()
         delAction = QAction("Delete", self)
         self.treeViewPopMenu.addAction(delAction)
@@ -620,11 +622,13 @@ class uiModuleWindow(QWidget):
                     self.ui.tableView.hideColumn(2) # order
                     self.ui.tableView.resizeColumnsToContents()
                     self.ui.pbAddRegMap.setEnabled(False)
-                    self.ui.pbAddReg.setEnabled(True)
                     self.ui.pbAddBf.setEnabled(False)
                     self.ui.pbAddBfEnum.setEnabled(False)
                     self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new register map, " \
                                                      "or <font color=\"red\">%s</font> to add register."%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text()))
+                regMapType = current.data(RegisterConst.RegMapTypeRole)
+                regMapType = RegisterConst.RegMap if regMapType == None or regMapType == '' else int(regMapType) # default as regmap if not set
+                self.ui.pbAddReg.setEnabled(regMapType == RegisterConst.RegMap)
                 
             elif tableName == "Register": # reg selected, show reg table
                 regMapId = int(current.data(RegisterConst.RegMapIdRole))
@@ -724,10 +728,10 @@ class uiModuleWindow(QWidget):
                     self.ui.tableView.hideColumn(1) # bfid
                     self.ui.tableView.hideColumn(2) # order
                     self.ui.tableView.resizeColumnsToContents()
-                    self.ui.pbAddRegMap.setEnabled(True)
-                    self.ui.pbAddReg.setEnabled(True)
-                    self.ui.pbAddBf.setEnabled(True)
-                    self.ui.pbAddBfEnum.setEnabled(True)
+                    self.ui.pbAddRegMap.setEnabled(False)
+                    self.ui.pbAddReg.setEnabled(False)
+                    self.ui.pbAddBf.setEnabled(False)
+                    self.ui.pbAddBfEnum.setEnabled(False)
                     self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new bitfield enum. "%self.ui.pbAddBfEnum.text())
 
             # select tableView row
@@ -763,6 +767,42 @@ class uiModuleWindow(QWidget):
         newRegMapItem.setData("RegisterMap", RegisterConst.NameRole)
         newRegMapItem.setData(memoryMapId, RegisterConst.MemoryMapIdRole)
         newRegMapItem.setData(r.value("id"), RegisterConst.RegMapIdRole)
+        newRegMapItem.setData(RegisterConst.RegMap, RegisterConst.RegMapTypeRole)
+        
+        standardItem = self.treeViewTableModel.itemFromIndex(current)
+        if tableName == "MemoryMap":
+            standardItem.appendRow(newRegMapItem)
+        elif tableName == "RegisterMap":
+            if (current.row() + 1) == standardItem.parent().rowCount(): # current is last one
+                standardItem.parent().appendRow(newRegMapItem)
+                item = standardItem.parent().child(current.row() + 1)
+                self.ui.treeView.selectionModel().setCurrentIndex(item.index(), QItemSelectionModel.ClearAndSelect)
+            else:
+                standardItem.parent().insertRows(current.row() + 1, 1)
+                standardItem.parent().setChild(current.row() + 1, newRegMapItem)
+                item = standardItem.parent().child(current.row() + 1)
+                self.ui.treeView.selectionModel().setCurrentIndex(item.index(), QItemSelectionModel.ClearAndSelect)
+        elif tableName == "Register":
+            standardItem.parent().parent().appendRow(newRegMapItem)
+        elif tableName == "Bitfield":
+            standardItem.parent().parent().parent().appendRow(newRegMapItem)
+        elif tableName == "BitfieldEnum":
+            standardItem.parent().parent().parent().parent().appendRow(newRegMapItem)        
+        return
+
+    @Slot()
+    def do_pbAddRegMod_clicked(self):
+        current = self.ui.treeView.selectedIndexes().pop()
+        tableName = str(current.data(RegisterConst.NameRole))
+        memoryMapId = int(current.data(RegisterConst.MemoryMapIdRole))
+        newRegMapRowIndex = -1 if tableName != "RegisterMap" else current.row() + 1
+        r = self.newRegMapRow(self.regMapTableModel, memoryMapId, newRegMapRowIndex, RegisterConst.RegMod)
+        
+        newRegMapItem = QStandardItem(self.regMapIcon, r.value("name"))
+        newRegMapItem.setData("RegisterMap", RegisterConst.NameRole)
+        newRegMapItem.setData(memoryMapId, RegisterConst.MemoryMapIdRole)
+        newRegMapItem.setData(r.value("id"), RegisterConst.RegMapIdRole)
+        newRegMapItem.setData(RegisterConst.RegMod, RegisterConst.RegMapTypeRole)
         
         standardItem = self.treeViewTableModel.itemFromIndex(current)
         if tableName == "MemoryMap":

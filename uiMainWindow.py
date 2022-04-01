@@ -26,9 +26,9 @@ class uiMainWindow(QMainWindow):
         centerPoint = QDesktopWidget().availableGeometry().center()
         rect.moveCenter(centerPoint)
         self.move(rect.topLeft())
-        with open ('style.qss') as file:
-            str = file.read()
-        self.setStyleSheet(str)
+        with open (RegisterConst.StyleFile) as file:
+            style = file.read()
+        self.setStyleSheet(style)
         
         # TODO: add icon for action items?
         #self.ui.actionNew.setIcon(QIcon("icon/new32.png"))
