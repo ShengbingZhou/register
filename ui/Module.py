@@ -17,7 +17,7 @@ class Ui_ModuleWindow(object):
     def setupUi(self, ModuleWindow):
         if not ModuleWindow.objectName():
             ModuleWindow.setObjectName(u"ModuleWindow")
-        ModuleWindow.resize(1331, 819)
+        ModuleWindow.resize(1446, 876)
         self.gridLayout = QGridLayout(ModuleWindow)
         self.gridLayout.setObjectName(u"gridLayout")
         self.splitter = QSplitter(ModuleWindow)
@@ -133,6 +133,10 @@ class Ui_ModuleWindow(object):
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.labelDescription.sizePolicy().hasHeightForWidth())
         self.labelDescription.setSizePolicy(sizePolicy3)
+        self.labelDescription.setMinimumSize(QSize(0, 60))
+        font = QFont()
+        font.setPointSize(9)
+        self.labelDescription.setFont(font)
 
         self.gridDebugLayout.addWidget(self.labelDescription, 2, 0, 1, 5)
 

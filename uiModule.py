@@ -284,6 +284,12 @@ class uiModuleWindow(QWidget):
         self.conn = QSqlDatabase.addDatabase("QSQLITE", fileName)
         self.conn.setDatabaseName(fileName)
         if self.conn.open():
+            # enable FK
+            query = QSqlQuery(self.conn)
+            query.prepare("PRAGMA foreign_keys = ON")
+            query.exec_()
+
+            # setup table models
             self.infoTableModel = QSqlTableModel(self, self.conn)
             self.infoTableModel.setEditStrategy(QSqlTableModel.OnFieldChange) 
             self.infoTableModel.setTable("info")
@@ -660,34 +666,50 @@ class uiModuleWindow(QWidget):
 
                 regQ = QSqlQuery("SELECT Width FROM Register WHERE id=%s"%(regId), self.conn)
                 text = ""
-                while regQ.next():
+                fontSize = 22
+                while regQ.next(): # only 1 item
                     regW = regQ.value(0)
                     regB = regW - 1
-                    text = "Tips: (bit%s)-"%(regW - 1)
+                    text = "Tips: "
                     bfRefQ = QSqlQuery("SELECT * FROM BitfieldRef WHERE RegisterId=%s ORDER BY RegisterOffset DESC"%(regId), self.conn)
                     while bfRefQ.next():
                         regOff = bfRefQ.value("RegisterOffset")
                         bfOff = bfRefQ.value("BitfieldOffset")
                         sliceW = bfRefQ.value("SliceWidth")
                         _bfId = bfRefQ.value("BitfieldId")
-     
+    
+                        # unused bits before bitfield 
                         if sliceW > 0 and regB > (regOff + sliceW - 1):
+                            text += "<span style='font-size:%spx'>"%fontSize
                             for i in range(regOff + sliceW, regB + 1):
-                                text = text + "0"
-                                regB = regB - 1
+                                text += "%s "%(regB)
+                                regB -= 1
                                 if regB < 0:
                                     break
-                            text = text + "-"
+                            text += " - </span>"
 
+                        # bitfield bits
                         if sliceW > 0 and regB >= 0:
-                            text = text + "<span style='text-decoration:underline'><font color='red'>" if _bfId == bfId else text + "<span style='text-decoration:underline'><font>"
+                            text += "<span style='text-decoration:underline;font-size:%spx"%fontSize
+                            text += ";color:Red'>" if _bfId == bfId else "'>"
                             for j in range(regOff, regOff + sliceW):
-                                text = text + "0"
-                                regB = regB - 1
+                                text += "%s "%(regB)
+                                regB -= 1
                                 if regB < 0:
                                     break
-                            text = text + "</font></span>-" if _bfId == bfId else text + "</font></span>-"
-                    text = text + "(bit0)"
+                            text += "</span>"
+                            if regB >= 0:
+                                text += "<span style='font-size:%spx'> - </span>"%fontSize
+
+                    # left unsed bits
+                    if regB >= 0:
+                        text += "<span style='font-size:%spx'>"%fontSize
+                        for k in range(0, regB + 1):
+                            text += "%s "%(regB)
+                            regB -= 1
+                        text += "</span>"
+                    
+                    text += " "
                 self.ui.labelDescription.setText(text)
                 
             elif tableName == "BitfieldEnum": # bfenum selected, show bfenum table
