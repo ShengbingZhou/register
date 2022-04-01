@@ -300,17 +300,89 @@ class uiModuleWindow(QWidget):
         # import .sp1 file
         self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
         if self.setupDesignViewModels(newName):
-            info0Id = self.newInfoRow(self.infoTableModel, now).value("id")                 # create info   row0
-            memMap0Id = self.newMemoryMapRow(self.memoryMaptableModel).value("id")          # create memmap row0
+            infoId = self.newInfoRow(self.infoTableModel, now).value("id")
+            memMapId = self.newMemoryMapRow(self.memoryMaptableModel).value("id")
 
             sp1 = QFile(fileName)
-            if sp1.open(QFile.ReadOnly):
+            if sp1.open(QFile.ReadOnly):                
+                r = self.regMapTableModel.record()
+                regMapNameCol = r.indexOf("Name")
+                regMapDescriptionCol = r.indexOf("Description")
+            
+                r = self.regTableModel.record()
+                regNameCol = r.indexOf("Name")
+                regDescriptionCol = r.indexOf("Description")
+                
+                r = self.bfRefTableModel.record()
+                bfRefRegisterOffsetCol = r.indexOf("RegisterOffset")
+                bfRefBitfieldOffsetCol = r.indexOf("BitfieldOffset") 
+                bfRefSliceWidthCol = r.indexOf("SliceWidth")
+                
+                r = self.bfTableModel.record()
+                bfNameCol = r.indexOf("Name")
+                bfDescriptionCol = r.indexOf("Description")                   
+                bfWidthCol = r.indexOf("Width")
+
+                regMapRow = 0
+                regRow = 0
+                bfRow = 0
+                
                 doc = QDomDocument()
                 doc.setContent(sp1)
-                regMap = doc.elementsByTagName("RegisterMap")
-                for i in range(regMap.count()):
-                    regMapName = regMap.at(i).namedItem("Name").toElement().text()
-                    regMapId = self.newRegMapRow(self.regMapTableModel, memMap0Id, -1, RegisterConst.RegMap, regMapName).value("id")
+                memMapNodes = doc.elementsByTagName("MemoryMap")
+                if memMapNodes.count() == 0:
+                    QMessageBox.warning(self, "Error", "Unable to find memory map", QMessageBox.Yes)
+                    return False
+                
+                bfNodes = memMapNodes.at(0).namedItem("BitFields").childNodes()
+                regMapNodes = memMapNodes.at(0).namedItem("RegisterMaps").childNodes()
+                for i in range(regMapNodes.count()):
+                    regMapNode = regMapNodes.at(i)
+                    regMap = self.newRegMapRow(self.regMapTableModel, memMapId, -1, RegisterConst.RegMap)
+                    regMapId = regMap.value("id")
+                    self.regMapTableModel.setData(self.regMapTableModel.createIndex(regMapRow, regMapNameCol),        regMapNode.namedItem("Name").toElement().text())
+                    self.regMapTableModel.setData(self.regMapTableModel.createIndex(regMapRow, regMapDescriptionCol), regMapNode.namedItem("Description").toElement().text())                    
+                    regMapRow += 1
+                    
+                    regNodes = regMapNode.namedItem("Registers").childNodes()
+                    for j in range(regNodes.count()):
+                        regNode = regNodes.at(j)
+                        reg = self.newRegRow(self.regTableModel, regMapId, 0, 8, -1)
+                        regId = reg.value("id")
+                        self.regTableModel.setData(self.regTableModel.createIndex(regRow, regNameCol),        regNode.namedItem("Name").toElement().text())
+                        self.regTableModel.setData(self.regTableModel.createIndex(regRow, regDescriptionCol), regNode.namedItem("Description").toElement().text())
+                        regRow += 1
+                    
+                        bfRefNodes = regNode.namedItem("BitFieldRefs").childNodes()
+                        for k in range(bfRefNodes.count()):
+                            bfRefNode = bfRefNodes.at(k)
+                            
+                            bf = None
+                            bfUID = bfRefNode.namedItem("BF-UID").toElement().text()
+                            for m in range(bfNodes.count()):
+                                bfNode = bfNodes.at(m)
+                                uid = bfNode.namedItem("UID").toElement().text()
+                                if uid == bfUID:                                                                
+                                    bf = self.newBfRow(self.bfTableModel, self.bfRefTableModel, regId, memMapId, 8, -1)
+                                    bfId = bf.value("id")
+                                    bfWidth = bfNode.namedItem("Width").toElement().text().lower().replace("'h", "0x").replace("'d", "")
+                                    self.bfTableModel.setData(self.bfTableModel.createIndex(bfRow, bfNameCol),        bfNode.namedItem("Name").toElement().text())                            
+                                    self.bfTableModel.setData(self.bfTableModel.createIndex(bfRow, bfDescriptionCol), bfNode.namedItem("Description").toElement().text())
+                                    self.bfTableModel.setData(self.bfTableModel.createIndex(bfRow, bfWidthCol), bfWidth)                                    
+                                    break
+                            if bf == None:
+                                bf = self.newBfRow(self.bfTableModel, self.bfRefTableModel, regId, memMapId, 8, -1)
+                                bfId = bf.value("id")
+                                self.bfTableModel.setData(self.bfTableModel.createIndex(bfRow, bfNameCol),        bfRefNode.namedItem("BF-UID").toElement().text())                            
+                                self.bfTableModel.setData(self.bfTableModel.createIndex(bfRow, bfDescriptionCol), bfRefNode.namedItem("UID").toElement().text())                                
+                            RegOffset = bfRefNode.namedItem("RegOffset").toElement().text().lower().replace("'h", "0x").replace("'d", "")
+                            BitOffset = bfRefNode.namedItem("BitOffset").toElement().text().lower().replace("'h", "0x").replace("'d", "")
+                            SliceWidth = bfRefNode.namedItem("SliceWidth").toElement().text().lower().replace("'h", "0x").replace("'d", "")
+                            self.bfRefTableModel.setData(self.bfRefTableModel.createIndex(bfRow, bfRefRegisterOffsetCol), RegOffset)
+                            self.bfRefTableModel.setData(self.bfRefTableModel.createIndex(bfRow, bfRefBitfieldOffsetCol), BitOffset)         
+                            self.bfRefTableModel.setData(self.bfRefTableModel.createIndex(bfRow, bfRefSliceWidthCol),     SliceWidth)  
+                            bfRow += 1
+                            
                 sp1.close()
 
             self.setupTreeView()
