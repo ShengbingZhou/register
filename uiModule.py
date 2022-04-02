@@ -2,7 +2,7 @@ import os
 import shutil
 import datetime
 
-from PySide2.QtWidgets import QWidget, QStyle, QAbstractItemView, QMessageBox, QLineEdit, QMenu, QAction, QFileDialog
+from PySide2.QtWidgets import QWidget, QAbstractItemView, QMessageBox, QMenu, QAction, QFileDialog, QProgressDialog
 from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize, QEvent, QDir, QFile, QUrl
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
@@ -12,7 +12,7 @@ from ui.Module import Ui_ModuleWindow
 from RegisterConst import RegisterConst
 from QSqlQueryBfTableModel import QSqlQueryBfTableModel
 from QSqlHighlightTableModel import QSqlHighlightTableModel
-from QRegDebugTableModel import QRegDebugTableModel, QRegDebugValueEditDelegate
+from QRegDebugTableModel import QRegDebugTableModel
 
 class uiModuleWindow(QWidget):
     
@@ -312,6 +312,7 @@ class uiModuleWindow(QWidget):
                 r = self.regTableModel.record()
                 regNameCol = r.indexOf("Name")
                 regDescriptionCol = r.indexOf("Description")
+                regWidthCol = r.indexOf("Width")
                 
                 r = self.bfRefTableModel.record()
                 bfRefRegisterOffsetCol = r.indexOf("RegisterOffset")
@@ -332,25 +333,36 @@ class uiModuleWindow(QWidget):
                 memMapNodes = doc.elementsByTagName("MemoryMap")
                 if memMapNodes.count() == 0:
                     QMessageBox.warning(self, "Error", "Unable to find memory map", QMessageBox.Yes)
+                    if os.path.isfile(self.newFileName):
+                        os.remove(self.newFileName)
                     return False
                 
-                bfNodes = memMapNodes.at(0).namedItem("BitFields").childNodes()
+                dlgProgress = QProgressDialog("Importing %s ..."%fileName, "Cancel", 0, memMapNodes.count(), self)
+                dlgProgress.setWindowTitle("Importing...")
+                dlgProgress.setWindowModality(Qt.WindowModal)
+                bfNodes = memMapNodes.at(0).namedItem("BitFields").childNodes() # only 1 memory map node in yoda file
                 regMapNodes = memMapNodes.at(0).namedItem("RegisterMaps").childNodes()
                 for i in range(regMapNodes.count()):
+                    if i == 0:
+                        continue # 0 is RegisterMaps Node UID
                     regMapNode = regMapNodes.at(i)
                     regMap = self.newRegMapRow(self.regMapTableModel, memMapId, -1, RegisterConst.RegMap)
                     regMapId = regMap.value("id")
                     self.regMapTableModel.setData(self.regMapTableModel.createIndex(regMapRow, regMapNameCol),        regMapNode.namedItem("Name").toElement().text())
-                    self.regMapTableModel.setData(self.regMapTableModel.createIndex(regMapRow, regMapDescriptionCol), regMapNode.namedItem("Description").toElement().text())                    
+                    self.regMapTableModel.setData(self.regMapTableModel.createIndex(regMapRow, regMapDescriptionCol), regMapNode.namedItem("Description").toElement().text())            
                     regMapRow += 1
-                    
+                    dlgProgress.setLabelText("Importing map nodes %s:%s from %s "%(i, regMapNode.namedItem("Name").toElement().text(), fileName))
+                    dlgProgress.setValue(i)
+
                     regNodes = regMapNode.namedItem("Registers").childNodes()
                     for j in range(regNodes.count()):
                         regNode = regNodes.at(j)
                         reg = self.newRegRow(self.regTableModel, regMapId, 0, 8, -1)
                         regId = reg.value("id")
+                        regWidth = regNode.namedItem("Width").toElement().text().lower().replace("'h", "0x").replace("'d", "")
                         self.regTableModel.setData(self.regTableModel.createIndex(regRow, regNameCol),        regNode.namedItem("Name").toElement().text())
                         self.regTableModel.setData(self.regTableModel.createIndex(regRow, regDescriptionCol), regNode.namedItem("Description").toElement().text())
+                        self.regTableModel.setData(self.regTableModel.createIndex(regRow, regWidthCol),       regWidth)
                         regRow += 1
                     
                         bfRefNodes = regNode.namedItem("BitFieldRefs").childNodes()
@@ -360,6 +372,8 @@ class uiModuleWindow(QWidget):
                             bf = None
                             bfUID = bfRefNode.namedItem("BF-UID").toElement().text()
                             for m in range(bfNodes.count()):
+                                if m == 0:
+                                    continue # 0 is BitFields UID
                                 bfNode = bfNodes.at(m)
                                 uid = bfNode.namedItem("UID").toElement().text()
                                 if uid == bfUID:                                                                
@@ -382,7 +396,7 @@ class uiModuleWindow(QWidget):
                             self.bfRefTableModel.setData(self.bfRefTableModel.createIndex(bfRow, bfRefBitfieldOffsetCol), BitOffset)         
                             self.bfRefTableModel.setData(self.bfRefTableModel.createIndex(bfRow, bfRefSliceWidthCol),     SliceWidth)  
                             bfRow += 1
-                            
+                dlgProgress.close()
                 sp1.close()
 
             self.setupTreeView()
@@ -721,7 +735,7 @@ class uiModuleWindow(QWidget):
                     self.ui.pbAddReg.setEnabled(False)
                     self.ui.pbAddBf.setEnabled(False)
                     self.ui.pbAddBfEnum.setEnabled(False)
-                    self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new register map. "%self.ui.pbAddRegMap.text())
+                    self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add new register map.</br></br>"%self.ui.pbAddRegMap.text())
                 
             elif tableName == "RegisterMap": # regmap or reg selected, show regmap table
                 if self.ui.tableView.model() != self.regMapTableModel:
@@ -734,8 +748,8 @@ class uiModuleWindow(QWidget):
                     self.ui.pbAddRegMap.setEnabled(False)
                     self.ui.pbAddBf.setEnabled(False)
                     self.ui.pbAddBfEnum.setEnabled(False)
-                    self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new register map, " \
-                                                     "or <font color=\"red\">%s</font> to add register."%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text()))
+                    self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add new register map, " \
+                                                     "or <font color=\"red\">%s</font> to add register.</br></br>"%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text()))
                 regMapType = current.data(RegisterConst.RegMapTypeRole)
                 regMapType = RegisterConst.RegMap if regMapType == None or regMapType == '' else int(regMapType) # default as regmap if not set
                 self.ui.pbAddReg.setEnabled(regMapType == RegisterConst.RegMap)
@@ -756,10 +770,10 @@ class uiModuleWindow(QWidget):
                     self.ui.pbAddReg.setEnabled(False)
                     self.ui.pbAddBf.setEnabled(True)
                     self.ui.pbAddBfEnum.setEnabled(False)
-                    self.ui.labelDescription.setText("Tips: Click "\
+                    self.ui.labelDescription.setText("Tips: <br><br>Click "\
                                                      "<font color=\"red\">%s</font> to add new register map, or " \
                                                      "<font color=\"red\">%s</font> to add register, or " \
-                                                     "<font color=\"red\">%s</font> to add bitfield"%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text(), self.ui.pbAddBf.text()))
+                                                     "<font color=\"red\">%s</font> to add bitfield</br></br>"%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text(), self.ui.pbAddBf.text()))
                 
             elif tableName == "Bitfield": # bf selected, show bf table
                 regId = int(current.data(RegisterConst.RegIdRole))
@@ -780,11 +794,11 @@ class uiModuleWindow(QWidget):
 
                 regQ = QSqlQuery("SELECT Width FROM Register WHERE id=%s"%(regId), self.conn)
                 text = ""
-                fontSize = 22
+                fontSize = 14
                 while regQ.next(): # only 1 item
                     regW = regQ.value(0)
                     regB = regW - 1
-                    text = "Tips: "
+                    text = "Tips: <pre>"
                     bfRefQ = QSqlQuery("SELECT * FROM BitfieldRef WHERE RegisterId=%s ORDER BY RegisterOffset DESC"%(regId), self.conn)
                     while bfRefQ.next():
                         regOff = bfRefQ.value("RegisterOffset")
@@ -796,34 +810,42 @@ class uiModuleWindow(QWidget):
                         if sliceW > 0 and regB > (regOff + sliceW - 1):
                             text += "<span style='font-size:%spx'>"%fontSize
                             for i in range(regOff + sliceW, regB + 1):
-                                text += "%s "%(regB)
+                                # '0 '
+                                # '16 '
+                                if regB > (regOff + sliceW):
+                                    text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
+                                else:
+                                    text += "%s"%(regB) if (regW < 10 or regB > 9) else "0%s"%(regB)
                                 regB -= 1
                                 if regB < 0:
                                     break
-                            text += " - </span>"
+                            text += "-</span>"
 
                         # bitfield bits
                         if sliceW > 0 and regB >= 0:
                             text += "<span style='text-decoration:underline;font-size:%spx"%fontSize
                             text += ";color:Red'>" if _bfId == bfId else "'>"
                             for j in range(regOff, regOff + sliceW):
-                                text += "%s "%(regB)
+                                if j < (regOff + sliceW - 1):
+                                    text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
+                                else:
+                                    text += "%s"%(regB) if (regW < 10 or regB > 9) else "0%s"%(regB)
                                 regB -= 1
                                 if regB < 0:
                                     break
                             text += "</span>"
                             if regB >= 0:
-                                text += "<span style='font-size:%spx'> - </span>"%fontSize
+                                text += "<span style='font-size:%spx'>-</span>"%fontSize
 
                     # left unsed bits
                     if regB >= 0:
                         text += "<span style='font-size:%spx'>"%fontSize
                         for k in range(0, regB + 1):
-                            text += "%s "%(regB)
+                            text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
                             regB -= 1
                         text += "</span>"
                     
-                    text += " "
+                    text += "</pre>"
                 self.ui.labelDescription.setText(text)
                 
             elif tableName == "BitfieldEnum": # bfenum selected, show bfenum table
@@ -842,7 +864,7 @@ class uiModuleWindow(QWidget):
                     self.ui.pbAddReg.setEnabled(False)
                     self.ui.pbAddBf.setEnabled(False)
                     self.ui.pbAddBfEnum.setEnabled(False)
-                    self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new bitfield enum. "%self.ui.pbAddBfEnum.text())
+                    self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add new bitfield enum.</br></br>"%self.ui.pbAddBfEnum.text())
 
             # select tableView row
             self.__treeViewCurrentRow = current.row()
