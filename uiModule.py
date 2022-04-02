@@ -3,7 +3,7 @@ import shutil
 import datetime
 
 from PySide2.QtWidgets import QWidget, QAbstractItemView, QMessageBox, QMenu, QAction, QFileDialog, QProgressDialog
-from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize, QEvent, QDir, QFile, QUrl
+from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize, QEvent, QDir, QFile, QUrl, QDir
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
 from PySide2.QtXmlPatterns import QXmlQuery, QXmlSerializer, QXmlResultItems
@@ -231,9 +231,10 @@ class uiModuleWindow(QWidget):
         # create temp database
         now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
         newName = "__%s%s"%(now, RegisterConst.DesignFileExt)
-        shutil.copyfile("module_template.db", newName)
+        newName = QDir.homePath() + "/.reg/" + newName        
+        shutil.copyfile("template/module_template.db", newName)
         self.newFileName = newName
-        self.newModule = True     
+        self.newModule = True
         
         # open new database
         self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
@@ -257,6 +258,7 @@ class uiModuleWindow(QWidget):
         # create temp database
         now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
         newName = "__%s%s"%(now, RegisterConst.DesignFileExt)
+        newName = QDir.homePath() + "/.reg/" + newName  
         shutil.copyfile(fileName, newName)
         self.newFileName = newName
         self.fileName = fileName
@@ -301,7 +303,7 @@ class uiModuleWindow(QWidget):
         # create temp database
         now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
         newName = "__%s%s"%(now, RegisterConst.DesignFileExt)
-        shutil.copyfile("module_template.db", newName)
+        shutil.copyfile("template/module_template.db", newName)
         self.newFileName = newName
         self.newModule = True  
 

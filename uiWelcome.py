@@ -1,8 +1,9 @@
 import os
 import datetime
+import shutil
 
 from PySide2.QtWidgets import QWidget, QAbstractItemView, QMessageBox
-from PySide2.QtCore import Qt, Slot
+from PySide2.QtCore import Qt, Slot, QDir
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel
 from ui.Welcome import Ui_WelcomeWindow
@@ -24,7 +25,15 @@ class uiWelcomeWindow(QWidget):
     def updateRecentFiles(self, fileName):
         now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
         self.conn = QSqlDatabase.addDatabase("QSQLITE", "%srecent_files.db"%now)
-        self.conn.setDatabaseName("recent_files.db")
+        rf = QDir.homePath() + "/.reg/recent_files.db"
+        if os.path.isfile(rf):
+            self.conn.setDatabaseName(rf)
+        else:
+            dir = QDir.homePath() + "/.reg"
+            if not os.path.exists(dir):            
+                os.mkdir(dir)
+            shutil.copyfile("template/recent_files.db", rf)
+            self.conn.setDatabaseName(rf)
         if self.conn.open():
             recentFilesTableModel = QSqlTableModel(self, self.conn)
             recentFilesTableModel.setEditStrategy(QSqlTableModel.OnManualSubmit )
