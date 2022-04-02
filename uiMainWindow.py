@@ -105,7 +105,7 @@ class uiMainWindow(QMainWindow):
     
     @Slot()
     def on_actionImportYoda_triggered(self):
-        fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open Yoda (.sp1) file", QDir.homePath(), "Register File (*)")
+        fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open Yoda (.sp1) file", QDir.homePath(), "Register File (*.sp1)")
         if fileName != '':
             self.importYodaSp1File(fileName)
         return

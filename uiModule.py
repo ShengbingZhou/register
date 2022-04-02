@@ -8,6 +8,7 @@ from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
 from PySide2.QtXmlPatterns import QXmlQuery, QXmlSerializer, QXmlResultItems
 from PySide2.QtXml import QDomDocument, QDomNodeList
+from xml.etree import ElementTree
 from ui.Module import Ui_ModuleWindow
 from RegisterConst import RegisterConst
 from QSqlQueryBfTableModel import QSqlQueryBfTableModel
@@ -301,110 +302,97 @@ class uiModuleWindow(QWidget):
         self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
         if self.setupDesignViewModels(newName):
             infoId = self.newInfoRow(self.infoTableModel, now).value("id")
-            memMapId = self.newMemoryMapRow(self.memoryMaptableModel).value("id")
 
-            sp1 = QFile(fileName)
-            if sp1.open(QFile.ReadOnly):                
-                r = self.regMapTableModel.record()
-                regMapNameCol = r.indexOf("Name")
-                regMapDescriptionCol = r.indexOf("Description")
-                regMapAddrCol = r.indexOf("OffsetAddress")
-            
-                r = self.regTableModel.record()
-                regNameCol = r.indexOf("Name")
-                regDescriptionCol = r.indexOf("Description")
-                regWidthCol = r.indexOf("Width")
-                regAddrCol = r.indexOf("OffsetAddress")
-                
-                r = self.bfRefTableModel.record()
-                bfRefRegisterOffsetCol = r.indexOf("RegisterOffset")
-                bfRefBitfieldOffsetCol = r.indexOf("BitfieldOffset") 
-                bfRefSliceWidthCol = r.indexOf("SliceWidth")
-                
-                r = self.bfTableModel.record()
-                bfNameCol = r.indexOf("Name")
-                bfDescriptionCol = r.indexOf("Description")                   
-                bfWidthCol = r.indexOf("Width")
+            sp1 = ElementTree.parse(fileName)
+            root = sp1.getroot()
+    
+            memMapNodes = root.findall('MemoryMap')
+            if len(memMapNodes) == 0:
+                QMessageBox.warning(self, "Error", "Unable to find memory map", QMessageBox.Yes)
+                if os.path.isfile(self.newFileName):
+                    os.remove(self.newFileName)
+                return False
 
+            for memMap in memMapNodes:
+                memMapId = self.newMemoryMapRow(self.memoryMaptableModel).value("id")
                 regMapRow = 0
                 regRow = 0
                 bfRow = 0
-                
-                doc = QDomDocument()
-                doc.setContent(sp1)
-                memMapNodes = doc.elementsByTagName("MemoryMap")
-                if memMapNodes.count() == 0:
-                    QMessageBox.warning(self, "Error", "Unable to find memory map", QMessageBox.Yes)
-                    if os.path.isfile(self.newFileName):
-                        os.remove(self.newFileName)
-                    return False
-                
-                dlgProgress = QProgressDialog("Importing %s ..."%fileName, "Cancel", 0, memMapNodes.count(), self)
+
+                # only 1 memory map node in yoda file, no need to loop
+                bfNodes = memMap.findall("BitFields/BitField")
+                bfUIDs  = memMap.findall("BitFields/BitField/UID")
+                regMapNodes = memMap.findall("RegisterMaps/RegisterMap")
+
+                # prepare progress dialog
+                dlgProgress = QProgressDialog("Importing %s ..."%fileName, "Cancel", 0, len(regMapNodes), self)
                 dlgProgress.setWindowTitle("Importing...")
                 dlgProgress.setWindowModality(Qt.WindowModal)
-                bfNodes = memMapNodes.at(0).namedItem("BitFields").childNodes() # only 1 memory map node in yoda file
-                regMapNodes = memMapNodes.at(0).namedItem("RegisterMaps").childNodes()
-                for i in range(regMapNodes.count()):
-                    if i == 0:
-                        continue # 0 is RegisterMaps Node UID
-                    regMapNode = regMapNodes.at(i)
+
+                # start to import
+                query = QSqlQuery(self.conn)
+                for i in range(len(regMapNodes)):
+                    regMapNode = regMapNodes[i]
                     regMap = self.newRegMapRow(self.regMapTableModel, memMapId, -1, RegisterConst.RegMap)
                     regMapId = regMap.value("id")
-                    regMapAddr = regMapNode.namedItem("Address").toElement().text().lower().replace("'h", "0x").replace("'d", "")
-                    self.regMapTableModel.setData(self.regMapTableModel.createIndex(regMapRow, regMapNameCol),        regMapNode.namedItem("Name").toElement().text())
-                    self.regMapTableModel.setData(self.regMapTableModel.createIndex(regMapRow, regMapDescriptionCol), regMapNode.namedItem("Description").toElement().text()) 
-                    self.regMapTableModel.setData(self.regMapTableModel.createIndex(regMapRow, regMapAddrCol),        regMapAddr)            
+                    regMapName = regMapNode.find("Name").text
+                    regMapDesc = regMapNode.find("Description").text
+                    regMapAddr = regMapNode.find("Address").text.lower().replace("'h", "0x").replace("'d", "")
+                    query.exec_("UPDATE RegisterMap SET Name='%s', Description='%s', OffsetAddress='%s' WHERE id=%s"%(regMapName, regMapDesc, regMapAddr, regMapId))       
                     regMapRow += 1
-                    dlgProgress.setLabelText("Importing map nodes %s:%s from %s "%(i, regMapNode.namedItem("Name").toElement().text(), fileName))
-                    dlgProgress.setValue(i)
 
-                    regNodes = regMapNode.namedItem("Registers").childNodes()
-                    for j in range(regNodes.count()):
-                        regNode = regNodes.at(j)
+                    dlgProgress.setLabelText("Importing map nodes '%s' from %s "%(regMapName, fileName))
+                    dlgProgress.setValue(i)
+                 
+                    regNodes = regMapNode.findall("Registers/Register")
+                    for j in range(len(regNodes)):
+                        regNode = regNodes[j]
                         reg = self.newRegRow(self.regTableModel, regMapId, 0, 8, -1)
                         regId = reg.value("id")
-                        regWidth = regNode.namedItem("Width").toElement().text().lower().replace("'h", "0x").replace("'d", "")
-                        regAddr  = regNode.namedItem("Address").toElement().text().lower().replace("'h", "0x").replace("'d", "")
-                        self.regTableModel.setData(self.regTableModel.createIndex(regRow, regNameCol),        regNode.namedItem("Name").toElement().text())
-                        self.regTableModel.setData(self.regTableModel.createIndex(regRow, regDescriptionCol), regNode.namedItem("Description").toElement().text())
-                        self.regTableModel.setData(self.regTableModel.createIndex(regRow, regWidthCol),       regWidth)
-                        self.regTableModel.setData(self.regTableModel.createIndex(regRow, regAddrCol),        regAddr)    
+                        regName = regNode.find("Name").text
+                        regDesc = regNode.find("Description").text
+                        regWidth = regNode.find("Width").text.lower().replace("'h", "0x").replace("'d", "")
+                        regAddr  = regNode.find("Address").text.lower().replace("'h", "0x").replace("'d", "")
+                        query.exec_("UPDATE Register SET Name='%s', Description='%s', Width='%s', OffsetAddress='%s' WHERE id=%s"%(regName, regDesc, regWidth, regAddr, regId)) 
                         regRow += 1
-                    
-                        bfRefNodes = regNode.namedItem("BitFieldRefs").childNodes()
-                        for k in range(bfRefNodes.count()):
-                            bfRefNode = bfRefNodes.at(k)
+
+                        bfRefNodes = regNode.findall("BitFieldRefs/BitFieldRef")
+                        for k in range(len(bfRefNodes)):
+                            bfRefNode = bfRefNodes[k]
                             
-                            bf = None
-                            bfUID = bfRefNode.namedItem("BF-UID").toElement().text()
-                            for m in range(bfNodes.count()):
-                                if m == 0:
-                                    continue # 0 is BitFields UID
-                                bfNode = bfNodes.at(m)
-                                uid = bfNode.namedItem("UID").toElement().text()
-                                if uid == bfUID:                                                                
-                                    bf = self.newBfRow(self.bfTableModel, self.bfRefTableModel, regId, memMapId, 8, -1)
-                                    bfId = bf.value("id")
-                                    bfWidth = bfNode.namedItem("Width").toElement().text().lower().replace("'h", "0x").replace("'d", "")
-                                    self.bfTableModel.setData(self.bfTableModel.createIndex(bfRow, bfNameCol),        bfNode.namedItem("Name").toElement().text())                            
-                                    self.bfTableModel.setData(self.bfTableModel.createIndex(bfRow, bfDescriptionCol), bfNode.namedItem("Description").toElement().text())
-                                    self.bfTableModel.setData(self.bfTableModel.createIndex(bfRow, bfWidthCol), bfWidth)                                    
+                            bfRowCreated = 0 # 0: not created, 1: no need to create, 2: created
+                            bfUID = bfRefNode.find("BF-UID").text
+                            for m in range(len(bfNodes)):
+                                bfNode = bfNodes[m]
+                                if bfUIDs[m].text == bfUID:
+                                    bfName = bfNode.find("Name").text
+                                    if bfName != "RESERVED":
+                                        bf = self.newBfRow(self.bfTableModel, self.bfRefTableModel, regId, memMapId, 8, -1)
+                                        bfId = bf.value("id")
+                                        bfDesc = bfNode.find("Description").text
+                                        bfWidth = bfNode.find("Width").text.replace("'h", "0x").replace("'d", "")
+                                        query.exec_("UPDATE Bitfield SET Name='%s', Description='%s', Width='%s' WHERE id=%s"%(bfName, bfDesc, bfWidth, bfId))
+                                        bfRowCreated = 2
+                                    else:
+                                        bfRowCreated = 1                           
                                     break
-                            if bf == None:
+                            if bfRowCreated == 0:
                                 bf = self.newBfRow(self.bfTableModel, self.bfRefTableModel, regId, memMapId, 8, -1)
                                 bfId = bf.value("id")
-                                self.bfTableModel.setData(self.bfTableModel.createIndex(bfRow, bfNameCol),        bfRefNode.namedItem("BF-UID").toElement().text())                            
-                                self.bfTableModel.setData(self.bfTableModel.createIndex(bfRow, bfDescriptionCol), bfRefNode.namedItem("UID").toElement().text())                                
-                            RegOffset = bfRefNode.namedItem("RegOffset").toElement().text().lower().replace("'h", "0x").replace("'d", "")
-                            BitOffset = bfRefNode.namedItem("BitOffset").toElement().text().lower().replace("'h", "0x").replace("'d", "")
-                            SliceWidth = bfRefNode.namedItem("SliceWidth").toElement().text().lower().replace("'h", "0x").replace("'d", "")
-                            self.bfRefTableModel.setData(self.bfRefTableModel.createIndex(bfRow, bfRefRegisterOffsetCol), RegOffset)
-                            self.bfRefTableModel.setData(self.bfRefTableModel.createIndex(bfRow, bfRefBitfieldOffsetCol), BitOffset)         
-                            self.bfRefTableModel.setData(self.bfRefTableModel.createIndex(bfRow, bfRefSliceWidthCol),     SliceWidth)  
-                            bfRow += 1
+                                query.exec_("UPDATE Bitfield SET Name='%s', Description='%s' WHERE id=%s"%(bfUID, "", bfId))
+                                bfRowCreated = 2
+                            if bfRowCreated == 2:
+                                RegOffset  = bfRefNode.find("RegOffset").text.lower().replace("'h", "0x").replace("'d", "")
+                                BitOffset  = bfRefNode.find("BitOffset").text.lower().replace("'h", "0x").replace("'d", "")
+                                SliceWidth = bfRefNode.find("SliceWidth").text.lower().replace("'h", "0x").replace("'d", "")
+                                query.exec_("UPDATE BitfieldRef SET RegisterOffset='%s', BitfieldOffset='%s', SliceWidth='%s' WHERE BitfieldId=%s"%(RegOffset, BitOffset, SliceWidth, bfId)) 
+                                bfRow += 1
                 dlgProgress.close()
-                sp1.close()
-
+            
+            self.regMapTableModel.select()
+            self.regTableModel.select()
+            self.bfRefTableModel.select()
+            self.bfTableModel.select()
             self.setupTreeView()
             self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
@@ -481,8 +469,8 @@ class uiModuleWindow(QWidget):
             self.memoryMapItem = QStandardItem(self.moduleIcon, "MemoryMap")
             self.memoryMapItem.setData("MemoryMap", RegisterConst.NameRole)
             self.memoryMapItem.setData(memoryMapRecord.value("id"), RegisterConst.MemoryMapIdRole)
-            root.appendRow(self.memoryMapItem)
-            
+            root.appendRow(self.memoryMapItem)            
+
             # register map
             regMapQueryModel = QSqlQueryModel()
             regMapQueryModel.setQuery("SELECT id, Name, Type FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memoryMapRecord.value("id"), self.conn)
@@ -800,7 +788,9 @@ class uiModuleWindow(QWidget):
 
                 regQ = QSqlQuery("SELECT Width FROM Register WHERE id=%s"%(regId), self.conn)
                 text = ""
-                fontSize = 14
+                fontSize = 18
+                bfColors = ["LightSalmon", "PowderBlue", "LightPink", "Aquamarine", "Bisque", "LightBlue", "DarkKhaki", "DarkSeaGreen"] 
+                bfColorsIndex = 0
                 while regQ.next(): # only 1 item
                     regW = regQ.value(0)
                     regB = regW - 1
@@ -825,12 +815,15 @@ class uiModuleWindow(QWidget):
                                 regB -= 1
                                 if regB < 0:
                                     break
-                            text += "-</span>"
+                            text += " </span>"
 
                         # bitfield bits
                         if sliceW > 0 and regB >= 0:
-                            text += "<span style='text-decoration:underline;font-size:%spx"%fontSize
-                            text += ";color:Red'>" if _bfId == bfId else "'>"
+                            if _bfId == bfId:
+                                text += "<span style='font-size:%spx;background-color:%s;font-weight:bold;text-decoration:underline overline'>"%(fontSize, bfColors[bfColorsIndex])
+                            else:
+                                text += "<span style='font-size:%spx;background-color:%s'>"%(fontSize, bfColors[bfColorsIndex])
+                            bfColorsIndex = 0 if (bfColorsIndex + 1) >= len(bfColors) else bfColorsIndex + 1
                             for j in range(regOff, regOff + sliceW):
                                 if j < (regOff + sliceW - 1):
                                     text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
@@ -841,7 +834,7 @@ class uiModuleWindow(QWidget):
                                     break
                             text += "</span>"
                             if regB >= 0:
-                                text += "<span style='font-size:%spx'>-</span>"%fontSize
+                                text += "<span style='font-size:%spx'> </span>"%fontSize
 
                     # left unsed bits
                     if regB >= 0:
