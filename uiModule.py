@@ -308,11 +308,13 @@ class uiModuleWindow(QWidget):
                 r = self.regMapTableModel.record()
                 regMapNameCol = r.indexOf("Name")
                 regMapDescriptionCol = r.indexOf("Description")
+                regMapAddrCol = r.indexOf("OffsetAddress")
             
                 r = self.regTableModel.record()
                 regNameCol = r.indexOf("Name")
                 regDescriptionCol = r.indexOf("Description")
                 regWidthCol = r.indexOf("Width")
+                regAddrCol = r.indexOf("OffsetAddress")
                 
                 r = self.bfRefTableModel.record()
                 bfRefRegisterOffsetCol = r.indexOf("RegisterOffset")
@@ -348,8 +350,10 @@ class uiModuleWindow(QWidget):
                     regMapNode = regMapNodes.at(i)
                     regMap = self.newRegMapRow(self.regMapTableModel, memMapId, -1, RegisterConst.RegMap)
                     regMapId = regMap.value("id")
+                    regMapAddr = regMapNode.namedItem("Address").toElement().text().lower().replace("'h", "0x").replace("'d", "")
                     self.regMapTableModel.setData(self.regMapTableModel.createIndex(regMapRow, regMapNameCol),        regMapNode.namedItem("Name").toElement().text())
-                    self.regMapTableModel.setData(self.regMapTableModel.createIndex(regMapRow, regMapDescriptionCol), regMapNode.namedItem("Description").toElement().text())            
+                    self.regMapTableModel.setData(self.regMapTableModel.createIndex(regMapRow, regMapDescriptionCol), regMapNode.namedItem("Description").toElement().text()) 
+                    self.regMapTableModel.setData(self.regMapTableModel.createIndex(regMapRow, regMapAddrCol),        regMapAddr)            
                     regMapRow += 1
                     dlgProgress.setLabelText("Importing map nodes %s:%s from %s "%(i, regMapNode.namedItem("Name").toElement().text(), fileName))
                     dlgProgress.setValue(i)
@@ -360,9 +364,11 @@ class uiModuleWindow(QWidget):
                         reg = self.newRegRow(self.regTableModel, regMapId, 0, 8, -1)
                         regId = reg.value("id")
                         regWidth = regNode.namedItem("Width").toElement().text().lower().replace("'h", "0x").replace("'d", "")
+                        regAddr  = regNode.namedItem("Address").toElement().text().lower().replace("'h", "0x").replace("'d", "")
                         self.regTableModel.setData(self.regTableModel.createIndex(regRow, regNameCol),        regNode.namedItem("Name").toElement().text())
                         self.regTableModel.setData(self.regTableModel.createIndex(regRow, regDescriptionCol), regNode.namedItem("Description").toElement().text())
                         self.regTableModel.setData(self.regTableModel.createIndex(regRow, regWidthCol),       regWidth)
+                        self.regTableModel.setData(self.regTableModel.createIndex(regRow, regAddrCol),        regAddr)    
                         regRow += 1
                     
                         bfRefNodes = regNode.namedItem("BitFieldRefs").childNodes()
