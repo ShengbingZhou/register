@@ -12,7 +12,7 @@ from xml.etree import ElementTree
 from ui.Module import Ui_ModuleWindow
 from RegisterConst import RegisterConst
 from QSqlQueryBfTableModel import QSqlQueryBfTableModel
-from QSqlHighlightTableModel import QSqlHighlightTableModel
+from QSqlHighlightTableModel import QSqlHighlightTableModel, QRegValueDisplayDelegate
 from QRegDebugTableModel import QRegDebugTableModel
 
 class uiModuleWindow(QWidget):
@@ -762,6 +762,7 @@ class uiModuleWindow(QWidget):
             elif tableName == "Register": # reg selected, show reg table
                 regMapId = int(current.data(RegisterConst.RegMapIdRole))
                 if self.ui.tableView.model() != self.regTableModel or regMapId != self.regTableModel.parentId:
+                    self.ui.tableView.setItemDelegateForColumn(self.regTableModel.record().indexOf("Value"), QRegValueDisplayDelegate())
                     self.regTableModel.setParentId(regMapId)
                     self.regTableModel.setFilter("RegisterMapId=%s"%regMapId)
                     self.regTableModel.select()
