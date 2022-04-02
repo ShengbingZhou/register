@@ -313,13 +313,8 @@ class uiModuleWindow(QWidget):
                     os.remove(self.newFileName)
                 return False
 
-            for memMap in memMapNodes:
+            for memMap in memMapNodes: # actually only 1 memory map node in yoda file, no need to loop
                 memMapId = self.newMemoryMapRow(self.memoryMaptableModel).value("id")
-                regMapRow = 0
-                regRow = 0
-                bfRow = 0
-
-                # only 1 memory map node in yoda file, no need to loop
                 bfNodes = memMap.findall("BitFields/BitField")
                 bfUIDs  = memMap.findall("BitFields/BitField/UID")
                 regMapNodes = memMap.findall("RegisterMaps/RegisterMap")
@@ -339,9 +334,8 @@ class uiModuleWindow(QWidget):
                     regMapDesc = regMapNode.find("Description").text
                     regMapAddr = regMapNode.find("Address").text.lower().replace("'h", "0x").replace("'d", "")
                     query.exec_("UPDATE RegisterMap SET Name='%s', Description='%s', OffsetAddress='%s' WHERE id=%s"%(regMapName, regMapDesc, regMapAddr, regMapId))       
-                    regMapRow += 1
 
-                    dlgProgress.setLabelText("Importing map nodes '%s' from %s "%(regMapName, fileName))
+                    dlgProgress.setLabelText("Importing register map '%s' from %s "%(regMapName, fileName))
                     dlgProgress.setValue(i)
                  
                     regNodes = regMapNode.findall("Registers/Register")
@@ -354,7 +348,6 @@ class uiModuleWindow(QWidget):
                         regWidth = regNode.find("Width").text.lower().replace("'h", "0x").replace("'d", "")
                         regAddr  = regNode.find("Address").text.lower().replace("'h", "0x").replace("'d", "")
                         query.exec_("UPDATE Register SET Name='%s', Description='%s', Width='%s', OffsetAddress='%s' WHERE id=%s"%(regName, regDesc, regWidth, regAddr, regId)) 
-                        regRow += 1
 
                         bfRefNodes = regNode.findall("BitFieldRefs/BitFieldRef")
                         for k in range(len(bfRefNodes)):
@@ -386,7 +379,6 @@ class uiModuleWindow(QWidget):
                                 BitOffset  = bfRefNode.find("BitOffset").text.lower().replace("'h", "0x").replace("'d", "")
                                 SliceWidth = bfRefNode.find("SliceWidth").text.lower().replace("'h", "0x").replace("'d", "")
                                 query.exec_("UPDATE BitfieldRef SET RegisterOffset='%s', BitfieldOffset='%s', SliceWidth='%s' WHERE BitfieldId=%s"%(RegOffset, BitOffset, SliceWidth, bfId)) 
-                                bfRow += 1
                 dlgProgress.close()
             
             self.regMapTableModel.select()
@@ -461,6 +453,19 @@ class uiModuleWindow(QWidget):
         self.treeViewTableModel = QStandardItemModel()
         root = self.treeViewTableModel.invisibleRootItem()
 
+        # prepare progress dialog
+        query = QSqlQuery(self.conn)
+        query.exec_("SELECT COUNT(*) FROM MemoryMap")
+        query.next()
+        mmMapCount = query.value(0)
+        query.exec_("SELECT COUNT(*) FROM RegisterMap")
+        query.next()
+        regMapCount = query.value(0)
+
+        dlgProgress = QProgressDialog("Setting up item list...", "Cancel", 0, mmMapCount*regMapCount, self)
+        dlgProgress.setWindowTitle("Setting up item list ...")
+        dlgProgress.setWindowModality(Qt.WindowModal)
+
         # memory map
         memoryMapQueryModel = QSqlQueryModel()
         memoryMapQueryModel.setQuery("SELECT id FROM MemoryMap", self.conn)
@@ -484,7 +489,10 @@ class uiModuleWindow(QWidget):
                 self.memoryMapItem.appendRow(regMapitem)
                 if RegisterConst.recordExist(regMapRecord) == False:
                     regMapitem.setData(QColor('grey'), Qt.BackgroundColorRole)
-                
+            
+                dlgProgress.setLabelText("adding register map '%s'"%(regMapRecord.value("name")))
+                dlgProgress.setValue(i)
+
                 # register
                 regQueryModel = QSqlQueryModel()
                 regQueryModel.setQuery("SELECT id, Name FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
@@ -530,7 +538,10 @@ class uiModuleWindow(QWidget):
                             bfItem.appendRow(bfEnumItem)
                             if RegisterConst.recordExist(bfEnumRecord) == False:
                                 bfEnumItem.setData(QColor('grey'), Qt.BackgroundColorRole)
-                                
+        
+        # close progressbar
+        dlgProgress.close()
+
         # show tree view nodes
         self.ui.treeView.setModel(self.treeViewTableModel)
         self.ui.treeView.expandAll()
