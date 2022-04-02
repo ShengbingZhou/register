@@ -75,9 +75,9 @@ class RegisterConst:
             if sliceW > 0 and regB >= 0:
                 if _bfId == bfId:
                     if fontSize != None:
-                        text += "<span style='font-size:%spx;background-color:%s;font-weight:bold;text-decoration:underline overline'>"%(fontSize, bfColors[bfColorsIndex])
+                        text += "<span style='font-size:%spx;background-color:%s;font-weight:bold;color:red'>"%(fontSize, bfColors[bfColorsIndex])
                     else:
-                        text += "<span style='background-color:%s;font-weight:bold;text-decoration:underline overline'>"%(bfColors[bfColorsIndex])
+                        text += "<span style='background-color:%s;font-weight:bold;color:red'>"%(bfColors[bfColorsIndex])
                 else:
                     if fontSize != None:
                         text += "<span style='font-size:%spx;background-color:%s'>"%(fontSize, bfColors[bfColorsIndex])
