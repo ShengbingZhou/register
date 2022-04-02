@@ -9,6 +9,9 @@ class RegisterConst:
     # style file
     StyleFile = "style/style.qss"
 
+    # design file externsion
+    DesignFileExt = ".reg"
+
     # welcome tab text const
     WelcomeTabText = "Welcome"
     

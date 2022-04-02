@@ -230,7 +230,7 @@ class uiModuleWindow(QWidget):
     def newDatabase(self):
         # create temp database
         now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
-        newName = "__temp_module_%s.db"%now
+        newName = "__%s%s"%(now, RegisterConst.DesignFileExt)
         shutil.copyfile("module_template.db", newName)
         self.newFileName = newName
         self.newModule = True     
@@ -256,7 +256,7 @@ class uiModuleWindow(QWidget):
     def openDatabase(self, fileName):
         # create temp database
         now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
-        newName = "__temp_module_%s.db"%now
+        newName = "__%s%s"%(now, RegisterConst.DesignFileExt)
         shutil.copyfile(fileName, newName)
         self.newFileName = newName
         self.fileName = fileName
@@ -277,17 +277,22 @@ class uiModuleWindow(QWidget):
     def saveDatabase(self):
         fileName = ''
         if self.newModule == True:
-            fileName, filterUsed = QFileDialog.getSaveFileName(self, "Save register file", QDir.homePath(), "Register File (*)")
+            fileName, filterUsed = QFileDialog.getSaveFileName(self, "Save register file", QDir.homePath(), "Register File (*%s)"%RegisterConst.DesignFileExt)
             if fileName !='':
-                if os.path.exists(fileName):
+                if os.path.exists(fileName):                                        
                     os.remove(fileName)
+                else:
+                    f_name, f_ext = os.path.splitext(fileName)
+                    # add .reg when saving new file
+                    if f_ext != RegisterConst.DesignFileExt:
+                        fileName += RegisterConst.DesignFileExt
                 shutil.copy(self.newFileName, fileName)
                 self.fileName = fileName
                 self.newModule = False
         else:
             if self.newFileName != '':
                 if os.path.exists(fileName):
-                    os.remove(fileName)
+                    os.remove(fileName)                  
                 shutil.copy(self.newFileName, self.fileName)
                 fileName = self.fileName
         return fileName
@@ -295,7 +300,7 @@ class uiModuleWindow(QWidget):
     def importYodaSp1(self, fileName):
         # create temp database
         now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
-        newName = "__temp_module_%s.db"%now
+        newName = "__%s%s"%(now, RegisterConst.DesignFileExt)
         shutil.copyfile("module_template.db", newName)
         self.newFileName = newName
         self.newModule = True  
