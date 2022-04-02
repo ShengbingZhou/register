@@ -82,7 +82,7 @@ class RegisterConst:
                     if fontSize != None:
                         text += "<span style='font-size:%spx;background-color:%s'>"%(fontSize, bfColors[bfColorsIndex])
                     else:
-                        text += "<span style='background-color:%s'>"%(fontSize, bfColors[bfColorsIndex])
+                        text += "<span style='background-color:%s'>"%(bfColors[bfColorsIndex])
                 bfColorsIndex = 0 if (bfColorsIndex + 1) >= len(bfColors) else bfColorsIndex + 1
                 for j in range(regOff, regOff + sliceW):
                     if j < (regOff + sliceW - 1):

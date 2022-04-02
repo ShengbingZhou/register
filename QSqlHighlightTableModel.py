@@ -18,57 +18,9 @@ class QSqlHighlightTableModel(QSqlTableModel):
             if self.tableName() == "Register":
                 field = self.record().fieldName(index.column())
                 if field == "Value": # show bitfield usage info in this column
-                    regW = self.record(index.row()).value("Width")
-                    text = ""
-                    bfColors = ["LightSalmon", "PowderBlue", "LightPink", "Aquamarine", "Bisque", "LightBlue", "DarkKhaki", "DarkSeaGreen"] 
-                    bfColorsIndex = 0
-                    regB = regW - 1
-                    text = ""
-                    bfRefQ = QSqlQuery("SELECT * FROM BitfieldRef WHERE RegisterId=%s ORDER BY RegisterOffset DESC"%(self.record(index.row()).value("id")), self.database())
-                    while bfRefQ.next():
-                        regOff = bfRefQ.value("RegisterOffset")
-                        bfOff = bfRefQ.value("BitfieldOffset")
-                        sliceW = bfRefQ.value("SliceWidth")
-                        _bfId = bfRefQ.value("BitfieldId")
-    
-                        # unused bits before bitfield 
-                        if sliceW > 0 and regB > (regOff + sliceW - 1):
-                            for i in range(regOff + sliceW, regB + 1):
-                                # '0 '
-                                # '16 '
-                                if regB > (regOff + sliceW):
-                                    text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
-                                else:
-                                    text += "%s"%(regB) if (regW < 10 or regB > 9) else "0%s"%(regB)
-                                regB -= 1
-                                if regB < 0:
-                                    break
-                            text += " "
-
-                        # bitfield bits
-                        if sliceW > 0 and regB >= 0:
-                            text += "<span style='background-color:%s'>"%(bfColors[bfColorsIndex])
-                            bfColorsIndex = 0 if (bfColorsIndex + 1) >= len(bfColors) else bfColorsIndex + 1
-                            for j in range(regOff, regOff + sliceW):
-                                if j < (regOff + sliceW - 1):
-                                    text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
-                                else:
-                                    text += "%s"%(regB) if (regW < 10 or regB > 9) else "0%s"%(regB)
-                                regB -= 1
-                                if regB < 0:
-                                    break
-                            text += "</span>"
-                            if regB >= 0:
-                                text += " "
-
-                    # left unsed bits
-                    if regB >= 0:
-                        for k in range(0, regB + 1):
-                            text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
-                            regB -= 1
-    
-                    # generate value
-                    value = text
+                    regId = self.record(index.row()).value("id")
+                    regW  = self.record(index.row()).value("Width")
+                    value  = RegisterConst.genColoredRegBitsUsage(self.database(), None, regId, regW, None)
         return value
 
     def flags(self, index):

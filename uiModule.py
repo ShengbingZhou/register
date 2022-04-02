@@ -762,7 +762,9 @@ class uiModuleWindow(QWidget):
             elif tableName == "Register": # reg selected, show reg table
                 regMapId = int(current.data(RegisterConst.RegMapIdRole))
                 if self.ui.tableView.model() != self.regTableModel or regMapId != self.regTableModel.parentId:
-                    self.ui.tableView.setItemDelegateForColumn(self.regTableModel.record().indexOf("Value"), QRegValueDisplayDelegate())
+                    valueIndex = self.regTableModel.record().indexOf("Value")
+                    self.regTableModel.setHeaderData(valueIndex, Qt.Horizontal, "Bits")
+                    self.ui.tableView.setItemDelegateForColumn(valueIndex, QRegValueDisplayDelegate())
                     self.regTableModel.setParentId(regMapId)
                     self.regTableModel.setFilter("RegisterMapId=%s"%regMapId)
                     self.regTableModel.select()
@@ -800,65 +802,13 @@ class uiModuleWindow(QWidget):
 
                 regQ = QSqlQuery("SELECT Width FROM Register WHERE id=%s"%(regId), self.conn)
                 text = ""
-                fontSize = 18
-                bfColors = ["LightSalmon", "PowderBlue", "LightPink", "Aquamarine", "Bisque", "LightBlue", "DarkKhaki", "DarkSeaGreen"] 
-                bfColorsIndex = 0
                 while regQ.next(): # only 1 item
                     regW = regQ.value(0)
-                    regB = regW - 1
                     text = "Tips: <pre>"
-                    bfRefQ = QSqlQuery("SELECT * FROM BitfieldRef WHERE RegisterId=%s ORDER BY RegisterOffset DESC"%(regId), self.conn)
-                    while bfRefQ.next():
-                        regOff = bfRefQ.value("RegisterOffset")
-                        bfOff = bfRefQ.value("BitfieldOffset")
-                        sliceW = bfRefQ.value("SliceWidth")
-                        _bfId = bfRefQ.value("BitfieldId")
-    
-                        # unused bits before bitfield 
-                        if sliceW > 0 and regB > (regOff + sliceW - 1):
-                            text += "<span style='font-size:%spx'>"%fontSize
-                            for i in range(regOff + sliceW, regB + 1):
-                                # '0 '
-                                # '16 '
-                                if regB > (regOff + sliceW):
-                                    text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
-                                else:
-                                    text += "%s"%(regB) if (regW < 10 or regB > 9) else "0%s"%(regB)
-                                regB -= 1
-                                if regB < 0:
-                                    break
-                            text += " </span>"
-
-                        # bitfield bits
-                        if sliceW > 0 and regB >= 0:
-                            if _bfId == bfId:
-                                text += "<span style='font-size:%spx;background-color:%s;font-weight:bold;text-decoration:underline overline'>"%(fontSize, bfColors[bfColorsIndex])
-                            else:
-                                text += "<span style='font-size:%spx;background-color:%s'>"%(fontSize, bfColors[bfColorsIndex])
-                            bfColorsIndex = 0 if (bfColorsIndex + 1) >= len(bfColors) else bfColorsIndex + 1
-                            for j in range(regOff, regOff + sliceW):
-                                if j < (regOff + sliceW - 1):
-                                    text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
-                                else:
-                                    text += "%s"%(regB) if (regW < 10 or regB > 9) else "0%s"%(regB)
-                                regB -= 1
-                                if regB < 0:
-                                    break
-                            text += "</span>"
-                            if regB >= 0:
-                                text += "<span style='font-size:%spx'> </span>"%fontSize
-
-                    # left unsed bits
-                    if regB >= 0:
-                        text += "<span style='font-size:%spx'>"%fontSize
-                        for k in range(0, regB + 1):
-                            text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
-                            regB -= 1
-                        text += "</span>"
-                    
+                    text += RegisterConst.genColoredRegBitsUsage(self.conn, bfId, regId, regW, 18)
                     text += "</pre>"
                 self.ui.labelDescription.setText(text)
-                
+
             elif tableName == "BitfieldEnum": # bfenum selected, show bfenum table
                 bfId = int(current.data(RegisterConst.BfIdRole))      
                 if self.ui.tableView.model() != self.bfEnumTableModel or bfId != self.bfEnumTableModel.parentId:
