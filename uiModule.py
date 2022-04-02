@@ -303,6 +303,7 @@ class uiModuleWindow(QWidget):
         # create temp database
         now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
         newName = "__%s%s"%(now, RegisterConst.DesignFileExt)
+        newName = QDir.homePath() + "/.reg/" + newName   
         shutil.copyfile("template/module_template.db", newName)
         self.newFileName = newName
         self.newModule = True  
