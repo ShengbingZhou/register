@@ -34,6 +34,8 @@ class QSqlQueryBfTableModel(QSqlQueryModel):
             result = query.exec_("UPDATE BitfieldRef SET %s='%s' WHERE RegisterId=%s AND BitfieldId=%s"%(field, value, regId, bfId))
         else:
             result = query.exec_("UPDATE Bitfield SET %s='%s' WHERE id=%s"%(field, value, bfId))
+            if field == "Width": # update slicewidth as well to make sure they are same
+                result = query.exec_("UPDATE BitfieldRef SET %s='%s' WHERE RegisterId=%s AND BitfieldId=%s"%("SliceWidth", value, regId, bfId))
         if result:
             self.setQuery(self.query().executedQuery(), self.conn)
             self.dataChanged.emit(index, index, role)

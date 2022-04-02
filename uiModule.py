@@ -33,7 +33,7 @@ class uiModuleWindow(QWidget):
         self.setStyleSheet(style)
 
         self.tableDesignViewBfQuerySql = "SELECT A.id, B.RegisterId, A.DisplayOrder, A.Name, A.Access, A.DefaultValue, A.Description, " \
-                                         "A.Width, B.RegisterOffset, B.BitfieldOffset, B.SliceWidth, A.Exist, A.Notes " \
+                                         "A.Width, B.RegisterOffset, A.Exist, A.Notes " \
                                          "FROM Bitfield AS A JOIN BitfieldRef AS B ON A.id=B.BitfieldId WHERE B.RegisterId="
         
         self.moduleIcon = QIcon('icon/module32.png')
@@ -58,6 +58,10 @@ class uiModuleWindow(QWidget):
         self.newModule = True
         self.fileName = ''
         self.newFileName = ''
+
+        # default value
+        self.__regMapTypeIndex = None
+        self.__regValueIndex = None
         return
     
     def eventFilter(self, obj, event):
@@ -237,10 +241,8 @@ class uiModuleWindow(QWidget):
             info0Id = self.newInfoRow(self.infoTableModel, now).value("id")                 # create info   row0
             memMap0Id = self.newMemoryMapRow(self.memoryMaptableModel).value("id")          # create memmap row0
             regMap0Id = self.newRegMapRow(self.regMapTableModel, memMap0Id, -1).value("id") # create regmap row0
-            reg0Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 8, -1).value("id")    # create register row0
-            reg1Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 8, -1).value("id")    # create register row1
+            reg0Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 32, -1).value("id")   # create register row0
             bf0Id = self.newBfRow(self.bfTableModel, self.bfRefTableModel, reg0Id, memMap0Id, 8, -1).value("id") # create bitfield row0
-            bf1Id = self.newBfRow(self.bfTableModel, self.bfRefTableModel, reg1Id, memMap0Id, 8, -1).value("id") # create bitfield row1
             bfEnum0Id = self.newBfEnumRow(self.bfEnumTableModel, bf0Id, -1).value("id")     # create bitfieldenum row0
             self.setupTreeView()
             self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
@@ -341,7 +343,7 @@ class uiModuleWindow(QWidget):
                     regNodes = regMapNode.findall("Registers/Register")
                     for j in range(len(regNodes)):
                         regNode = regNodes[j]
-                        reg = self.newRegRow(self.regTableModel, regMapId, 0, 8, -1)
+                        reg = self.newRegRow(self.regTableModel, regMapId, 0, 32, -1)
                         regId = reg.value("id")
                         regName = regNode.find("Name").text
                         regDesc = regNode.find("Description").text
@@ -731,11 +733,15 @@ class uiModuleWindow(QWidget):
                 if self.ui.tableView.model() != self.memoryMaptableModel:
                     self.ui.tableView.setModel(self.memoryMaptableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    if self.__regMapTypeIndex != None:
+                        self.ui.tableView.showColumn(self.__regMapTypeIndex)
+                    if self.__regValueIndex != None:
+                        self.ui.tableView.showColumn(self.__regValueIndex)
+                        self.ui.tableView.setItemDelegateForColumn(self.__regValueIndex, None)
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.showColumn(1) # offset address
                     self.ui.tableView.showColumn(2) # notes
                     self.ui.tableView.resizeColumnsToContents()
-                    
                     self.ui.pbAddRegMap.setEnabled(True)
                     self.ui.pbAddReg.setEnabled(False)
                     self.ui.pbAddBf.setEnabled(False)
@@ -746,9 +752,15 @@ class uiModuleWindow(QWidget):
                 if self.ui.tableView.model() != self.regMapTableModel:
                     self.ui.tableView.setModel(self.regMapTableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    if self.__regValueIndex != None:
+                        self.ui.tableView.showColumn(self.__regValueIndex)
+                        self.ui.tableView.setItemDelegateForColumn(self.__regValueIndex, None)
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.hideColumn(1) # memmap id
                     self.ui.tableView.hideColumn(2) # order
+                    self.__regMapTypeIndex = self.regMapTableModel.record().indexOf("Type")
+                    self.ui.tableView.hideColumn(self.__regMapTypeIndex)
+                    self.ui.tableView.resizeColumnsToContents()
                     self.ui.tableView.resizeColumnsToContents()
                     self.ui.pbAddRegMap.setEnabled(False)
                     self.ui.pbAddBf.setEnabled(False)
@@ -762,12 +774,14 @@ class uiModuleWindow(QWidget):
             elif tableName == "Register": # reg selected, show reg table
                 regMapId = int(current.data(RegisterConst.RegMapIdRole))
                 if self.ui.tableView.model() != self.regTableModel or regMapId != self.regTableModel.parentId:
-                    valueIndex = self.regTableModel.record().indexOf("Value")
-                    self.regTableModel.setHeaderData(valueIndex, Qt.Horizontal, "Bits")
-                    self.ui.tableView.setItemDelegateForColumn(valueIndex, QRegValueDisplayDelegate())
+                    self.__regValueIndex = self.regTableModel.record().indexOf("Value")
+                    self.regTableModel.setHeaderData(self.__regValueIndex, Qt.Horizontal, "Bits")
                     self.regTableModel.setParentId(regMapId)
                     self.regTableModel.setFilter("RegisterMapId=%s"%regMapId)
                     self.regTableModel.select()
+                    if self.__regMapTypeIndex != None:
+                        self.ui.tableView.showColumn(self.__regMapTypeIndex)
+                    self.ui.tableView.setItemDelegateForColumn(self.__regValueIndex, QRegValueDisplayDelegate())
                     self.ui.tableView.setModel(self.regTableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
                     self.ui.tableView.hideColumn(0) # id
@@ -791,6 +805,11 @@ class uiModuleWindow(QWidget):
                     self.bfQueryModel.setQuery("%s%s ORDER BY A.DisplayOrder ASC"%(self.tableDesignViewBfQuerySql, regId), self.conn)
                     self.ui.tableView.setModel(self.bfQueryModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    if self.__regMapTypeIndex != None:
+                        self.ui.tableView.showColumn(self.__regMapTypeIndex)
+                    if self.__regValueIndex != None:
+                        self.ui.tableView.showColumn(self.__regValueIndex)
+                        self.ui.tableView.setItemDelegateForColumn(self.__regValueIndex, None)
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.hideColumn(1) # regid
                     self.ui.tableView.hideColumn(2) # order
@@ -817,6 +836,11 @@ class uiModuleWindow(QWidget):
                     self.bfEnumTableModel.select()
                     self.ui.tableView.setModel(self.bfEnumTableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    if self.__regMapTypeIndex != None:
+                        self.ui.tableView.showColumn(self.__regMapTypeIndex)
+                    if self.__regValueIndex != None:
+                        self.ui.tableView.showColumn(self.__regValueIndex)
+                        self.ui.tableView.setItemDelegateForColumn(self.__regValueIndex, None)
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.hideColumn(1) # bfid
                     self.ui.tableView.hideColumn(2) # order
@@ -841,6 +865,11 @@ class uiModuleWindow(QWidget):
                     if regDebugModel.id == regMapId:
                         self.ui.tableView.setModel(regDebugModel)
                         self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                        if self.__regMapTypeIndex != None:
+                            self.ui.tableView.showColumn(self.__regMapTypeIndex)
+                        if self.__regValueIndex != None:
+                            self.ui.tableView.showColumn(self.__regValueIndex)
+                            self.ui.tableView.setItemDelegateForColumn(self.__regValueIndex, None)
                         self.ui.tableView.showColumn(0)
                         self.ui.tableView.showColumn(1)
                         self.ui.tableView.showColumn(2)
@@ -924,8 +953,8 @@ class uiModuleWindow(QWidget):
         tableName = str(current.data(RegisterConst.NameRole))
         memoryMapId = int(current.data(RegisterConst.MemoryMapIdRole))
         regMapId = int(current.data(RegisterConst.RegMapIdRole))
-        newRegRowIndex = -1 if tableName != "Register" else current.row() + 1        
-        r = self.newRegRow(self.regTableModel, regMapId, 0, 8, newRegRowIndex)
+        newRegRowIndex = -1 if tableName != "Register" else current.row() + 1
+        r = self.newRegRow(self.regTableModel, regMapId, 0, 32, newRegRowIndex)
         
         newRegItem = QStandardItem(self.regIcon, r.value("name"))
         newRegItem.setData("Register", RegisterConst.NameRole)

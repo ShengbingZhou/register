@@ -21,7 +21,7 @@ class uiMainWindow(QMainWindow):
         self.setWindowIcon(QIcon('icon/module32.png'))
         self.ui.actionSave_As.setVisible(False)
         self.ui.menuEdit.setTitle('')
-        self.resize(1440, 900)
+        self.resize(1600, 1080)
         rect = self.frameGeometry()
         centerPoint = QDesktopWidget().availableGeometry().center()
         rect.moveCenter(centerPoint)
