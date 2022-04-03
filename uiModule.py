@@ -851,7 +851,7 @@ class uiModuleWindow(QWidget):
                 while regQ.next(): # only 1 item
                     regW = regQ.value(0)
                     text = "Tips: <pre>"
-                    text += RegisterConst.genColoredRegBitsUsage(self.conn, bfId, regId, regW, 18)
+                    text += RegisterConst.genColoredRegBitsUsage(self.conn, bfId, regId, regW, 14)
                     text += "</pre>"
                 self.ui.labelDescription.setText(text)
 
