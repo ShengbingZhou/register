@@ -340,15 +340,20 @@ class uiModuleWindow(QWidget):
                 dlgProgress.setWindowModality(Qt.WindowModal)
 
                 # start to import
+                regMapDisplayOrder = 0
+                regDisplayOrder = 0
+                bfDisplayOrder = 0
                 query = QSqlQuery(self.conn)
                 for i in range(len(regMapNodes)):
                     regMapNode = regMapNodes[i]
-                    regMap = self.newRegMapRow(self.regMapTableModel, memMapId, -1, RegisterConst.RegMap)
-                    regMapId = regMap.value("id")
                     regMapName = regMapNode.find("Name").text
                     regMapDesc = regMapNode.find("Description").text
                     regMapAddr = regMapNode.find("Address").text.lower().replace("'h", "0x").replace("'d", "")
-                    query.exec_("UPDATE RegisterMap SET Name='%s', Description='%s', OffsetAddress='%s' WHERE id=%s"%(regMapName, regMapDesc, regMapAddr, regMapId))       
+                    query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, Name, Description, OffsetAddress) VALUES ('%s', '%s', '%s', '%s', '%s')"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr))
+                    query.exec_("SELECT max(id) FROM RegisterMap")
+                    query.next()
+                    regMapId = query.record().value(0)
+                    regMapDisplayOrder += 1
 
                     dlgProgress.setLabelText("Importing register map '%s' from %s "%(regMapName, fileName))
                     dlgProgress.setValue(i)
@@ -356,13 +361,15 @@ class uiModuleWindow(QWidget):
                     regNodes = regMapNode.findall("Registers/Register")
                     for j in range(len(regNodes)):
                         regNode = regNodes[j]
-                        reg = self.newRegRow(self.regTableModel, regMapId, 0, 32, -1)
-                        regId = reg.value("id")
                         regName = regNode.find("Name").text
                         regDesc = regNode.find("Description").text
+                        regAddr = regNode.find("Address").text.lower().replace("'h", "0x").replace("'d", "")
                         regWidth = regNode.find("Width").text.lower().replace("'h", "0x").replace("'d", "")
-                        regAddr  = regNode.find("Address").text.lower().replace("'h", "0x").replace("'d", "")
-                        query.exec_("UPDATE Register SET Name='%s', Description='%s', Width='%s', OffsetAddress='%s' WHERE id=%s"%(regName, regDesc, regWidth, regAddr, regId)) 
+                        query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width) VALUES ('%s', '%s', '%s', '%s', '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth))
+                        query.exec_("SELECT max(id) FROM Register")
+                        query.next()
+                        regId = query.record().value(0)
+                        regDisplayOrder += 1
 
                         bfRefNodes = regNode.findall("BitFieldRefs/BitFieldRef")
                         for k in range(len(bfRefNodes)):
@@ -375,25 +382,30 @@ class uiModuleWindow(QWidget):
                                 if bfUIDs[m].text == bfUID:
                                     bfName = bfNode.find("Name").text
                                     if bfName != "RESERVED":
-                                        bf = self.newBfRow(self.bfTableModel, self.bfRefTableModel, regId, memMapId, 8, -1)
-                                        bfId = bf.value("id")
                                         bfDesc = bfNode.find("Description").text
                                         bfWidth = bfNode.find("Width").text.replace("'h", "0x").replace("'d", "")
-                                        query.exec_("UPDATE Bitfield SET Name='%s', Description='%s', Width='%s' WHERE id=%s"%(bfName, bfDesc, bfWidth, bfId))
+                                        bfDfValue = bfNode.find("DefaultValue").text.replace("'h", "0x").replace("'d", "")
+                                        query.exec_("INSERT INTO Bitfield (MemoryMapId, DisplayOrder, Name, Description, Width, DefaultValue) VALUES ('%s', '%s', '%s', '%s', '%s', '%s')"%(memMapId, bfDisplayOrder, bfName, bfDesc, bfWidth, bfDfValue))
+                                        query.exec_("SELECT max(id) FROM Bitfield")
+                                        query.next()
+                                        bfId = query.record().value(0)
+                                        bfDisplayOrder += 1
                                         bfRowCreated = 2
                                     else:
-                                        bfRowCreated = 1                           
+                                        bfRowCreated = 1
                                     break
                             if bfRowCreated == 0:
-                                bf = self.newBfRow(self.bfTableModel, self.bfRefTableModel, regId, memMapId, 8, -1)
-                                bfId = bf.value("id")
-                                query.exec_("UPDATE Bitfield SET Name='%s', Description='%s' WHERE id=%s"%(bfUID, "", bfId))
+                                query.exec_("INSERT INTO Bitfield (MemoryMapId, DisplayOrder, Name) VALUES ('%s', '%s', '%s')"%(memMapId, bfDisplayOrder, bfUID))
+                                query.exec_("SELECT max(id) FROM Bitfield")
+                                query.next()
+                                bfId = query.record().value(0)
+                                bfDisplayOrder += 1
                                 bfRowCreated = 2
                             if bfRowCreated == 2:
                                 RegOffset  = bfRefNode.find("RegOffset").text.lower().replace("'h", "0x").replace("'d", "")
                                 BitOffset  = bfRefNode.find("BitOffset").text.lower().replace("'h", "0x").replace("'d", "")
                                 SliceWidth = bfRefNode.find("SliceWidth").text.lower().replace("'h", "0x").replace("'d", "")
-                                query.exec_("UPDATE BitfieldRef SET RegisterOffset='%s', BitfieldOffset='%s', SliceWidth='%s' WHERE BitfieldId=%s"%(RegOffset, BitOffset, SliceWidth, bfId)) 
+                                query.exec_("INSERT INTO BitfieldRef (RegisterId, BitfieldId, RegisterOffset, BitfieldOffset, SliceWidth) VALUES ('%s', '%s', '%s', '%s', '%s')"%(regId, bfId, RegOffset, BitOffset, SliceWidth))
                 dlgProgress.close()
             
             self.regMapTableModel.select()
