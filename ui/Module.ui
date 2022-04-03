@@ -73,6 +73,9 @@
           <property name="bottomMargin">
            <number>0</number>
           </property>
+          <item row="1" column="0">
+           <widget class="QTableView" name="tableView"/>
+          </item>
           <item row="0" column="0">
            <widget class="QFrame" name="frame_4">
             <property name="sizePolicy">
@@ -270,8 +273,8 @@
             </layout>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QTableView" name="tableView"/>
+          <item row="2" column="0">
+           <widget class="QTableView" name="tableViewReg"/>
           </item>
          </layout>
         </widget>

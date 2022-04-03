@@ -47,6 +47,11 @@ class Ui_ModuleWindow(object):
         self.gridLayout_2 = QGridLayout(self.frame_3)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.tableView = QTableView(self.frame_3)
+        self.tableView.setObjectName(u"tableView")
+
+        self.gridLayout_2.addWidget(self.tableView, 1, 0, 1, 1)
+
         self.frame_4 = QFrame(self.frame_3)
         self.frame_4.setObjectName(u"frame_4")
         sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
@@ -143,10 +148,10 @@ class Ui_ModuleWindow(object):
 
         self.gridLayout_2.addWidget(self.frame_4, 0, 0, 1, 1)
 
-        self.tableView = QTableView(self.frame_3)
-        self.tableView.setObjectName(u"tableView")
+        self.tableViewReg = QTableView(self.frame_3)
+        self.tableViewReg.setObjectName(u"tableViewReg")
 
-        self.gridLayout_2.addWidget(self.tableView, 1, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.tableViewReg, 2, 0, 1, 1)
 
 
         self.verticalLayout.addWidget(self.frame_3)

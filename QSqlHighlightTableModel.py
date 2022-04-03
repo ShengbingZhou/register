@@ -53,12 +53,11 @@ class QRegValueDisplayDelegate(QStyledItemDelegate):
         doc.setHtml(options.text)
         options.text = ""
         style.drawControl(QStyle.CE_ItemViewItem, options, painter)
-        ctx = QAbstractTextDocumentLayout.PaintContext()
         textRect = style.subElementRect(QStyle.SE_ItemViewItemText, options)
         painter.save()
         painter.translate(textRect.topLeft())
         painter.setClipRect(textRect.translated(-textRect.topLeft()))
-        doc.documentLayout().draw(painter, ctx)
+        doc.documentLayout().draw(painter, QAbstractTextDocumentLayout.PaintContext())
         painter.restore()
 
     def sizeHint(self, option, index):
