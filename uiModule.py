@@ -28,6 +28,8 @@ class uiModuleWindow(QWidget):
         self.ui.treeView.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.ui.treeView.installEventFilter(self)
         self.ui.tableView.setAlternatingRowColors(True)
+        self.ui.tableViewReg.setAlternatingRowColors(True)
+        self.ui.tableViewReg.setVisible(False)
         with open (RegisterConst.StyleFile) as file:
             style = file.read()
         self.setStyleSheet(style)
@@ -60,8 +62,9 @@ class uiModuleWindow(QWidget):
         self.newFileName = ''
 
         # default value
-        self.__regMapTypeIndex = None
-        self.__regValueIndex = None
+        self.__treeViewCurrentTable = None # selected table by treeView
+        self.__treeViewCurrentRow = None   # curent row index on treeView
+        self.__regMapTypeIndex = None      # regmap table 'Type' column index which should be hidden, while this column should be visible for other tables
         return
     
     def eventFilter(self, obj, event):
@@ -94,6 +97,8 @@ class uiModuleWindow(QWidget):
             self.ui.pbAddBfEnum.setVisible(not isDebugView)
             self.ui.labelDescription.setVisible(not isDebugView)
             self.ui.tableView.setAlternatingRowColors(not isDebugView)
+            self.ui.tableView.setVisible(isDebugView or ((not isDebugView) and (self.__treeViewCurrentTable != "Register")))
+            self.ui.tableViewReg.setVisible((not isDebugView) and (self.__treeViewCurrentTable == "Register"))
             self.ui.pbReadAll.setVisible(isDebugView)
             self.ui.pbReadSelected.setVisible(isDebugView)
             self.ui.pbWriteAll.setVisible(isDebugView)
@@ -619,7 +624,10 @@ class uiModuleWindow(QWidget):
     @Slot('QItemSelection', 'QItemSelection')
     def do_tableView_selectionChanged(self, selected, deselected):
         if self.view == RegisterConst.DesignView:
-            tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()
+            if self.__treeViewCurrentTable == "Register":                            
+                tableViewCurrents = self.ui.tableViewReg.selectionModel().selectedIndexes()                
+            else:
+                tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()
             tableViewCurrent = None if len(tableViewCurrents) == 0 else tableViewCurrents[0]
             if tableViewCurrent != None:
                 treeViewCurrent = self.ui.treeView.selectedIndexes()[0]
@@ -675,7 +683,7 @@ class uiModuleWindow(QWidget):
         #    addBfAction.triggered.connect(self.on_pbAddBf_clicked)
         #    self.treeViewPopMenu.addAction(addBfEnumAction)
         #    addBfEnumAction.triggered.connect(self.on_pbAddBfEnum_clicked)
-        ###
+        
         self.treeViewPopMenu.addSeparator()
         delAction = QAction("Delete", self)
         self.treeViewPopMenu.addAction(delAction)
@@ -730,39 +738,45 @@ class uiModuleWindow(QWidget):
                         else:
                             self.treeViewTableModel.itemFromIndex(child).setData(None, Qt.BackgroundColorRole)
 
-        self.ui.tableView.resizeColumnsToContents()
+        # resize columns                            
+        if tableName == "Register":
+            self.ui.tableViewReg.resizeColumnsToContents()            
+        else:
+            self.ui.tableView.resizeColumnsToContents()
+            
         return
     
     @Slot()
     def do_treeView_currentChanged(self, current, previous):
         if self.view == RegisterConst.DesignView:
             tableName = str(current.data(RegisterConst.NameRole))
-            if tableName == "MemoryMap": # memorymap selected, show memorymap table
+            if tableName == "MemoryMap": # memmap selected, show memmap table
+                self.ui.tableView.setVisible(True)
+                self.ui.tableViewReg.setVisible(False)                 
                 if self.ui.tableView.model() != self.memoryMaptableModel:
                     self.ui.tableView.setModel(self.memoryMaptableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
                     if self.__regMapTypeIndex != None:
                         self.ui.tableView.showColumn(self.__regMapTypeIndex)
-                    if self.__regValueIndex != None:
-                        self.ui.tableView.showColumn(self.__regValueIndex)
-                        self.ui.tableView.setItemDelegateForColumn(self.__regValueIndex, None)
+                        self.__regMapTypeIndex = None
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.showColumn(1) # offset address
                     self.ui.tableView.showColumn(2) # notes
                     self.ui.tableView.resizeColumnsToContents()
-                    self.ui.pbAddRegMap.setEnabled(True)
-                    self.ui.pbAddReg.setEnabled(False)
-                    self.ui.pbAddBf.setEnabled(False)
-                    self.ui.pbAddBfEnum.setEnabled(False)
-                    self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add new register map.</br></br>"%self.ui.pbAddRegMap.text())
+                    
+                # update tips
+                self.ui.pbAddRegMap.setEnabled(True)
+                self.ui.pbAddReg.setEnabled(False)
+                self.ui.pbAddBf.setEnabled(False)
+                self.ui.pbAddBfEnum.setEnabled(False)
+                self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add new register map.</br></br>"%self.ui.pbAddRegMap.text())
                 
             elif tableName == "RegisterMap": # regmap or reg selected, show regmap table
+                self.ui.tableView.setVisible(True)
+                self.ui.tableViewReg.setVisible(False)                 
                 if self.ui.tableView.model() != self.regMapTableModel:
                     self.ui.tableView.setModel(self.regMapTableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
-                    if self.__regValueIndex != None:
-                        self.ui.tableView.showColumn(self.__regValueIndex)
-                        self.ui.tableView.setItemDelegateForColumn(self.__regValueIndex, None)
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.hideColumn(1) # memmap id
                     self.ui.tableView.hideColumn(2) # order
@@ -770,42 +784,48 @@ class uiModuleWindow(QWidget):
                     self.ui.tableView.hideColumn(self.__regMapTypeIndex)
                     self.ui.tableView.resizeColumnsToContents()
                     self.ui.tableView.resizeColumnsToContents()
-                    self.ui.pbAddRegMap.setEnabled(False)
-                    self.ui.pbAddBf.setEnabled(False)
-                    self.ui.pbAddBfEnum.setEnabled(False)
-                    self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add new register map, " \
-                                                     "or <font color=\"red\">%s</font> to add register.</br></br>"%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text()))
+                                    
+                # update tips
+                self.ui.pbAddRegMap.setEnabled(False)
+                self.ui.pbAddBf.setEnabled(False)
+                self.ui.pbAddBfEnum.setEnabled(False)
                 regMapType = current.data(RegisterConst.RegMapTypeRole)
                 regMapType = RegisterConst.RegMap if regMapType == None or regMapType == '' else int(regMapType) # default as regmap if not set
-                self.ui.pbAddReg.setEnabled(regMapType == RegisterConst.RegMap)
+                self.ui.pbAddReg.setEnabled(regMapType == RegisterConst.RegMap)                
+                if regMapType == RegisterConst.RegMap:
+                    self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add register.</br></br>"%(self.ui.pbAddReg.text()))
+                else:
+                    self.ui.labelDescription.setText("Tips: <br><br>Assign a filename to sub-module.</br></br>")
 
             elif tableName == "Register": # reg selected, show reg table
+                self.ui.tableView.setVisible(False)
+                self.ui.tableViewReg.setVisible(True)                
                 regMapId = int(current.data(RegisterConst.RegMapIdRole))
-                if self.ui.tableView.model() != self.regTableModel or regMapId != self.regTableModel.parentId:
+                if self.ui.tableViewReg.model() != self.regTableModel or regMapId != self.regTableModel.parentId:
                     self.__regValueIndex = self.regTableModel.record().indexOf("Value")
                     self.regTableModel.setHeaderData(self.__regValueIndex, Qt.Horizontal, "Bits")
                     self.regTableModel.setParentId(regMapId)
                     self.regTableModel.setFilter("RegisterMapId=%s"%regMapId)
                     self.regTableModel.select()
-                    if self.__regMapTypeIndex != None:
-                        self.ui.tableView.showColumn(self.__regMapTypeIndex)
-                    self.ui.tableView.setItemDelegateForColumn(self.__regValueIndex, QRegValueDisplayDelegate())
-                    self.ui.tableView.setModel(self.regTableModel)
-                    self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
-                    self.ui.tableView.hideColumn(0) # id
-                    self.ui.tableView.hideColumn(1) # regmap id
-                    self.ui.tableView.hideColumn(2) # order
-                    self.ui.tableView.resizeColumnsToContents()
-                    self.ui.pbAddRegMap.setEnabled(False)
-                    self.ui.pbAddReg.setEnabled(False)
-                    self.ui.pbAddBf.setEnabled(True)
-                    self.ui.pbAddBfEnum.setEnabled(False)
-                    self.ui.labelDescription.setText("Tips: <br><br>Click "\
-                                                     "<font color=\"red\">%s</font> to add new register map, or " \
-                                                     "<font color=\"red\">%s</font> to add register, or " \
-                                                     "<font color=\"red\">%s</font> to add bitfield</br></br>"%(self.ui.pbAddRegMap.text(), self.ui.pbAddReg.text(), self.ui.pbAddBf.text()))
+                    self.ui.tableViewReg.setItemDelegateForColumn(self.__regValueIndex, QRegValueDisplayDelegate())
+                    if self.ui.tableViewReg.model() != self.regTableModel:
+                        self.ui.tableViewReg.setModel(self.regTableModel)
+                    self.ui.tableViewReg.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    self.ui.tableViewReg.hideColumn(0) # id
+                    self.ui.tableViewReg.hideColumn(1) # regmap id
+                    self.ui.tableViewReg.hideColumn(2) # order
+                    self.ui.tableViewReg.resizeColumnsToContents()
+                    
+                # update tips
+                self.ui.pbAddRegMap.setEnabled(False)
+                self.ui.pbAddReg.setEnabled(False)
+                self.ui.pbAddBf.setEnabled(True)
+                self.ui.pbAddBfEnum.setEnabled(False)                
+                self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add bitfield</br></br>"%(self.ui.pbAddBf.text()))
                 
             elif tableName == "Bitfield": # bf selected, show bf table
+                self.ui.tableView.setVisible(True)
+                self.ui.tableViewReg.setVisible(False)
                 regId = int(current.data(RegisterConst.RegIdRole))
                 bfId  = int(current.data(RegisterConst.BfIdRole))
                 if self.ui.tableView.model() != self.bfQueryModel or regId != self.bfQueryModel.parentId:
@@ -815,18 +835,17 @@ class uiModuleWindow(QWidget):
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
                     if self.__regMapTypeIndex != None:
                         self.ui.tableView.showColumn(self.__regMapTypeIndex)
-                    if self.__regValueIndex != None:
-                        self.ui.tableView.showColumn(self.__regValueIndex)
-                        self.ui.tableView.setItemDelegateForColumn(self.__regValueIndex, None)
+                        self.__regMapTypeIndex = None
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.hideColumn(1) # regid
                     self.ui.tableView.hideColumn(2) # order
                     self.ui.tableView.resizeColumnsToContents()
-                    self.ui.pbAddRegMap.setEnabled(False)
-                    self.ui.pbAddReg.setEnabled(False)
-                    self.ui.pbAddBf.setEnabled(False)
-                    self.ui.pbAddBfEnum.setEnabled(True)
-
+                    
+                # update tips
+                self.ui.pbAddRegMap.setEnabled(False)
+                self.ui.pbAddReg.setEnabled(False)
+                self.ui.pbAddBf.setEnabled(False)
+                self.ui.pbAddBfEnum.setEnabled(True)                
                 regQ = QSqlQuery("SELECT Width FROM Register WHERE id=%s"%(regId), self.conn)
                 text = ""
                 while regQ.next(): # only 1 item
@@ -837,6 +856,8 @@ class uiModuleWindow(QWidget):
                 self.ui.labelDescription.setText(text)
 
             elif tableName == "BitfieldEnum": # bfenum selected, show bfenum table
+                self.ui.tableView.setVisible(True)
+                self.ui.tableViewReg.setVisible(False)                 
                 bfId = int(current.data(RegisterConst.BfIdRole))      
                 if self.ui.tableView.model() != self.bfEnumTableModel or bfId != self.bfEnumTableModel.parentId:
                     self.bfEnumTableModel.setParentId(bfId)
@@ -846,25 +867,32 @@ class uiModuleWindow(QWidget):
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
                     if self.__regMapTypeIndex != None:
                         self.ui.tableView.showColumn(self.__regMapTypeIndex)
-                    if self.__regValueIndex != None:
-                        self.ui.tableView.showColumn(self.__regValueIndex)
-                        self.ui.tableView.setItemDelegateForColumn(self.__regValueIndex, None)
+                        self.__regMapTypeIndex = None
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.hideColumn(1) # bfid
                     self.ui.tableView.hideColumn(2) # order
                     self.ui.tableView.resizeColumnsToContents()
-                    self.ui.pbAddRegMap.setEnabled(False)
-                    self.ui.pbAddReg.setEnabled(False)
-                    self.ui.pbAddBf.setEnabled(False)
-                    self.ui.pbAddBfEnum.setEnabled(False)
-                    self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add new bitfield enum.</br></br>"%self.ui.pbAddBfEnum.text())
+                    
+                # update tips
+                self.ui.pbAddRegMap.setEnabled(False)
+                self.ui.pbAddReg.setEnabled(False)
+                self.ui.pbAddBf.setEnabled(False)
+                self.ui.pbAddBfEnum.setEnabled(False)                    
+                self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add new bitfield enum.</br></br>"%self.ui.pbAddBfEnum.text())
 
             # select tableView row
+            self.__treeViewCurrentTable = tableName
             self.__treeViewCurrentRow = current.row()
-            tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()
+            if tableName == "Register":
+                tableViewCurrents = self.ui.tableViewReg.selectionModel().selectedIndexes()                
+            else:
+                tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()
             tableViewCurrent = None if len(tableViewCurrents) == 0 else tableViewCurrents[0]
             if tableViewCurrent == None or tableViewCurrent.row() != current.row():
-                self.ui.tableView.selectRow(current.row())
+                if tableName == "Register":
+                    self.ui.tableViewReg.selectRow(current.row())
+                else:
+                    self.ui.tableView.selectRow(current.row())                    
         else: # debug view
             tableName = str(current.data(RegisterConst.NameRole))
             if tableName != "MemoryMap":          
@@ -875,9 +903,7 @@ class uiModuleWindow(QWidget):
                         self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
                         if self.__regMapTypeIndex != None:
                             self.ui.tableView.showColumn(self.__regMapTypeIndex)
-                        if self.__regValueIndex != None:
-                            self.ui.tableView.showColumn(self.__regValueIndex)
-                            self.ui.tableView.setItemDelegateForColumn(self.__regValueIndex, None)
+                            self.__regMapTypeIndex = None
                         self.ui.tableView.showColumn(0)
                         self.ui.tableView.showColumn(1)
                         self.ui.tableView.showColumn(2)
