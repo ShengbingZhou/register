@@ -197,28 +197,19 @@ class uiModuleWindow(QWidget):
         r = self.newRegMap_Reg_Bf_BfEnum_Row(row, r, "Reg", model, "Register")
         return r
 
-    def newBfRow(self, model, bfRefModel, regId, memMapId, Width, row):                
+    def newBfRow(self, model, regId, Width, row):                
         r = model.record()
         r.remove(r.indexOf('id'))
-        r.setValue("MemoryMapId", memMapId)
+        r.setValue("RegisterId", regId)
         r.setValue("Access", "r/w")
         r.setValue("DefaultValue", 0)
+        r.setValue("RegisterOffset", 0)
         r.setValue("Width", Width)
         r.setValue("Description", "This is no name bitfield")
         r.setValue("Value", 0)
         r.setValue("Name", "Bf")
         r.setValue("DisplayOrder", -1)    
         r = self.newRegMap_Reg_Bf_BfEnum_Row(row, r, "Bf", model, "Bitfield")
-
-        bfId = r.value("id")
-        rr = bfRefModel.record()
-        rr.remove(rr.indexOf('id'))
-        rr.setValue("RegisterId", regId)
-        rr.setValue("BitfieldId", bfId)
-        rr.setValue("RegisterOffset", 0)
-        rr.setValue("BitfieldOffset", 0)
-        rr.setValue("SliceWidth", Width)
-        bfRefModel.insertRecord(-1, rr)
         return r
     
     def newBfEnumRow(self, model, bfId, row):
@@ -244,16 +235,16 @@ class uiModuleWindow(QWidget):
         # open new database
         self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
         if self.setupDesignViewModels(newName):
-            info0Id = self.newInfoRow(self.infoTableModel, now).value("id")                 # create info   row0
-            memMap0Id = self.newMemoryMapRow(self.memMaptableModel).value("id")          # create memmap row0
+            self.newInfoRow(self.infoTableModel, now).value("id")                 # create info   row0
+            memMap0Id = self.newMemoryMapRow(self.memMaptableModel).value("id")   # create memmap row0
             regMap0Id = self.newRegMapRow(self.regMapTableModel, memMap0Id, -1).value("id") # create regmap row0
             reg0Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 32, -1).value("id")   # create register row0
-            bf0Id = self.newBfRow(self.bfTableModel, self.bfRefTableModel, reg0Id, memMap0Id, 8, -1).value("id") # create bitfield row0
-            bfEnum0Id = self.newBfEnumRow(self.bfEnumTableModel, bf0Id, -1).value("id")     # create bitfieldenum row0
+            bf0Id = self.newBfRow(self.bfTableModel, reg0Id, 8, -1).value("id") # create bitfield row0
+            self.newBfEnumRow(self.bfEnumTableModel, bf0Id, -1).value("id")     # create bitfieldenum row0
             self.setupTreeView()
             self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
-            self.bfQueryModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.bfTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.bfEnumTableModel.dataChanged.connect(self.do_tableView_dataChanged)
         else:
             return False
@@ -275,7 +266,7 @@ class uiModuleWindow(QWidget):
             self.setupTreeView()
             self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
-            self.bfQueryModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.bfTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.bfEnumTableModel.dataChanged.connect(self.do_tableView_dataChanged)     
         else:
             return False
@@ -358,7 +349,8 @@ class uiModuleWindow(QWidget):
                     regMapName = regMapNode.find("Name").text
                     regMapDesc = regMapNode.find("Description").text
                     regMapAddr = regMapNode.find("Address").text.lower().replace("'h", "0x").replace("'d", "")
-                    query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, Name, Description, OffsetAddress) VALUES ('%s', '%s', '%s', '%s', '%s')"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr))
+                    query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, Name, Description, OffsetAddress) " \
+                                "VALUES ('%s', '%s', '%s', '%s', '%s')"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr))
                     query.exec_("SELECT max(id) FROM RegisterMap")
                     query.next()
                     regMapId = query.record().value(0)
@@ -374,7 +366,8 @@ class uiModuleWindow(QWidget):
                         regDesc = regNode.find("Description").text
                         regAddr = regNode.find("Address").text.lower().replace("'h", "0x").replace("'d", "")
                         regWidth = regNode.find("Width").text.lower().replace("'h", "0x").replace("'d", "")
-                        query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width) VALUES ('%s', '%s', '%s', '%s', '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth))
+                        query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width) " \
+                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth))
                         query.exec_("SELECT max(id) FROM Register")
                         query.next()
                         regId = query.record().value(0)
@@ -383,49 +376,32 @@ class uiModuleWindow(QWidget):
                         bfRefNodes = regNode.findall("BitFieldRefs/BitFieldRef")
                         for k in range(len(bfRefNodes)):
                             bfRefNode = bfRefNodes[k]
-                            
-                            bfRowCreated = 0 # 0: not created, 1: no need to create, 2: created
                             bfUID = bfRefNode.find("BF-UID").text
+                            regOffset  = bfRefNode.find("RegOffset").text.lower().replace("'h", "0x").replace("'d", "")
+                            bitOffset  = bfRefNode.find("BitOffset").text.lower().replace("'h", "0x").replace("'d", "")
+                            sliceWidth = bfRefNode.find("SliceWidth").text.lower().replace("'h", "0x").replace("'d", "")
                             for m in range(len(bfNodes)):
                                 bfNode = bfNodes[m]
                                 if bfUIDs[m].text == bfUID:
                                     bfName = bfNode.find("Name").text
                                     if bfName != "RESERVED":
                                         bfDesc = bfNode.find("Description").text
-                                        bfWidth = bfNode.find("Width").text.replace("'h", "0x").replace("'d", "")
-                                        bfDfValue = bfNode.find("DefaultValue").text.replace("'h", "0x").replace("'d", "")
-                                        query.exec_("INSERT INTO Bitfield (MemoryMapId, DisplayOrder, Name, Description, Width, DefaultValue) VALUES ('%s', '%s', '%s', '%s', '%s', '%s')"%(memMapId, bfDisplayOrder, bfName, bfDesc, bfWidth, bfDfValue))
-                                        query.exec_("SELECT max(id) FROM Bitfield")
-                                        query.next()
-                                        bfId = query.record().value(0)
+                                        bfDfValue = bfNode.find("DefaultValue").text.replace("'h", "0x").replace("'d", "").replace("'b", "").replace("'", "")
+                                        # TODO: process default value to get sliced value
+                                        query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, Name, Description, RegisterOffset, Width, DefaultValue) " \
+                                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, sliceWidth, bfDfValue))
                                         bfDisplayOrder += 1
-                                        bfRowCreated = 2
-                                    else:
-                                        bfRowCreated = 1
                                     break
-                            if bfRowCreated == 0:
-                                query.exec_("INSERT INTO Bitfield (MemoryMapId, DisplayOrder, Name) VALUES ('%s', '%s', '%s')"%(memMapId, bfDisplayOrder, bfUID))
-                                query.exec_("SELECT max(id) FROM Bitfield")
-                                query.next()
-                                bfId = query.record().value(0)
-                                bfDisplayOrder += 1
-                                bfRowCreated = 2
-                            if bfRowCreated == 2:
-                                RegOffset  = bfRefNode.find("RegOffset").text.lower().replace("'h", "0x").replace("'d", "")
-                                BitOffset  = bfRefNode.find("BitOffset").text.lower().replace("'h", "0x").replace("'d", "")
-                                SliceWidth = bfRefNode.find("SliceWidth").text.lower().replace("'h", "0x").replace("'d", "")
-                                query.exec_("INSERT INTO BitfieldRef (RegisterId, BitfieldId, RegisterOffset, BitfieldOffset, SliceWidth) VALUES ('%s', '%s', '%s', '%s', '%s')"%(regId, bfId, RegOffset, BitOffset, SliceWidth))
                 dlgProgress.close()
-            
+
             self.memMaptableModel.select()
             self.regMapTableModel.select()
             self.regTableModel.select()
-            self.bfRefTableModel.select()
             self.bfTableModel.select()
             self.setupTreeView()
             self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
-            self.bfQueryModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.bfTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.bfEnumTableModel.dataChanged.connect(self.do_tableView_dataChanged)
         return True
 
@@ -460,12 +436,7 @@ class uiModuleWindow(QWidget):
             self.regTableModel.setTable("Register")
             self.regTableModel.setSort(self.regTableModel.fieldIndex("DisplayOrder"), Qt.AscendingOrder)
             self.regTableModel.select()
-            
-            self.bfRefTableModel = QSqlTableModel(self, self.conn)
-            self.bfRefTableModel.setEditStrategy(QSqlTableModel.OnFieldChange)
-            self.bfRefTableModel.setTable("BitfieldRef")
-            self.bfRefTableModel.select()
-            
+                        
             self.bfTableModel = QSqlHighlightTableModel(self, self.conn)
             self.bfTableModel.setEditStrategy(QSqlTableModel.OnFieldChange) 
             self.bfTableModel.setTable("Bitfield")
@@ -477,9 +448,6 @@ class uiModuleWindow(QWidget):
             self.bfEnumTableModel.setTable("BitfieldEnum")
             self.bfEnumTableModel.setSort(self.bfEnumTableModel.fieldIndex("DisplayOrder"), Qt.AscendingOrder)
             self.bfEnumTableModel.select()
-            
-            self.bfQueryModel = QSqlQueryBfTableModel()
-            self.bfQueryModel.setConn(self.conn)
         else:
             QMessageBox.warning(self, "Error", "Failed to open %s"%fileName)  
             return False
@@ -490,24 +458,11 @@ class uiModuleWindow(QWidget):
         self.treeViewTableModel = QStandardItemModel()
         root = self.treeViewTableModel.invisibleRootItem()
 
-        # prepare progress dialog
-        query = QSqlQuery(self.conn)
-        query.exec_("SELECT COUNT(*) FROM MemoryMap")
-        query.next()
-        mmMapCount = query.value(0)
-        query.exec_("SELECT COUNT(*) FROM RegisterMap")
-        query.next()
-        regMapCount = query.value(0)
-
-        dlgProgress = QProgressDialog("Setting up item list...", "Cancel", 0, mmMapCount*regMapCount, self)
-        dlgProgress.setWindowTitle("Setting up item list ...")
-        dlgProgress.setWindowModality(Qt.WindowModal)
-
         # memory map
         memoryMapQueryModel = QSqlQueryModel()
         memoryMapQueryModel.setQuery("SELECT id FROM MemoryMap", self.conn)
-        for l in range(memoryMapQueryModel.rowCount()):
-            memoryMapRecord = memoryMapQueryModel.record(l)
+        for i in range(memoryMapQueryModel.rowCount()):
+            memoryMapRecord = memoryMapQueryModel.record(i)
             self.memoryMapItem = QStandardItem(self.moduleIcon, "MemoryMap")
             self.memoryMapItem.setData("MemoryMap", RegisterConst.NameRole)
             self.memoryMapItem.setData(memoryMapRecord.value("id"), RegisterConst.MemMapIdRole)
@@ -516,8 +471,8 @@ class uiModuleWindow(QWidget):
             # register map
             regMapQueryModel = QSqlQueryModel()
             regMapQueryModel.setQuery("SELECT id, Name, Type FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memoryMapRecord.value("id"), self.conn)
-            for i in range(regMapQueryModel.rowCount()):
-                regMapRecord = regMapQueryModel.record(i)
+            for j in range(regMapQueryModel.rowCount()):
+                regMapRecord = regMapQueryModel.record(j)
                 regMapitem = QStandardItem(self.regMapIcon, regMapRecord.value("name"))
                 regMapitem.setData("RegisterMap", RegisterConst.NameRole)
                 regMapitem.setData(memoryMapRecord.value("id"), RegisterConst.MemMapIdRole)
@@ -527,14 +482,11 @@ class uiModuleWindow(QWidget):
                 if RegisterConst.recordExist(regMapRecord) == False:
                     regMapitem.setData(QColor('grey'), Qt.BackgroundColorRole)
             
-                dlgProgress.setLabelText("adding register map '%s'"%(regMapRecord.value("name")))
-                dlgProgress.setValue(i)
-
                 # register
                 regQueryModel = QSqlQueryModel()
                 regQueryModel.setQuery("SELECT id, Name FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
-                for j in range(regQueryModel.rowCount()):
-                    regRecord = regQueryModel.record(j)
+                for k in range(regQueryModel.rowCount()):
+                    regRecord = regQueryModel.record(k)
                     regItem = QStandardItem(self.regIcon, regRecord.value("name"))
                     regItem.setData("Register", RegisterConst.NameRole)
                     regItem.setData(memoryMapRecord.value("id"), RegisterConst.MemMapIdRole)
@@ -546,10 +498,9 @@ class uiModuleWindow(QWidget):
                     
                     # bitfield
                     bfQueryModel = QSqlQueryModel()
-                    bfQueryModel.setQuery("SELECT id, Name FROM Bitfield WHERE EXISTS (SELECT * FROM BitfieldRef WHERE Bitfield.id=BitfieldRef.BitfieldId AND " \
-                                          "BitfieldRef.RegisterId=%s) ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
-                    for k in range(bfQueryModel.rowCount()):
-                        bfRecord = bfQueryModel.record(k)
+                    bfQueryModel.setQuery("SELECT id, Name FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
+                    for m in range(bfQueryModel.rowCount()):
+                        bfRecord = bfQueryModel.record(m)
                         bfItem = QStandardItem(self.bfIcon, bfRecord.value("name"))
                         bfItem.setData("Bitfield", RegisterConst.NameRole)
                         bfItem.setData(memoryMapRecord.value("id"), RegisterConst.MemMapIdRole)
@@ -559,12 +510,12 @@ class uiModuleWindow(QWidget):
                         regItem.appendRow(bfItem)
                         if RegisterConst.recordExist(bfRecord) == False:
                             bfItem.setData(QColor('grey'), Qt.BackgroundColorRole)                       
-                            
-                        #bitfield enum
+
+                        # bitfield enum
                         bfEnumQueryModel = QSqlQueryModel()
                         bfEnumQueryModel.setQuery("SELECT id, Name FROM BitfieldEnum WHERE BitfieldId=%s ORDER BY DisplayOrder ASC"%bfRecord.value("id"), self.conn)
-                        for j in range(bfEnumQueryModel.rowCount()):
-                            bfEnumRecord = bfEnumQueryModel.record(j)
+                        for n in range(bfEnumQueryModel.rowCount()):
+                            bfEnumRecord = bfEnumQueryModel.record(n)
                             bfEnumItem = QStandardItem(self.bfenumIcon, bfEnumRecord.value("name"))
                             bfEnumItem.setData("BitfieldEnum", RegisterConst.NameRole)
                             bfEnumItem.setData(memoryMapRecord.value("id"), RegisterConst.MemMapIdRole)
@@ -576,9 +527,6 @@ class uiModuleWindow(QWidget):
                             if RegisterConst.recordExist(bfEnumRecord) == False:
                                 bfEnumItem.setData(QColor('grey'), Qt.BackgroundColorRole)
         
-        # close progressbar
-        dlgProgress.close()
-
         # show tree view nodes
         self.ui.treeView.setModel(self.treeViewTableModel)
         self.ui.treeView.expandAll()
@@ -629,8 +577,7 @@ class uiModuleWindow(QWidget):
 
                 # bitfield
                 bfQueryModel = QSqlQueryModel()
-                bfQueryModel.setQuery("SELECT Name, Value FROM Bitfield WHERE EXISTS (SELECT * FROM BitfieldRef WHERE Bitfield.id=BitfieldRef.BitfieldId AND " \
-                                      "BitfieldRef.RegisterId=%s) ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
+                bfQueryModel.setQuery("SELECT Name, Value FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
                 for k in range(bfQueryModel.rowCount()):
                     bfRecord = bfQueryModel.record(k)
                     if RegisterConst.recordExist(bfRecord) == True:
@@ -730,7 +677,7 @@ class uiModuleWindow(QWidget):
             model = self.regTableModel
             idRole = RegisterConst.RegIdRole
         elif tableName == "Bitfield":
-            model = self.bfQueryModel
+            model = self.bfTableModel
             idRole = RegisterConst.BfIdRole
         elif tableName == "BitfieldEnum":
             model = self.bfEnumTableModel
@@ -838,7 +785,7 @@ class uiModuleWindow(QWidget):
                     self.ui.tableViewReg.hideColumn(1) # regmap id
                     self.ui.tableViewReg.hideColumn(2) # order
                     self.ui.tableViewReg.resizeColumnsToContents()
-                    
+
                 # update tips
                 self.ui.pbAddRegMap.setEnabled(False)
                 self.ui.pbAddReg.setEnabled(False)
@@ -851,10 +798,10 @@ class uiModuleWindow(QWidget):
                 self.ui.tableViewReg.setVisible(False)
                 regId = int(current.data(RegisterConst.RegIdRole))
                 bfId  = int(current.data(RegisterConst.BfIdRole))
-                if self.ui.tableView.model() != self.bfQueryModel or regId != self.bfQueryModel.parentId:
-                    self.bfQueryModel.setParentId(regId)
-                    self.bfQueryModel.setQuery("%s%s ORDER BY A.DisplayOrder ASC"%(self.tableDesignViewBfQuerySql, regId), self.conn)
-                    self.ui.tableView.setModel(self.bfQueryModel)
+                if self.ui.tableView.model() != self.bfTableModel or regId != self.bfTableModel.parentId:
+                    self.bfTableModel.setParentId(regId)
+                    self.bfTableModel.setFilter("RegisterId=%s"%regId)
+                    self.ui.tableView.setModel(self.bfTableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
                     if self.__regMapTypeIndex != None:
                         self.ui.tableView.showColumn(self.__regMapTypeIndex)
@@ -1046,7 +993,7 @@ class uiModuleWindow(QWidget):
         regMapId = int(current.data(RegisterConst.RegMapIdRole))
         regId = int(current.data(RegisterConst.RegIdRole))
         newBfRowIndex = -1 if tableName != "Bitfield" else current.row() + 1 
-        r = self.newBfRow(self.bfTableModel, self.bfRefTableModel, regId, memoryMapId, 8, newBfRowIndex)
+        r = self.newBfRow(self.bfTableModel, regId, 8, newBfRowIndex)
         
         newBfItem = QStandardItem(self.bfIcon, r.value("name"))
         newBfItem.setData("Bitfield", RegisterConst.NameRole)
@@ -1068,7 +1015,6 @@ class uiModuleWindow(QWidget):
                 standardItem.parent().setChild(current.row() + 1, newBfItem)
                 item = standardItem.parent().child(current.row() + 1)
                 self.ui.treeView.selectionModel().setCurrentIndex(item.index(), QItemSelectionModel.ClearAndSelect)
-            self.bfQueryModel.setQuery("%s%s ORDER BY A.DisplayOrder ASC"%(self.tableDesignViewBfQuerySql, regId), self.conn)
         elif tableName == "BitfieldEnum":
             standardItem.parent().parent().appendRow(newBfItem)
         return

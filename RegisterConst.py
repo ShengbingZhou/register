@@ -49,20 +49,18 @@ class RegisterConst:
         bfColorsIndex = 0
         regB = regW - 1
         text = ""
-        bfRefQ = QSqlQuery("SELECT * FROM BitfieldRef WHERE RegisterId=%s ORDER BY RegisterOffset DESC"%(regId), conn)
-        while bfRefQ.next():
-            # get values
-            regOff = bfRefQ.value("RegisterOffset")
-            bfOff = bfRefQ.value("BitfieldOffset")
-            sliceW = bfRefQ.value("SliceWidth")
-            _bfId = bfRefQ.value("BitfieldId")
+        bfQuery = QSqlQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY RegisterOffset DESC"%(regId), conn)
+        while bfQuery.next():
+            _regOff = bfQuery.value("RegisterOffset")
+            _bfW  = bfQuery.value("Width")
+            _bfId = bfQuery.value("id")
 
             # unused bits before bitfield 
-            if sliceW > 0 and regB > (regOff + sliceW - 1):
+            if _bfW > 0 and regB > (_regOff + _bfW - 1):
                 if fontSize != None:
                     text += "<span style='font-size:%spx'>"%fontSize 
-                for i in range(regOff + sliceW, regB + 1):
-                    if regB > (regOff + sliceW):
+                for i in range(_regOff + _bfW, regB + 1):
+                    if regB > (_regOff + _bfW):
                         text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
                     else:
                         text += "%s"%(regB) if (regW < 10 or regB > 9) else "0%s"%(regB)
@@ -75,7 +73,7 @@ class RegisterConst:
                     text += " "
 
             # bitfield bits
-            if sliceW > 0 and regB >= 0:
+            if _bfW > 0 and regB >= 0:
                 if _bfId == bfId:
                     if fontSize != None:
                         text += "<span style='font-size:%spx;background-color:%s;font-weight:bold;color:red'>"%(fontSize, bfColors[bfColorsIndex])
@@ -87,8 +85,8 @@ class RegisterConst:
                     else:
                         text += "<span style='background-color:%s'>"%(bfColors[bfColorsIndex])
                 bfColorsIndex = 0 if (bfColorsIndex + 1) >= len(bfColors) else bfColorsIndex + 1
-                for j in range(regOff, regOff + sliceW):
-                    if j < (regOff + sliceW - 1):
+                for j in range(_regOff, _regOff + _bfW):
+                    if j < (_regOff + _bfW - 1):
                         text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
                     else:
                         text += "%s"%(regB) if (regW < 10 or regB > 9) else "0%s"%(regB)
