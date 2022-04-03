@@ -39,7 +39,7 @@
      <x>0</x>
      <y>0</y>
      <width>1045</width>
-     <height>24</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -147,17 +147,17 @@
   </action>
   <action name="actionImportYoda">
    <property name="text">
-    <string>Yoda</string>
+    <string>yoda</string>
    </property>
   </action>
   <action name="actionImportIP_XACT">
    <property name="text">
-    <string>IP-XACT</string>
+    <string>ipxact</string>
    </property>
   </action>
   <action name="actionExportIP_XACT">
    <property name="text">
-    <string>IP-XACT</string>
+    <string>ipxact</string>
    </property>
   </action>
   <action name="actionDesignView">
