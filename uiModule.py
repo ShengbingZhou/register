@@ -8,7 +8,7 @@ from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
 from PySide2.QtXmlPatterns import QXmlQuery, QXmlSerializer, QXmlResultItems
 from PySide2.QtXml import QDomDocument, QDomNodeList
-from xml.etree import ElementTree
+from lxml import etree
 from ui.Module import Ui_ModuleWindow
 from RegisterConst import RegisterConst
 from QSqlQueryBfTableModel import QSqlQueryBfTableModel
@@ -290,7 +290,121 @@ class uiModuleWindow(QWidget):
                 shutil.copy(self.newFileName, self.fileName)
                 fileName = self.fileName
         return fileName
+
+    def exporIpxact(self):
+        fileName, filterUsed = QFileDialog.getSaveFileName(self, "Export ipxact file", QDir.homePath(), "ipxact File (*.xml)")
+        if fileName !='':
+            if os.path.exists(fileName):                                        
+                os.remove(fileName)
+        return
     
+    def importIpxact(self, fileName):
+        # create temp database
+        now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
+        newName = "__%s%s"%(now, RegisterConst.DesignFileExt)
+        newName = QDir.homePath() + "/.reg/" + newName   
+        shutil.copyfile("template/module_template.db", newName)
+        self.newFileName = newName
+        self.newModule = True  
+
+        # import ipxact xml file
+        self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
+        if self.setupDesignViewModels(newName):
+            infoId = self.newInfoRow(self.infoTableModel, now).value("id")
+
+            # find root
+            sp1 = etree.parse(fileName)
+            root = sp1.getroot()
+            
+            # find memory map
+            memMapNodes = root.findall('ipxact:memoryMaps/ipxact:memoryMap', root.nsmap)
+            if len(memMapNodes) == 0:
+                QMessageBox.warning(self, "Error", "Unable to find memory map", QMessageBox.Yes)
+                if os.path.isfile(self.newFileName):
+                    os.remove(self.newFileName)
+                return False
+
+            # start to import
+            regMapDisplayOrder = 0
+            regDisplayOrder = 0
+            bfDisplayOrder = 0
+            query = QSqlQuery(self.conn)
+            for memMap in memMapNodes:
+                # add memory record
+                query.exec_("INSERT INTO MemoryMap (OffsetAddress) VALUES ('%s')"%(0))
+                query.exec_("SELECT max(id) FROM MemoryMap")
+                query.next()
+                memMapId = query.record().value(0)
+
+                # get regmap nodes
+                regMapNodes = memMap.findall("ipxact:addressBlock", root.nsmap)
+
+                # prepare progress dialog
+                dlgProgress = QProgressDialog("Importing %s ..."%fileName, "Cancel", 0, len(regMapNodes), self)
+                dlgProgress.setWindowTitle("Importing...")
+                dlgProgress.setWindowModality(Qt.WindowModal)
+
+                for i in range(len(regMapNodes)):
+                    regMapNode = regMapNodes[i]
+                    regMapName = regMapNode.find("ipxact:name", root.nsmap).text
+
+                    n = regMapNode.find("ipxact:description", root.nsmap)
+                    regMapDesc = "" if n == None else n.text
+
+                    regMapAddr = regMapNode.find("ipxact:baseAddress", root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
+                    query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, Name, Description, OffsetAddress) " \
+                                "VALUES ('%s', '%s', '%s', '%s', '%s')"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr))
+                    query.exec_("SELECT max(id) FROM RegisterMap")
+                    query.next()
+                    regMapId = query.record().value(0)
+                    regMapDisplayOrder += 1
+
+                    dlgProgress.setLabelText("Importing register map '%s' from %s "%(regMapName, fileName))
+                    dlgProgress.setValue(i)
+                 
+                    regNodes = regMapNode.findall("ipxact:register", root.nsmap)
+                    for j in range(len(regNodes)):
+                        regNode = regNodes[j]
+                        regName = regNode.find("ipxact:name", root.nsmap).text
+
+                        n = regNode.find("ipxact:description", root.nsmap)
+                        regDesc = "" if n == None else n.text
+
+                        regAddr = regNode.find("ipxact:addressOffset", root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
+                        regWidth = regNode.find("ipxact:size", root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
+                        query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width) " \
+                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth))
+                        query.exec_("SELECT max(id) FROM Register")
+                        query.next()
+                        regId = query.record().value(0)
+                        regDisplayOrder += 1
+
+                        bfNodes = regNode.findall("ipxact:field", root.nsmap)
+                        for k in range(len(bfNodes)):
+                            bfNode = bfNodes[k]
+                            bfName = bfNode.find("ipxact:name", root.nsmap).text
+
+                            n = bfNode.find("ipxact:description", root.nsmap)
+                            bfDesc = "" if n == None else n.text
+
+                            regOffset = bfNode.find("ipxact:bitOffset", root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
+                            bfWidth   = bfNode.find("ipxact:bitWidth", root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
+                            query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, Name, Description, RegisterOffset, Width, DefaultValue) " \
+                                        "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, bfWidth, 0))
+                            bfDisplayOrder += 1
+                dlgProgress.close()
+
+            self.memMaptableModel.select()
+            self.regMapTableModel.select()
+            self.regTableModel.select()
+            self.bfTableModel.select()
+            self.setupTreeView()
+            self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.bfTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.bfEnumTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+        return True
+
     def importYodaSp1(self, fileName):
         # create temp database
         now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
@@ -306,7 +420,7 @@ class uiModuleWindow(QWidget):
             infoId = self.newInfoRow(self.infoTableModel, now).value("id")
 
             # find root
-            sp1 = ElementTree.parse(fileName)
+            sp1 = etree.parse(fileName)
             root = sp1.getroot()
     
             # find memory map
@@ -322,7 +436,7 @@ class uiModuleWindow(QWidget):
             regDisplayOrder = 0
             bfDisplayOrder = 0
             query = QSqlQuery(self.conn)
-            for memMap in memMapNodes: # actually only 1 memory map node in yoda file, no need to loop
+            for memMap in memMapNodes:
                 # add memory record
                 memMapAddr = root.find("Properties/Address").text.lower().replace("'h", "0x").replace("'d", "")
                 query.exec_("INSERT INTO MemoryMap (OffsetAddress) VALUES ('%s')"%(memMapAddr))
@@ -399,6 +513,7 @@ class uiModuleWindow(QWidget):
             self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.bfTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.bfEnumTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+
         return True
 
     def setupDesignViewModels(self, fileName):  

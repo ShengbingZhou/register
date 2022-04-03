@@ -47,33 +47,7 @@ class uiMainWindow(QMainWindow):
             tab = moduleWindow = self.ui.tabWidget.widget(i)
             tab.close()
         event.accept()
-    
-    def openFile(self, fileName):
-        if os.path.isfile(fileName) == False:
-            QMessageBox.warning(self, "Error", "Failed to open %s as it doesn't exist."%fileName)
-            return
-        moduleWindow = uiModuleWindow(self)
-        moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
-        if moduleWindow.openDatabase(fileName):
-            index = self.ui.tabWidget.addTab(moduleWindow, os.path.basename(fileName))
-            self.ui.tabWidget.setCurrentIndex(index)
-            moduleWindow.setMainWindow(self)
-            if self.welcomeWindow != None:
-                self.welcomeWindow.updateRecentFiles(fileName)
-        return
         
-    def importYodaSp1File(self, fileName):
-        if os.path.isfile(fileName) == False:
-            QMessageBox.warning(self, "Error", "Failed to open %s as it doesn't exist."%fileName)
-            return
-        moduleWindow = uiModuleWindow(self)
-        moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
-        if moduleWindow.importYodaSp1(fileName):
-            index = self.ui.tabWidget.addTab(moduleWindow, "NoName")
-            self.ui.tabWidget.setCurrentIndex(index)
-            moduleWindow.setMainWindow(self)
-        return 
-
     @Slot(int)
     def on_tabWidget_tabCloseRequested(self, index):
         if (index < 0):
@@ -100,24 +74,58 @@ class uiMainWindow(QMainWindow):
     def on_actionOpen_triggered(self):
         fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open register file", QDir.homePath(), "Register File (*%s)"%RegisterConst.DesignFileExt)
         if fileName != '':
-            self.openFile(fileName)
+            if os.path.isfile(fileName) == False:
+                QMessageBox.warning(self, "Error", "Failed to open %s as it doesn't exist."%fileName)
+                return
+            moduleWindow = uiModuleWindow(self)
+            moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
+            if moduleWindow.openDatabase(fileName):
+                f_name, f_ext = os.path.splitext(os.path.basename(fileName))
+                index = self.ui.tabWidget.addTab(moduleWindow, f_name)
+                self.ui.tabWidget.setCurrentIndex(index)
+                moduleWindow.setMainWindow(self)
+                if self.welcomeWindow != None:
+                    self.welcomeWindow.updateRecentFiles(fileName)
         return
     
     @Slot()
     def on_actionImportYoda_triggered(self):
         fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open Yoda (.sp1) file", QDir.homePath(), "Register File (*.sp1)")
         if fileName != '':
-            self.importYodaSp1File(fileName)
+            if os.path.isfile(fileName) == False:
+                QMessageBox.warning(self, "Error", "Failed to open %s as it doesn't exist."%fileName)
+                return
+            moduleWindow = uiModuleWindow(self)
+            moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
+            if moduleWindow.importYodaSp1(fileName):
+                index = self.ui.tabWidget.addTab(moduleWindow, "NoName")
+                self.ui.tabWidget.setCurrentIndex(index)
+                moduleWindow.setMainWindow(self)
         return
 
     @Slot()
     def on_actionImportIP_XACT_triggered(self):
-        QMessageBox.information(self, "Import IP-XACT file", "TODO", QMessageBox.Yes)
+        fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open ipxact (.xml) file", QDir.homePath(), "ipxact File (*.xml)")
+        if fileName != '':
+            if os.path.isfile(fileName) == False:
+                QMessageBox.warning(self, "Error", "Failed to open %s as it doesn't exist."%fileName)
+                return
+            moduleWindow = uiModuleWindow(self)
+            moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
+            if moduleWindow.importIpxact(fileName):
+                index = self.ui.tabWidget.addTab(moduleWindow, "NoName")
+                self.ui.tabWidget.setCurrentIndex(index)
+                moduleWindow.setMainWindow(self)
         return
-    
+
     @Slot()
     def on_actionExportIP_XACT_triggered(self):
-        QMessageBox.information(self, "Export IP-XACT file", "TODO", QMessageBox.Yes)
+        if self.ui.tabWidget.currentIndex() < 0:
+            return
+        tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
+        if tabText != RegisterConst.WelcomeTabText:
+            moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+            moduleWindow.saveDatabase()
         return    
     
     @Slot()
@@ -129,7 +137,8 @@ class uiMainWindow(QMainWindow):
             moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
             fileName = moduleWindow.saveDatabase()
             if fileName != '':
-                self.ui.tabWidget.setTabText(self.ui.tabWidget.currentIndex(), os.path.basename(fileName))
+                f_name, f_ext = os.path.splitext(os.path.basename(fileName))
+                self.ui.tabWidget.setTabText(self.ui.tabWidget.currentIndex(), f_name)
                 if self.welcomeWindow != None:
                     self.welcomeWindow.updateRecentFiles(fileName)
         return
