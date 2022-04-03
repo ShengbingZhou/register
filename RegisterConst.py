@@ -27,13 +27,13 @@ class RegisterConst:
     RegAccessValues = ['r', 'w', 'rw', 'rc', 'wc']
 
     # special role
-    NameRole        = Qt.UserRole + 1
-    MemoryMapIdRole = Qt.UserRole + 2
-    RegMapIdRole    = Qt.UserRole + 3
-    RegIdRole       = Qt.UserRole + 4
-    BfIdRole        = Qt.UserRole + 5
-    BfEnumIdRole    = Qt.UserRole + 6
-    RegMapTypeRole  = Qt.UserRole + 7 # check regmap type
+    NameRole       = Qt.UserRole + 1
+    MemMapIdRole   = Qt.UserRole + 2
+    RegMapIdRole   = Qt.UserRole + 3
+    RegIdRole      = Qt.UserRole + 4
+    BfIdRole       = Qt.UserRole + 5
+    BfEnumIdRole   = Qt.UserRole + 6
+    RegMapTypeRole = Qt.UserRole + 7 # check regmap type
     
     @staticmethod
     def recordExist(record):

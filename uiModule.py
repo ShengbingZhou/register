@@ -245,7 +245,7 @@ class uiModuleWindow(QWidget):
         self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
         if self.setupDesignViewModels(newName):
             info0Id = self.newInfoRow(self.infoTableModel, now).value("id")                 # create info   row0
-            memMap0Id = self.newMemoryMapRow(self.memoryMaptableModel).value("id")          # create memmap row0
+            memMap0Id = self.newMemoryMapRow(self.memMaptableModel).value("id")          # create memmap row0
             regMap0Id = self.newRegMapRow(self.regMapTableModel, memMap0Id, -1).value("id") # create regmap row0
             reg0Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 32, -1).value("id")   # create register row0
             bf0Id = self.newBfRow(self.bfTableModel, self.bfRefTableModel, reg0Id, memMap0Id, 8, -1).value("id") # create bitfield row0
@@ -318,9 +318,11 @@ class uiModuleWindow(QWidget):
         if self.setupDesignViewModels(newName):
             infoId = self.newInfoRow(self.infoTableModel, now).value("id")
 
+            # find root
             sp1 = ElementTree.parse(fileName)
             root = sp1.getroot()
     
+            # find memory map
             memMapNodes = root.findall('MemoryMap')
             if len(memMapNodes) == 0:
                 QMessageBox.warning(self, "Error", "Unable to find memory map", QMessageBox.Yes)
@@ -328,8 +330,20 @@ class uiModuleWindow(QWidget):
                     os.remove(self.newFileName)
                 return False
 
+            # start to import
+            regMapDisplayOrder = 0
+            regDisplayOrder = 0
+            bfDisplayOrder = 0
+            query = QSqlQuery(self.conn)
             for memMap in memMapNodes: # actually only 1 memory map node in yoda file, no need to loop
-                memMapId = self.newMemoryMapRow(self.memoryMaptableModel).value("id")
+                # add memory record
+                memMapAddr = root.find("Properties/Address").text.lower().replace("'h", "0x").replace("'d", "")
+                query.exec_("INSERT INTO MemoryMap (OffsetAddress) VALUES ('%s')"%(memMapAddr))
+                query.exec_("SELECT max(id) FROM MemoryMap")
+                query.next()
+                memMapId = query.record().value(0)
+
+                # import regmap/reg/bf
                 bfNodes = memMap.findall("BitFields/BitField")
                 bfUIDs  = memMap.findall("BitFields/BitField/UID")
                 regMapNodes = memMap.findall("RegisterMaps/RegisterMap")
@@ -339,11 +353,6 @@ class uiModuleWindow(QWidget):
                 dlgProgress.setWindowTitle("Importing...")
                 dlgProgress.setWindowModality(Qt.WindowModal)
 
-                # start to import
-                regMapDisplayOrder = 0
-                regDisplayOrder = 0
-                bfDisplayOrder = 0
-                query = QSqlQuery(self.conn)
                 for i in range(len(regMapNodes)):
                     regMapNode = regMapNodes[i]
                     regMapName = regMapNode.find("Name").text
@@ -408,6 +417,7 @@ class uiModuleWindow(QWidget):
                                 query.exec_("INSERT INTO BitfieldRef (RegisterId, BitfieldId, RegisterOffset, BitfieldOffset, SliceWidth) VALUES ('%s', '%s', '%s', '%s', '%s')"%(regId, bfId, RegOffset, BitOffset, SliceWidth))
                 dlgProgress.close()
             
+            self.memMaptableModel.select()
             self.regMapTableModel.select()
             self.regTableModel.select()
             self.bfRefTableModel.select()
@@ -434,11 +444,11 @@ class uiModuleWindow(QWidget):
             self.infoTableModel.setTable("info")
             self.infoTableModel.select()
             
-            self.memoryMaptableModel = QSqlTableModel(self, self.conn)
-            self.memoryMaptableModel.setEditStrategy(QSqlTableModel.OnFieldChange)  
-            self.memoryMaptableModel.setTable("MemoryMap")
-            self.memoryMaptableModel.select()
-            
+            self.memMaptableModel = QSqlTableModel(self, self.conn)
+            self.memMaptableModel.setEditStrategy(QSqlTableModel.OnFieldChange)  
+            self.memMaptableModel.setTable("MemoryMap")
+            self.memMaptableModel.select()
+
             self.regMapTableModel = QSqlHighlightTableModel(self, self.conn)
             self.regMapTableModel.setEditStrategy(QSqlTableModel.OnFieldChange)  
             self.regMapTableModel.setTable("RegisterMap")
@@ -500,7 +510,7 @@ class uiModuleWindow(QWidget):
             memoryMapRecord = memoryMapQueryModel.record(l)
             self.memoryMapItem = QStandardItem(self.moduleIcon, "MemoryMap")
             self.memoryMapItem.setData("MemoryMap", RegisterConst.NameRole)
-            self.memoryMapItem.setData(memoryMapRecord.value("id"), RegisterConst.MemoryMapIdRole)
+            self.memoryMapItem.setData(memoryMapRecord.value("id"), RegisterConst.MemMapIdRole)
             root.appendRow(self.memoryMapItem)            
 
             # register map
@@ -510,7 +520,7 @@ class uiModuleWindow(QWidget):
                 regMapRecord = regMapQueryModel.record(i)
                 regMapitem = QStandardItem(self.regMapIcon, regMapRecord.value("name"))
                 regMapitem.setData("RegisterMap", RegisterConst.NameRole)
-                regMapitem.setData(memoryMapRecord.value("id"), RegisterConst.MemoryMapIdRole)
+                regMapitem.setData(memoryMapRecord.value("id"), RegisterConst.MemMapIdRole)
                 regMapitem.setData(regMapRecord.value("id"), RegisterConst.RegMapIdRole)
                 regMapitem.setData(regMapRecord.value("Type"), RegisterConst.RegMapTypeRole)
                 self.memoryMapItem.appendRow(regMapitem)
@@ -527,7 +537,7 @@ class uiModuleWindow(QWidget):
                     regRecord = regQueryModel.record(j)
                     regItem = QStandardItem(self.regIcon, regRecord.value("name"))
                     regItem.setData("Register", RegisterConst.NameRole)
-                    regItem.setData(memoryMapRecord.value("id"), RegisterConst.MemoryMapIdRole)
+                    regItem.setData(memoryMapRecord.value("id"), RegisterConst.MemMapIdRole)
                     regItem.setData(regMapRecord.value("id"), RegisterConst.RegMapIdRole)
                     regItem.setData(regRecord.value("id"), RegisterConst.RegIdRole)
                     regMapitem.appendRow(regItem)
@@ -542,7 +552,7 @@ class uiModuleWindow(QWidget):
                         bfRecord = bfQueryModel.record(k)
                         bfItem = QStandardItem(self.bfIcon, bfRecord.value("name"))
                         bfItem.setData("Bitfield", RegisterConst.NameRole)
-                        bfItem.setData(memoryMapRecord.value("id"), RegisterConst.MemoryMapIdRole)
+                        bfItem.setData(memoryMapRecord.value("id"), RegisterConst.MemMapIdRole)
                         bfItem.setData(regMapRecord.value("id"), RegisterConst.RegMapIdRole)
                         bfItem.setData(regRecord.value("id"), RegisterConst.RegIdRole)
                         bfItem.setData(bfRecord.value("id"), RegisterConst.BfIdRole)
@@ -557,7 +567,7 @@ class uiModuleWindow(QWidget):
                             bfEnumRecord = bfEnumQueryModel.record(j)
                             bfEnumItem = QStandardItem(self.bfenumIcon, bfEnumRecord.value("name"))
                             bfEnumItem.setData("BitfieldEnum", RegisterConst.NameRole)
-                            bfEnumItem.setData(memoryMapRecord.value("id"), RegisterConst.MemoryMapIdRole)
+                            bfEnumItem.setData(memoryMapRecord.value("id"), RegisterConst.MemMapIdRole)
                             bfEnumItem.setData(regMapRecord.value("id"), RegisterConst.RegMapIdRole)
                             bfEnumItem.setData(regRecord.value("id"), RegisterConst.RegIdRole)
                             bfEnumItem.setData(bfRecord.value("id"), RegisterConst.BfIdRole)
@@ -696,10 +706,11 @@ class uiModuleWindow(QWidget):
         #    self.treeViewPopMenu.addAction(addBfEnumAction)
         #    addBfEnumAction.triggered.connect(self.on_pbAddBfEnum_clicked)
         
-        self.treeViewPopMenu.addSeparator()
-        delAction = QAction("Delete", self)
-        self.treeViewPopMenu.addAction(delAction)
-        delAction.triggered.connect(self.do_delete_triggered)
+        if tableName != "MemoryMap" or index.row() != 0:
+            self.treeViewPopMenu.addSeparator()
+            delAction = QAction("Delete", self)
+            self.treeViewPopMenu.addAction(delAction)
+            delAction.triggered.connect(self.do_delete_triggered)
         
         menuPosition = self.ui.treeView.viewport().mapToGlobal(point)
         self.treeViewPopMenu.move(menuPosition)
@@ -765,8 +776,8 @@ class uiModuleWindow(QWidget):
             if tableName == "MemoryMap": # memmap selected, show memmap table
                 self.ui.tableView.setVisible(True)
                 self.ui.tableViewReg.setVisible(False)                 
-                if self.ui.tableView.model() != self.memoryMaptableModel:
-                    self.ui.tableView.setModel(self.memoryMaptableModel)
+                if self.ui.tableView.model() != self.memMaptableModel:
+                    self.ui.tableView.setModel(self.memMaptableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
                     if self.__regMapTypeIndex != None:
                         self.ui.tableView.showColumn(self.__regMapTypeIndex)
@@ -863,7 +874,7 @@ class uiModuleWindow(QWidget):
                 while regQ.next(): # only 1 item
                     regW = regQ.value(0)
                     text = "Tips: <pre>"
-                    text += RegisterConst.genColoredRegBitsUsage(self.conn, bfId, regId, regW, 14)
+                    text += RegisterConst.genColoredRegBitsUsage(self.conn, bfId, regId, regW, 13)
                     text += "</pre>"
                 self.ui.labelDescription.setText(text)
 
@@ -922,18 +933,18 @@ class uiModuleWindow(QWidget):
                         self.ui.tableView.resizeColumnsToContents()
                         break
         return
-        
+
     @Slot()
     def on_pbAddRegMap_clicked(self):
         current = self.ui.treeView.selectedIndexes().pop()
         tableName = str(current.data(RegisterConst.NameRole))
-        memoryMapId = int(current.data(RegisterConst.MemoryMapIdRole))
+        memoryMapId = int(current.data(RegisterConst.MemMapIdRole))
         newRegMapRowIndex = -1 if tableName != "RegisterMap" else current.row() + 1
         r = self.newRegMapRow(self.regMapTableModel, memoryMapId, newRegMapRowIndex)
         
         newRegMapItem = QStandardItem(self.regMapIcon, r.value("name"))
         newRegMapItem.setData("RegisterMap", RegisterConst.NameRole)
-        newRegMapItem.setData(memoryMapId, RegisterConst.MemoryMapIdRole)
+        newRegMapItem.setData(memoryMapId, RegisterConst.MemMapIdRole)
         newRegMapItem.setData(r.value("id"), RegisterConst.RegMapIdRole)
         newRegMapItem.setData(RegisterConst.RegMap, RegisterConst.RegMapTypeRole)
         
@@ -962,13 +973,13 @@ class uiModuleWindow(QWidget):
     def do_pbAddRegMod_clicked(self):
         current = self.ui.treeView.selectedIndexes().pop()
         tableName = str(current.data(RegisterConst.NameRole))
-        memoryMapId = int(current.data(RegisterConst.MemoryMapIdRole))
+        memoryMapId = int(current.data(RegisterConst.MemMapIdRole))
         newRegMapRowIndex = -1 if tableName != "RegisterMap" else current.row() + 1
         r = self.newRegMapRow(self.regMapTableModel, memoryMapId, newRegMapRowIndex, RegisterConst.RegMod)
         
         newRegMapItem = QStandardItem(self.regMapIcon, r.value("name"))
         newRegMapItem.setData("RegisterMap", RegisterConst.NameRole)
-        newRegMapItem.setData(memoryMapId, RegisterConst.MemoryMapIdRole)
+        newRegMapItem.setData(memoryMapId, RegisterConst.MemMapIdRole)
         newRegMapItem.setData(r.value("id"), RegisterConst.RegMapIdRole)
         newRegMapItem.setData(RegisterConst.RegMod, RegisterConst.RegMapTypeRole)
         
@@ -997,14 +1008,14 @@ class uiModuleWindow(QWidget):
     def on_pbAddReg_clicked(self):
         current = self.ui.treeView.selectedIndexes().pop()
         tableName = str(current.data(RegisterConst.NameRole))
-        memoryMapId = int(current.data(RegisterConst.MemoryMapIdRole))
+        memoryMapId = int(current.data(RegisterConst.MemMapIdRole))
         regMapId = int(current.data(RegisterConst.RegMapIdRole))
         newRegRowIndex = -1 if tableName != "Register" else current.row() + 1
         r = self.newRegRow(self.regTableModel, regMapId, 0, 32, newRegRowIndex)
         
         newRegItem = QStandardItem(self.regIcon, r.value("name"))
         newRegItem.setData("Register", RegisterConst.NameRole)
-        newRegItem.setData(memoryMapId, RegisterConst.MemoryMapIdRole)
+        newRegItem.setData(memoryMapId, RegisterConst.MemMapIdRole)
         newRegItem.setData(regMapId, RegisterConst.RegMapIdRole)
         newRegItem.setData(r.value("id"), RegisterConst.RegIdRole)
     
@@ -1031,7 +1042,7 @@ class uiModuleWindow(QWidget):
     def on_pbAddBf_clicked(self):
         current = self.ui.treeView.selectedIndexes().pop()
         tableName = str(current.data(RegisterConst.NameRole))
-        memoryMapId = int(current.data(RegisterConst.MemoryMapIdRole))
+        memoryMapId = int(current.data(RegisterConst.MemMapIdRole))
         regMapId = int(current.data(RegisterConst.RegMapIdRole))
         regId = int(current.data(RegisterConst.RegIdRole))
         newBfRowIndex = -1 if tableName != "Bitfield" else current.row() + 1 
@@ -1039,7 +1050,7 @@ class uiModuleWindow(QWidget):
         
         newBfItem = QStandardItem(self.bfIcon, r.value("name"))
         newBfItem.setData("Bitfield", RegisterConst.NameRole)
-        newBfItem.setData(memoryMapId, RegisterConst.MemoryMapIdRole)
+        newBfItem.setData(memoryMapId, RegisterConst.MemMapIdRole)
         newBfItem.setData(regMapId, RegisterConst.RegMapIdRole)
         newBfItem.setData(regId, RegisterConst.RegIdRole)
         newBfItem.setData(r.value("id"), RegisterConst.BfIdRole)
@@ -1066,7 +1077,7 @@ class uiModuleWindow(QWidget):
     def on_pbAddBfEnum_clicked(self):
         current = self.ui.treeView.selectedIndexes().pop()
         tableName = str(current.data(RegisterConst.NameRole))
-        memoryMapId = int(current.data(RegisterConst.MemoryMapIdRole))
+        memoryMapId = int(current.data(RegisterConst.MemMapIdRole))
         regMapId = int(current.data(RegisterConst.RegMapIdRole))
         regId = int(current.data(RegisterConst.RegIdRole))
         bfId = int(current.data(RegisterConst.BfIdRole))
@@ -1075,7 +1086,7 @@ class uiModuleWindow(QWidget):
         
         newBfEnumItem = QStandardItem(self.bfenumIcon, r.value("name"))
         newBfEnumItem.setData("BitfieldEnum", RegisterConst.NameRole)
-        newBfEnumItem.setData(memoryMapId, RegisterConst.MemoryMapIdRole)
+        newBfEnumItem.setData(memoryMapId, RegisterConst.MemMapIdRole)
         newBfEnumItem.setData(regMapId, RegisterConst.RegMapIdRole)
         newBfEnumItem.setData(regId, RegisterConst.RegIdRole)
         newBfEnumItem.setData(bfId, RegisterConst.BfIdRole)
@@ -1102,7 +1113,14 @@ class uiModuleWindow(QWidget):
         tableName = str(current.data(RegisterConst.NameRole))
         
         # remove from table
-        if tableName == "RegisterMap":
+        if tableName == "MemoryMap" and current.row() != 0:
+            memMapId = int(current.data(RegisterConst.MemMapIdRole))
+            for i in range(self.memMaptableModel.rowCount()):
+                if self.memMaptableModel.record(i).value("id") == memMapId:
+                    self.memMaptableModel.removeRows(i, 1)
+                    break
+            self.regMapTableModel.select()
+        elif tableName == "RegisterMap":
             regMapId = int(current.data(RegisterConst.RegMapIdRole))
             for i in range(self.regMapTableModel.rowCount()):
                 if self.regMapTableModel.record(i).value("id") == regMapId:
@@ -1131,8 +1149,8 @@ class uiModuleWindow(QWidget):
                     break
             self.bfEnumTableModel.select()
         
-        # remove from tree
-        if tableName != "MemoryMap":
+        # remove from tree but keep last memory map node
+        if tableName != "MemoryMap" or current.row() != 0:
             parentItem = self.treeViewTableModel.itemFromIndex(current.parent())
             parentItem.removeRow(current.row())
         
