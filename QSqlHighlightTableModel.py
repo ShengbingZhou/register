@@ -13,7 +13,7 @@ class QSqlHighlightTableModel(QSqlTableModel):
         value = QSqlTableModel.data(self, index, role)
         if role == Qt.BackgroundColorRole:
             if RegisterConst.recordExist(QSqlTableModel.record(self, index.row())) == False:
-                value = QColor('lightgrey')
+                value = QColor('grey')
         if role == Qt.DisplayRole:
             if self.tableName() == "Register":
                 field = self.record().fieldName(index.column())

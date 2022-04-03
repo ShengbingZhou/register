@@ -33,10 +33,6 @@ class uiModuleWindow(QWidget):
         with open (RegisterConst.StyleFile) as file:
             style = file.read()
         self.setStyleSheet(style)
-
-        self.tableDesignViewBfQuerySql = "SELECT A.id, B.RegisterId, A.DisplayOrder, A.Name, A.Access, A.DefaultValue, A.Description, " \
-                                         "A.Width, B.RegisterOffset, A.Exist, A.Notes " \
-                                         "FROM Bitfield AS A JOIN BitfieldRef AS B ON A.id=B.BitfieldId WHERE B.RegisterId="
         
         self.moduleIcon = QIcon('icon/module32.png')
         self.regMapIcon = QIcon('icon/regmap32.png')
@@ -62,7 +58,7 @@ class uiModuleWindow(QWidget):
         self.newFileName = ''
 
         # default value
-        self.__treeViewCurrentTable = None # selected table by treeView
+        self.__treeViewCurrentTable = None # selected table name by treeView
         self.__treeViewCurrentRow = None   # curent row index on treeView
         self.__regMapTypeIndex = None      # regmap table 'Type' column index which should be hidden, while this column should be visible for other tables
         return
