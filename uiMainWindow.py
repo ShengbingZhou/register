@@ -47,7 +47,21 @@ class uiMainWindow(QMainWindow):
             tab = moduleWindow = self.ui.tabWidget.widget(i)
             tab.close()
         event.accept()
-        
+
+    def openFile(self, fileName):
+        if os.path.isfile(fileName) == False:
+            QMessageBox.warning(self, "Error", "Failed to open %s as it doesn't exist."%fileName)
+            return
+        moduleWindow = uiModuleWindow(self)
+        moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
+        if moduleWindow.openDatabase(fileName):
+            index = self.ui.tabWidget.addTab(moduleWindow, os.path.basename(fileName))
+            self.ui.tabWidget.setCurrentIndex(index)
+            moduleWindow.setMainWindow(self)
+            if self.welcomeWindow != None:
+                self.welcomeWindow.updateRecentFiles(fileName)
+        return
+
     @Slot(int)
     def on_tabWidget_tabCloseRequested(self, index):
         if (index < 0):
@@ -74,18 +88,7 @@ class uiMainWindow(QMainWindow):
     def on_actionOpen_triggered(self):
         fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open register file", QDir.homePath(), "Register File (*%s)"%RegisterConst.DesignFileExt)
         if fileName != '':
-            if os.path.isfile(fileName) == False:
-                QMessageBox.warning(self, "Error", "Failed to open %s as it doesn't exist."%fileName)
-                return
-            moduleWindow = uiModuleWindow(self)
-            moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
-            if moduleWindow.openDatabase(fileName):
-                f_name, f_ext = os.path.splitext(os.path.basename(fileName))
-                index = self.ui.tabWidget.addTab(moduleWindow, f_name)
-                self.ui.tabWidget.setCurrentIndex(index)
-                moduleWindow.setMainWindow(self)
-                if self.welcomeWindow != None:
-                    self.welcomeWindow.updateRecentFiles(fileName)
+            self.openFile(fileName)
         return
     
     @Slot()
