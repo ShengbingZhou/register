@@ -289,121 +289,7 @@ class uiModuleWindow(QWidget):
                     os.remove(fileName)                  
                 shutil.copy(self.newFileName, self.fileName)
                 fileName = self.fileName
-        return fileName
-
-    def exporIpxact(self):
-        fileName, filterUsed = QFileDialog.getSaveFileName(self, "Export ipxact file", QDir.homePath(), "ipxact File (*.xml)")
-        if fileName !='':
-            if os.path.exists(fileName):                                        
-                os.remove(fileName)
-        return
-    
-    def importIpxact(self, fileName):
-        # create temp database
-        now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
-        newName = "__%s%s"%(now, RegisterConst.DesignFileExt)
-        newName = QDir.homePath() + "/.reg/" + newName   
-        shutil.copyfile("template/module_template.db", newName)
-        self.newFileName = newName
-        self.newModule = True  
-
-        # import ipxact xml file
-        self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
-        if self.setupDesignViewModels(newName):
-            infoId = self.newInfoRow(self.infoTableModel, now).value("id")
-
-            # find root
-            sp1 = etree.parse(fileName)
-            root = sp1.getroot()
-            
-            # find memory map
-            memMapNodes = root.findall('ipxact:memoryMaps/ipxact:memoryMap', root.nsmap)
-            if len(memMapNodes) == 0:
-                QMessageBox.warning(self, "Error", "Unable to find memory map", QMessageBox.Yes)
-                if os.path.isfile(self.newFileName):
-                    os.remove(self.newFileName)
-                return False
-
-            # start to import
-            regMapDisplayOrder = 0
-            regDisplayOrder = 0
-            bfDisplayOrder = 0
-            query = QSqlQuery(self.conn)
-            for memMap in memMapNodes:
-                # add memory record
-                query.exec_("INSERT INTO MemoryMap (OffsetAddress) VALUES ('%s')"%(0))
-                query.exec_("SELECT max(id) FROM MemoryMap")
-                query.next()
-                memMapId = query.record().value(0)
-
-                # get regmap nodes
-                regMapNodes = memMap.findall("ipxact:addressBlock", root.nsmap)
-
-                # prepare progress dialog
-                dlgProgress = QProgressDialog("Importing %s ..."%fileName, "Cancel", 0, len(regMapNodes), self)
-                dlgProgress.setWindowTitle("Importing...")
-                dlgProgress.setWindowModality(Qt.WindowModal)
-
-                for i in range(len(regMapNodes)):
-                    regMapNode = regMapNodes[i]
-                    regMapName = regMapNode.find("ipxact:name", root.nsmap).text
-
-                    n = regMapNode.find("ipxact:description", root.nsmap)
-                    regMapDesc = "" if n == None else n.text
-
-                    regMapAddr = regMapNode.find("ipxact:baseAddress", root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
-                    query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, Name, Description, OffsetAddress) " \
-                                "VALUES ('%s', '%s', '%s', '%s', '%s')"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr))
-                    query.exec_("SELECT max(id) FROM RegisterMap")
-                    query.next()
-                    regMapId = query.record().value(0)
-                    regMapDisplayOrder += 1
-
-                    dlgProgress.setLabelText("Importing register map '%s' from %s "%(regMapName, fileName))
-                    dlgProgress.setValue(i)
-                 
-                    regNodes = regMapNode.findall("ipxact:register", root.nsmap)
-                    for j in range(len(regNodes)):
-                        regNode = regNodes[j]
-                        regName = regNode.find("ipxact:name", root.nsmap).text
-
-                        n = regNode.find("ipxact:description", root.nsmap)
-                        regDesc = "" if n == None else n.text
-
-                        regAddr = regNode.find("ipxact:addressOffset", root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
-                        regWidth = regNode.find("ipxact:size", root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
-                        query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width) " \
-                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth))
-                        query.exec_("SELECT max(id) FROM Register")
-                        query.next()
-                        regId = query.record().value(0)
-                        regDisplayOrder += 1
-
-                        bfNodes = regNode.findall("ipxact:field", root.nsmap)
-                        for k in range(len(bfNodes)):
-                            bfNode = bfNodes[k]
-                            bfName = bfNode.find("ipxact:name", root.nsmap).text
-
-                            n = bfNode.find("ipxact:description", root.nsmap)
-                            bfDesc = "" if n == None else n.text
-
-                            regOffset = bfNode.find("ipxact:bitOffset", root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
-                            bfWidth   = bfNode.find("ipxact:bitWidth", root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
-                            query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, Name, Description, RegisterOffset, Width, DefaultValue) " \
-                                        "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, bfWidth, 0))
-                            bfDisplayOrder += 1
-                dlgProgress.close()
-
-            self.memMaptableModel.select()
-            self.regMapTableModel.select()
-            self.regTableModel.select()
-            self.bfTableModel.select()
-            self.setupTreeView()
-            self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
-            self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
-            self.bfTableModel.dataChanged.connect(self.do_tableView_dataChanged)
-            self.bfEnumTableModel.dataChanged.connect(self.do_tableView_dataChanged)
-        return True
+        return fileName    
 
     def importYodaSp1(self, fileName):
         # create temp database
@@ -514,7 +400,184 @@ class uiModuleWindow(QWidget):
             self.bfTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.bfEnumTableModel.dataChanged.connect(self.do_tableView_dataChanged)
 
+        return True    
+    
+    def importIpxact(self, fileName):
+        # create temp database
+        now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
+        newName = "__%s%s"%(now, RegisterConst.DesignFileExt)
+        newName = QDir.homePath() + "/.reg/" + newName   
+        shutil.copyfile("template/module_template.db", newName)
+        self.newFileName = newName
+        self.newModule = True  
+
+        # import ipxact xml file
+        self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
+        if self.setupDesignViewModels(newName):
+            infoId = self.newInfoRow(self.infoTableModel, now).value("id")
+
+            # find root
+            sp1 = etree.parse(fileName)
+            root = sp1.getroot()
+            
+            # find memory map
+            memMapNodes = root.findall('ipxact:memoryMaps/ipxact:memoryMap', root.nsmap)
+            if len(memMapNodes) == 0:
+                QMessageBox.warning(self, "Error", "Unable to find memory map", QMessageBox.Yes)
+                if os.path.isfile(self.newFileName):
+                    os.remove(self.newFileName)
+                return False
+
+            # start to import
+            regMapDisplayOrder = 0
+            regDisplayOrder = 0
+            bfDisplayOrder = 0
+            query = QSqlQuery(self.conn)
+            for memMap in memMapNodes:
+                # add memory record
+                query.exec_("INSERT INTO MemoryMap (OffsetAddress) VALUES ('%s')"%(0))
+                query.exec_("SELECT max(id) FROM MemoryMap")
+                query.next()
+                memMapId = query.record().value(0)
+
+                # get regmap nodes
+                regMapNodes = memMap.findall("ipxact:addressBlock", root.nsmap)
+
+                # prepare progress dialog
+                dlgProgress = QProgressDialog("Importing %s ..."%fileName, "Cancel", 0, len(regMapNodes), self)
+                dlgProgress.setWindowTitle("Importing...")
+                dlgProgress.setWindowModality(Qt.WindowModal)
+
+                for i in range(len(regMapNodes)):
+                    regMapNode = regMapNodes[i]
+                    regMapName = regMapNode.find("ipxact:name", root.nsmap).text
+
+                    n = regMapNode.find("ipxact:description", root.nsmap)
+                    regMapDesc = "" if n == None else n.text
+
+                    regMapAddr = regMapNode.find("ipxact:baseAddress", root.nsmap)
+                    params = regMapNode.findall("ipxact:parameters/ipxact:parameter", root.nsmap)
+                    for param in params:
+                        if param.find("ipxact:name", root.nsmap).text == regMapAddr.text:
+                            regMapAddr = param.find("ipxact:value", root.nsmap)
+                            break
+                    regMapAddr = regMapAddr.text.lower().replace("'h", "0x").replace("'d", "")
+                    query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, Name, Description, OffsetAddress) " \
+                                "VALUES ('%s', '%s', '%s', '%s', '%s')"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr))
+                    query.exec_("SELECT max(id) FROM RegisterMap")
+                    query.next()
+                    regMapId = query.record().value(0)
+                    regMapDisplayOrder += 1
+
+                    dlgProgress.setLabelText("Importing register map '%s' from %s "%(regMapName, fileName))
+                    dlgProgress.setValue(i)
+                 
+                    regNodes = regMapNode.findall("ipxact:register", root.nsmap)
+                    for j in range(len(regNodes)):
+                        regNode = regNodes[j]
+                        regName = regNode.find("ipxact:name", root.nsmap).text
+
+                        n = regNode.find("ipxact:description", root.nsmap)
+                        regDesc = "" if n == None else n.text
+
+                        regAddr = regNode.find("ipxact:addressOffset", root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
+                        regWidth = regNode.find("ipxact:size", root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
+                        query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width) " \
+                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth))
+                        query.exec_("SELECT max(id) FROM Register")
+                        query.next()
+                        regId = query.record().value(0)
+                        regDisplayOrder += 1
+
+                        bfNodes = regNode.findall("ipxact:field", root.nsmap)
+                        for k in range(len(bfNodes)):
+                            bfNode = bfNodes[k]
+                            bfName = bfNode.find("ipxact:name", root.nsmap).text
+
+                            n = bfNode.find("ipxact:description", root.nsmap)
+                            bfDesc = "" if n == None else n.text
+
+                            regOffset = bfNode.find("ipxact:bitOffset", root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
+                            bfWidth   = bfNode.find("ipxact:bitWidth", root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
+                            
+                            n = bfNode.find("ipxact:resets/ipxact:reset/ipxact:value", root.nsmap)
+                            bfDefaultVal = 0 if n is None else n.text.lower().replace("'h", "0x").replace("'d", "")
+                            
+                            query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, Name, Description, RegisterOffset, Width, DefaultValue) " \
+                                        "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, bfWidth, bfDefaultVal))
+                            bfDisplayOrder += 1
+                dlgProgress.close()
+
+            self.memMaptableModel.select()
+            self.regMapTableModel.select()
+            self.regTableModel.select()
+            self.bfTableModel.select()
+            self.setupTreeView()
+            self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.bfTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+            self.bfEnumTableModel.dataChanged.connect(self.do_tableView_dataChanged)
         return True
+
+    def exporIpxact(self):
+        fileName, filterUsed = QFileDialog.getSaveFileName(self, "Export ipxact file", QDir.homePath(), "ipxact File (*.xml)")
+        if fileName !='':
+            f_name, f_ext = os.path.splitext(os.path.basename(fileName))
+            # add .xml when saving ipxact file
+            if f_ext != ".xml":
+                fileName += ".xml"               
+            ipxactFile = open(fileName, "w")
+            ipxactFile.write("<ipxact:component xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ipxact=\"http://www.accellera.org/XMLSchema/IPXACT/1685-2014\" xsi:schemaLocation=\"http://www.accellera.org/XMLSchema/IPXACT/1685-2014 http://www.accellera.org/XMLSchema/IPXACT/1685-2014/index.xsd\">\n")
+            ipxactFile.write("  <ipxact:vendor>Register@ShengbingZhou</ipxact:vendor>\n")
+            ipxactFile.write("  <ipxact:name>%s</ipxact:name>\n"%f_name)
+            ipxactFile.write("  <ipxact:version>1.0</ipxact:version>\n")
+            ipxactFile.write("  <ipxact:memoryMaps>\n")
+            
+            # memory map
+            memoryMapQueryModel = QSqlQueryModel()
+            memoryMapQueryModel.setQuery("SELECT id FROM MemoryMap", self.conn)
+            for i in range(memoryMapQueryModel.rowCount()):
+                memoryMapRecord = memoryMapQueryModel.record(i)
+                ipxactFile.write("    <ipxact:memoryMap>\n")
+                ipxactFile.write("      <ipxact:name>RegisterMap%s</ipxact:name>\n"%i)
+                # register map
+                regMapQueryModel = QSqlQueryModel()
+                regMapQueryModel.setQuery("SELECT id, Name, Description, OffsetAddress FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memoryMapRecord.value("id"), self.conn)
+                for j in range(regMapQueryModel.rowCount()):
+                    regMapRecord = regMapQueryModel.record(j)
+                    ipxactFile.write("      <ipxact:addressBlock>\n")
+                    ipxactFile.write("        <ipxact:name>%s</ipxact:name>\n"%(regMapRecord.value("Name")))
+                    ipxactFile.write("        <ipxact:description>%s</ipxact:description>\n"%(regMapRecord.value("Description")))
+                    ipxactFile.write("        <ipxact:baseAddress>%s</ipxact:baseAddress>\n"%(regMapRecord.value("OffsetAddress")))
+                    #ipxactFile.write("        <ipxact:width>%s</ipxact:width>\n"%(regMapRecord.value("Width")))
+                    
+                    # register
+                    regQueryModel = QSqlQueryModel()
+                    regQueryModel.setQuery("SELECT id, Name, Description, OffsetAddress, Width FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
+                    for k in range(regQueryModel.rowCount()):
+                        regRecord = regQueryModel.record(k)
+                        ipxactFile.write("        <ipxact:register>\n")
+                        ipxactFile.write("          <ipxact:name>%s</ipxact:name>\n"%(regRecord.value("Name")))
+                        ipxactFile.write("          <ipxact:description>%s</ipxact:description>\n"%(regRecord.value("Description")))
+                        ipxactFile.write("          <ipxact:addressOffset>%s</ipxact:addressOffset>\n"%(regRecord.value("OffsetAddress")))
+                        ipxactFile.write("          <ipxact:size>%s</ipxact:size>\n"%(regRecord.value("Width")))
+                        # bitfield
+                        bfQueryModel = QSqlQueryModel()
+                        bfQueryModel.setQuery("SELECT id, Name, RegisterOffset, Width FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
+                        for m in range(bfQueryModel.rowCount()):
+                            bfRecord = bfQueryModel.record(m)
+                            ipxactFile.write("          <ipxact:field>\n")
+                            ipxactFile.write("            <ipxact:name>%s</ipxact:name>\n"%(bfRecord.value("Name")))
+                            ipxactFile.write("            <ipxact:bitOffset>%s</ipxact:bitOffset>\n"%(bfRecord.value("RegisterOffset")))
+                            ipxactFile.write("            <ipxact:bitWidth>%s</ipxact:bitWidth>\n"%(bfRecord.value("Width")))
+                            ipxactFile.write("          </ipxact:field>\n")
+                        ipxactFile.write("        </ipxact:register>\n")
+                    ipxactFile.write("      </ipxact:addressBlock>\n")
+                ipxactFile.write("    </ipxact:memoryMap>\n")
+            ipxactFile.write("  </ipxact:memoryMaps>\n")
+            ipxactFile.write("</ipxact:component>\n")
+            ipxactFile.close()  
+        return
 
     def setupDesignViewModels(self, fileName):  
         self.conn = QSqlDatabase.addDatabase("QSQLITE", fileName)

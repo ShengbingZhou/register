@@ -128,7 +128,7 @@ class uiMainWindow(QMainWindow):
         tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
         if tabText != RegisterConst.WelcomeTabText:
             moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-            moduleWindow.saveDatabase()
+            moduleWindow.exporIpxact()
         return    
     
     @Slot()
