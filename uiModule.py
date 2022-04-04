@@ -438,15 +438,18 @@ class uiModuleWindow(QWidget):
             regDisplayOrder = 0
             bfDisplayOrder = 0
             query = QSqlQuery(self.conn)
-            for memMap in memMapNodes:
+            for memMap in range(len(memMapNodes)):
+                memMapNode = memMapNodes[memMap]
+                memMapName = memMapNode.find("ipxact:name", root.nsmap).text
+
                 # add memory record
-                query.exec_("INSERT INTO MemoryMap (OffsetAddress) VALUES ('%s')"%(0))
+                query.exec_("INSERT INTO MemoryMap (OffsetAddress, Name) VALUES ('%s', '%s')"%(0, memMapName))
                 query.exec_("SELECT max(id) FROM MemoryMap")
                 query.next()
                 memMapId = query.record().value(0)
 
                 # get regmap nodes
-                regMapNodes = memMap.findall("ipxact:addressBlock", root.nsmap)
+                regMapNodes = memMapNode.findall("ipxact:addressBlock", root.nsmap)
 
                 # prepare progress dialog
                 dlgProgress = QProgressDialog("Importing %s ..."%fileName, "Cancel", 0, len(regMapNodes), self)
@@ -540,11 +543,11 @@ class uiModuleWindow(QWidget):
             
             # memory map
             memoryMapQueryModel = QSqlQueryModel()
-            memoryMapQueryModel.setQuery("SELECT id FROM MemoryMap", self.conn)
+            memoryMapQueryModel.setQuery("SELECT * FROM MemoryMap", self.conn)
             for i in range(memoryMapQueryModel.rowCount()):
                 memMapRecord = memoryMapQueryModel.record(i)
                 ipxactFile.write("    <ipxact:memoryMap>\n")
-                ipxactFile.write("      <ipxact:name>RegisterMap%s</ipxact:name>\n"%i)
+                ipxactFile.write("      <ipxact:name>%s</ipxact:name>\n"%memoryMapQueryModel.value("Name"))
                 
                 # register map
                 regMapQueryModel = QSqlQueryModel()
