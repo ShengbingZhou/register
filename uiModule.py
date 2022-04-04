@@ -61,6 +61,7 @@ class uiModuleWindow(QWidget):
         self.__treeViewCurrentTable = None # selected table name by treeView
         self.__treeViewCurrentRow = None   # curent row index on treeView
         self.__regMapTypeIndex = None      # regmap table 'Type' column index which should be hidden, while this column should be visible for other tables
+        self.__bfValueIndex = None         # bitfield table 'Value' column index which should be hidden, while this column should be visible for other tables
         return
     
     def eventFilter(self, obj, event):
@@ -840,6 +841,9 @@ class uiModuleWindow(QWidget):
                     if self.__regMapTypeIndex != None:
                         self.ui.tableView.showColumn(self.__regMapTypeIndex)
                         self.__regMapTypeIndex = None
+                    if self.__bfValueIndex != None:
+                        self.ui.tableView.showColumn(self.__bfValueIndex)
+                        self.__bfValueIndex = None
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.showColumn(1) # offset address
                     self.ui.tableView.showColumn(2) # notes
@@ -858,6 +862,9 @@ class uiModuleWindow(QWidget):
                 if self.ui.tableView.model() != self.regMapTableModel:
                     self.ui.tableView.setModel(self.regMapTableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    if self.__bfValueIndex != None:
+                        self.ui.tableView.showColumn(self.__bfValueIndex)
+                        self.__bfValueIndex = None
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.hideColumn(1) # memmap id
                     self.ui.tableView.hideColumn(2) # order
@@ -920,6 +927,8 @@ class uiModuleWindow(QWidget):
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.hideColumn(1) # regid
                     self.ui.tableView.hideColumn(2) # order
+                    self.__bfValueIndex = self.bfTableModel.record().indexOf("Value")
+                    self.ui.tableView.hideColumn(self.__bfValueIndex)
                     self.ui.tableView.resizeColumnsToContents()
                     
                 # update tips
@@ -949,6 +958,9 @@ class uiModuleWindow(QWidget):
                     if self.__regMapTypeIndex != None:
                         self.ui.tableView.showColumn(self.__regMapTypeIndex)
                         self.__regMapTypeIndex = None
+                    if self.__bfValueIndex != None:
+                        self.ui.tableView.showColumn(self.__bfValueIndex)
+                        self.__bfValueIndex = None
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.hideColumn(1) # bfid
                     self.ui.tableView.hideColumn(2) # order
