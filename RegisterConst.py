@@ -47,6 +47,8 @@ class RegisterConst:
     def genColoredRegBitsUsage(conn, bfId, regId, regW, fontSize):
         bfColors = ["LightSalmon", "PowderBlue", "LightPink", "Aquamarine", "Bisque", "LightBlue", "DarkKhaki", "DarkSeaGreen"] 
         bfColorsIndex = 0
+        if regW == None:
+            return None
         regB = regW - 1
         text = ""
         bfQuery = QSqlQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY RegisterOffset DESC"%(regId), conn)
