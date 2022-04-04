@@ -541,9 +541,10 @@ class uiModuleWindow(QWidget):
                 memoryMapRecord = memoryMapQueryModel.record(i)
                 ipxactFile.write("    <ipxact:memoryMap>\n")
                 ipxactFile.write("      <ipxact:name>RegisterMap%s</ipxact:name>\n"%i)
+                
                 # register map
                 regMapQueryModel = QSqlQueryModel()
-                regMapQueryModel.setQuery("SELECT id, Name, Description, OffsetAddress FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memoryMapRecord.value("id"), self.conn)
+                regMapQueryModel.setQuery("SELECT * FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memoryMapRecord.value("id"), self.conn)
                 for j in range(regMapQueryModel.rowCount()):
                     regMapRecord = regMapQueryModel.record(j)
                     ipxactFile.write("      <ipxact:addressBlock>\n")
@@ -554,7 +555,7 @@ class uiModuleWindow(QWidget):
                     
                     # register
                     regQueryModel = QSqlQueryModel()
-                    regQueryModel.setQuery("SELECT id, Name, Description, OffsetAddress, Width FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
+                    regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
                     for k in range(regQueryModel.rowCount()):
                         regRecord = regQueryModel.record(k)
                         ipxactFile.write("        <ipxact:register>\n")
@@ -562,15 +563,24 @@ class uiModuleWindow(QWidget):
                         ipxactFile.write("          <ipxact:description>%s</ipxact:description>\n"%(regRecord.value("Description")))
                         ipxactFile.write("          <ipxact:addressOffset>%s</ipxact:addressOffset>\n"%(regRecord.value("OffsetAddress")))
                         ipxactFile.write("          <ipxact:size>%s</ipxact:size>\n"%(regRecord.value("Width")))
+
                         # bitfield
                         bfQueryModel = QSqlQueryModel()
-                        bfQueryModel.setQuery("SELECT id, Name, RegisterOffset, Width FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
+                        bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
                         for m in range(bfQueryModel.rowCount()):
                             bfRecord = bfQueryModel.record(m)
                             ipxactFile.write("          <ipxact:field>\n")
                             ipxactFile.write("            <ipxact:name>%s</ipxact:name>\n"%(bfRecord.value("Name")))
                             ipxactFile.write("            <ipxact:bitOffset>%s</ipxact:bitOffset>\n"%(bfRecord.value("RegisterOffset")))
                             ipxactFile.write("            <ipxact:bitWidth>%s</ipxact:bitWidth>\n"%(bfRecord.value("Width")))
+                            ipxactFile.write("            <ipxact:access>%s</ipxact:access>\n"%("read-write"))
+                            ipxactFile.write("            <ipxact:volatile>%s</ipxact:volatile>\n"%("true"))
+                            ipxactFile.write("            <ipxact:resets>\n")
+                            ipxactFile.write("              <ipxact:reset>\n")
+                            ipxactFile.write("                <ipxact:value>%s</ipxact:value>\n"%(str(bfRecord.value("DefaultValue")).replace("0x", "'h")))
+                            ipxactFile.write("              </ipxact:reset>\n")
+                            ipxactFile.write("              </ipxact:reset>\n")
+                            ipxactFile.write("            </ipxact:resets>\n")
                             ipxactFile.write("          </ipxact:field>\n")
                         ipxactFile.write("        </ipxact:register>\n")
                     ipxactFile.write("      </ipxact:addressBlock>\n")
