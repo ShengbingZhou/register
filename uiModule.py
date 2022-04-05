@@ -139,7 +139,7 @@ class uiModuleWindow(QWidget):
         newRow, order = self.getNewRowAndDisplayOrder(model, row, maxOrder)
         query.exec_("UPDATE MemoryMap SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))
 
-        query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, User) VALUES ('%s', '%s', '%s')"%(order, 0x0000, os.getlogin()))
+        query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, AddressUnitBits, User) VALUES ('%s', '%s', '%s', '%s')"%(order, 0x0000, 8, os.getlogin()))
 
         query.exec_("SELECT max(id) FROM MemoryMap")
         query.next()
@@ -157,8 +157,8 @@ class uiModuleWindow(QWidget):
         newRow, order = self.getNewRowAndDisplayOrder(model, row, maxOrder)
         query.exec_("UPDATE RegisterMap SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))
 
-        query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, OffsetAddress, Description, Type, User) "\
-                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s')"%(memMapId, order, 0x0000, "This is no name register map", type, os.getlogin()))
+        query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, OffsetAddress, Range, Description, Type, User) "\
+                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(memMapId, order, 0x0000, 0x0000, "This is no name register map", type, os.getlogin()))
 
         query.exec_("SELECT max(id) FROM RegisterMap")
         query.next()
