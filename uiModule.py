@@ -15,7 +15,7 @@ from PySide2.QtXml import QDomDocument, QDomNodeList
 from lxml import etree    
 
 # python-docx package
-from docx import Document
+from docx import Document, oxml, shared
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.enum.table import WD_TABLE_ALIGNMENT
 
@@ -625,22 +625,29 @@ class uiModuleWindow(QWidget):
             if f_ext != ".docx":
                 fileName += ".docx"
             docx = Document()
-
+            docx.styles['Heading 1'].font.size = shared.Pt(11)
+            docx.styles['Heading 2'].font.size = shared.Pt(10)
+            docx.styles['Heading 3'].font.size = shared.Pt(9)
+            docx.styles['Heading 4'].font.size = shared.Pt(8)
+            docx.styles['Normal'].font.size = shared.Pt(8)
+            
             # memory map
             memoryMapQueryModel = QSqlQueryModel()
             memoryMapQueryModel.setQuery("SELECT * FROM MemoryMap", self.conn)
 
             title = docx.add_heading('MemoryMap Table\n', level = 1)
             title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-            fields = ['memoryMapName', 'memoryMapDescription']
+            fields = ['Name', 'Description']
             table = docx.add_table(rows=memoryMapQueryModel.rowCount() + 1, cols=len(fields), style='Table Grid')
+
             for i, row in enumerate(table.rows):
                 for j, (cell, field) in enumerate(zip(row.cells, fields)):
                     if i == 0: # table header
-                        cell.text = fields[j].upper()
+                        cell.text = fields[j]
+                        cell._tc.get_or_add_tcPr().append(oxml.parse_xml(r'<w:shd {} w:fill="c0c0c0"/>'.format(oxml.ns.nsdecls('w'))))
                     else:
                         memMapRecord = memoryMapQueryModel.record(i - 1)
-                        if field == 'memoryMapName':
+                        if field == 'Name':
                             cell.text = memMapRecord.value("Name")
             docx.add_page_break()
 
@@ -662,48 +669,50 @@ class uiModuleWindow(QWidget):
                     regQueryModel = QSqlQueryModel()
                     regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
 
-                    fields = ['registerName', 'registerAddr', 'registerDescription']
+                    fields = ['Name', 'Address', 'Description']
                     table = docx.add_table(rows=regQueryModel.rowCount() + 1, cols=len(fields), style='Table Grid')
                     for r, row in enumerate(table.rows):
                         for c, (cell, field) in enumerate(zip(row.cells, fields)):
                             if r == 0:
-                                cell.text = fields[c].upper()
+                                cell.text = fields[c]
+                                cell._tc.get_or_add_tcPr().append(oxml.parse_xml(r'<w:shd {} w:fill="c0c0c0"/>'.format(oxml.ns.nsdecls('w'))))
                             else:
                                 regRecord = regQueryModel.record(r - 1)
-                                if field == 'registerName':
+                                if field == 'Name':
                                     cell.text = regRecord.value("Name")
-                                if field == 'registerAddr':
+                                if field == 'Address':
                                     cell.text = "%s"%regRecord.value("OffsetAddress")
-                                if field == 'registerDescription':
+                                if field == 'Description':
                                     cell.text = regRecord.value("Description")
 
                     for k in range(regQueryModel.rowCount()):
                         regRecord = regQueryModel.record(k)
                         docx.add_heading('%s'%(regRecord.value("Name")), level = 4)
                         docx.add_paragraph('Description : %s'%(regRecord.value("Description")))
-                        docx.add_paragraph('BaseAddress : %s'%(regRecord.value("OffsetAddress")))
+                        docx.add_paragraph('Address : %s'%(regRecord.value("OffsetAddress")))
 
                         # bitfield
                         bfQueryModel = QSqlQueryModel()
                         bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
 
-                        fields = ['bitFieldName', 'registerOffset', 'bitFieldWidth', 'bitFieldResetValue', 'bitFieldDescription']
+                        fields = ['Name', 'Offset', 'Width', 'ResetValue', 'Description']
                         table = docx.add_table(rows=bfQueryModel.rowCount() + 1, cols=len(fields), style='Table Grid')
                         for r, row in enumerate(table.rows):
                             for c, (cell, field) in enumerate(zip(row.cells, fields)):
                                 if r == 0:
-                                    cell.text = fields[c].upper()
+                                    cell.text = fields[c]
+                                    cell._tc.get_or_add_tcPr().append(oxml.parse_xml(r'<w:shd {} w:fill="c0c0c0"/>'.format(oxml.ns.nsdecls('w'))))
                                 else:
                                     bfRecord = bfQueryModel.record(r - 1)
-                                    if field == 'bitFieldName':
+                                    if field == 'Name':
                                         cell.text = bfRecord.value("Name")
-                                    if field == 'registerOffset':
+                                    if field == 'Offset':
                                         cell.text = "%s"%(bfRecord.value("RegisterOffset"))
-                                    if field == 'bitFieldWidth':
+                                    if field == 'Width':
                                         cell.text = "%s"%(bfRecord.value("Width"))
-                                    if field == 'bitFieldResetValue':
+                                    if field == 'ResetValue':
                                         cell.text = "%s"%(bfRecord.value("DefaultValue"))
-                                    if field == 'bitFieldDescription':
+                                    if field == 'Description':
                                         cell.text = bfRecord.value("Description")
                     docx.add_page_break()
             docx.add_page_break()
