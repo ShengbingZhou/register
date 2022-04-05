@@ -8,7 +8,9 @@ from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
 from PySide2.QtXmlPatterns import QXmlQuery, QXmlSerializer, QXmlResultItems
 from PySide2.QtXml import QDomDocument, QDomNodeList
+
 from lxml import etree
+
 from ui.Module import Ui_ModuleWindow
 from RegisterConst import RegisterConst
 from QSqlQueryBfTableModel import QSqlQueryBfTableModel

@@ -93,7 +93,7 @@ class uiMainWindow(QMainWindow):
     
     @Slot()
     def on_actionImportYoda_triggered(self):
-        fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open Yoda (.sp1) file", QDir.homePath(), "Register File (*.sp1)")
+        fileName, filterUsed = QFileDialog.getOpenFileName(self, "Import Yoda file", QDir.homePath(), "Yoda File (*.sp1)")
         if fileName != '':
             if os.path.isfile(fileName) == False:
                 QMessageBox.warning(self, "Error", "Failed to open %s as it doesn't exist."%fileName)
@@ -108,7 +108,7 @@ class uiMainWindow(QMainWindow):
 
     @Slot()
     def on_actionImportIP_XACT_triggered(self):
-        fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open ipxact (.xml) file", QDir.homePath(), "ipxact File (*.xml)")
+        fileName, filterUsed = QFileDialog.getOpenFileName(self, "Import ipxact (.xml) file", QDir.homePath(), "ipxact File (*.xml)")
         if fileName != '':
             if os.path.isfile(fileName) == False:
                 QMessageBox.warning(self, "Error", "Failed to open %s as it doesn't exist."%fileName)
