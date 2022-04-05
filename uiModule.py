@@ -929,7 +929,9 @@ class uiModuleWindow(QWidget):
                 self.ui.tableView.setVisible(True)
                 self.ui.tableViewReg.setVisible(False)    
                 memMapId = int(current.data(RegisterConst.MemMapIdRole))
+                self.regMapTableModel.setParentId(memMapId)
                 self.regMapTableModel.setFilter("MemoryMapId=%s"%memMapId)
+                self.regMapTableModel.select()
                 if self.ui.tableView.model() != self.memMapTableModel:
                     self.ui.tableView.setModel(self.memMapTableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
@@ -958,10 +960,13 @@ class uiModuleWindow(QWidget):
                 self.ui.tableViewReg.setVisible(False)
                 memMapId = int(current.data(RegisterConst.MemMapIdRole))
                 regMapId = int(current.data(RegisterConst.RegMapIdRole))
+                self.regTableModel.setParentId(regMapId)
                 self.regTableModel.setFilter("RegisterMapId=%s"%regMapId)
+                self.regTableModel.select()
                 if self.ui.tableView.model() != self.regMapTableModel or memMapId != self.regMapTableModel.parentId:
                     self.regMapTableModel.setParentId(memMapId)
                     self.regMapTableModel.setFilter("MemoryMapId=%s"%memMapId)
+                    self.regMapTableModel.select()
                     self.ui.tableView.setModel(self.regMapTableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
                     if self.__bfValueIndex != None:
@@ -993,8 +998,10 @@ class uiModuleWindow(QWidget):
                 self.ui.tableViewReg.setVisible(True)                
                 regMapId = int(current.data(RegisterConst.RegMapIdRole))
                 regId = int(current.data(RegisterConst.RegIdRole))
+                self.bfTableModel.setParentId(regId)
                 self.bfTableModel.setFilter("RegisterId=%s"%regId)
-                if self.ui.tableViewReg.model() != self.regTableModel or regMapId != self.regTableModel.parentId:
+                self.bfTableModel.select()
+                if self.ui.tableViewReg.model() != self.regTableModel or regMapId != self.regTableModel.parentId or self.__treeViewCurrentTable != "Register":
                     self.__regValueIndex = self.regTableModel.record().indexOf("Value")
                     self.regTableModel.setHeaderData(self.__regValueIndex, Qt.Horizontal, "Bits")
                     self.regTableModel.setParentId(regMapId)
@@ -1003,7 +1010,7 @@ class uiModuleWindow(QWidget):
                     self.ui.tableViewReg.setItemDelegateForColumn(self.__regValueIndex, QRegValueDisplayDelegate())
                     if self.ui.tableViewReg.model() != self.regTableModel:
                         self.ui.tableViewReg.setModel(self.regTableModel)
-                    self.ui.tableViewReg.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                        self.ui.tableViewReg.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
                     self.ui.tableViewReg.hideColumn(0) # id
                     self.ui.tableViewReg.hideColumn(1) # regmap id
                     self.ui.tableViewReg.hideColumn(2) # order
@@ -1022,10 +1029,13 @@ class uiModuleWindow(QWidget):
                 self.ui.tableViewReg.setVisible(False)
                 regId = int(current.data(RegisterConst.RegIdRole))
                 bfId  = int(current.data(RegisterConst.BfIdRole))
+                self.bfEnumTableModel.setParentId(bfId)
                 self.bfEnumTableModel.setFilter("BitfieldId=%s"%bfId)
+                self.bfEnumTableModel.select()
                 if self.ui.tableView.model() != self.bfTableModel or regId != self.bfTableModel.parentId:
                     self.bfTableModel.setParentId(regId)
                     self.bfTableModel.setFilter("RegisterId=%s"%regId)
+                    self.bfTableModel.select()
                     self.ui.tableView.setModel(self.bfTableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
                     if self.__regMapTypeIndex != None:
