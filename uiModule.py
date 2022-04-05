@@ -375,7 +375,8 @@ class uiModuleWindow(QWidget):
                         regDesc = regNode.find("Description").text
                         regAddr = regNode.find("Address").text.lower().replace("'h", "0x").replace("'d", "")
                         regWidth = regNode.find("Width").text.lower().replace("'h", "0x").replace("'d", "")
-                        regVisibility  = regNode.find("Visibility").text.lower()
+                        regVisibilityNode = regNode.find("Visibility")
+                        regVisibility  = "" if regVisibilityNode is None else regNode.find("Visibility").text.lower()
                         query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width, Visibility) " \
                                     "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth, regVisibility))
                         query.exec_("SELECT max(id) FROM Register")
@@ -562,7 +563,7 @@ class uiModuleWindow(QWidget):
             for i in range(memoryMapQueryModel.rowCount()):
                 memMapRecord = memoryMapQueryModel.record(i)
                 ipxactFile.write("    <ipxact:memoryMap>\n")
-                ipxactFile.write("      <ipxact:name>%s</ipxact:name>\n"%memoryMapQueryModel.value("Name"))
+                ipxactFile.write("      <ipxact:name>%s</ipxact:name>\n"%memMapRecord.value("Name"))
                 
                 # register map
                 regMapQueryModel = QSqlQueryModel()
@@ -600,7 +601,6 @@ class uiModuleWindow(QWidget):
                             ipxactFile.write("            <ipxact:resets>\n")
                             ipxactFile.write("              <ipxact:reset>\n")
                             ipxactFile.write("                <ipxact:value>%s</ipxact:value>\n"%(str(bfRecord.value("DefaultValue")).replace("0x", "'h")))
-                            ipxactFile.write("              </ipxact:reset>\n")
                             ipxactFile.write("              </ipxact:reset>\n")
                             ipxactFile.write("            </ipxact:resets>\n")
                             ipxactFile.write("          </ipxact:field>\n")
