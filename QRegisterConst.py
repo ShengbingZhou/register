@@ -223,7 +223,7 @@ class QRegisterConst:
                                     if field == 'Name':
                                         cell.text = bfRecord.value("Name")
                                     if field == 'Bits':
-                                        cell.text = "[%s:%s]"%(bfRecord.value("Width") + bfRecord.value("RegisterOffset")-1, bfRecord.value("RegisterOffset"))
+                                        cell.text = "[%s:%s]"%(int(bfRecord.value("Width")) + int(bfRecord.value("RegisterOffset")) - 1, bfRecord.value("RegisterOffset"))
                                     if field == 'ResetValue':
                                         cell.text = "%s"%(bfRecord.value("DefaultValue"))
                                     if field == 'Description':
