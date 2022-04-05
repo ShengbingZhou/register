@@ -129,8 +129,18 @@ class uiMainWindow(QMainWindow):
         if tabText != RegisterConst.WelcomeTabText:
             moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
             moduleWindow.exporIpxact()
-        return    
-    
+        return  
+
+    @Slot()
+    def on_actionExportDocx_triggered(self):
+        if self.ui.tabWidget.currentIndex() < 0:
+            return
+        tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
+        if tabText != RegisterConst.WelcomeTabText:
+            moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+            moduleWindow.exporDocx()
+        return        
+
     @Slot()
     def on_actionSave_triggered(self):
         if self.ui.tabWidget.currentIndex() < 0:

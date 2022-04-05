@@ -39,7 +39,7 @@
      <x>0</x>
      <y>0</y>
      <width>1045</width>
-     <height>22</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -58,6 +58,7 @@
       <string>Export</string>
      </property>
      <addaction name="actionExportIP_XACT"/>
+     <addaction name="actionExportDocx"/>
     </widget>
     <addaction name="actionNew"/>
     <addaction name="actionOpen"/>
@@ -168,6 +169,11 @@
   <action name="actionDebugView">
    <property name="text">
     <string>Debug</string>
+   </property>
+  </action>
+  <action name="actionExportDocx">
+   <property name="text">
+    <string>docx</string>
    </property>
   </action>
  </widget>

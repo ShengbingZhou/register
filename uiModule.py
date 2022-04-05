@@ -1,7 +1,9 @@
+# built-in package
 import os
 import shutil
 import datetime
 
+# pyside2 package
 from PySide2.QtWidgets import QWidget, QAbstractItemView, QMessageBox, QMenu, QAction, QFileDialog, QProgressDialog
 from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize, QEvent, QDir, QFile, QUrl, QDir
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor
@@ -9,8 +11,15 @@ from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlReco
 from PySide2.QtXmlPatterns import QXmlQuery, QXmlSerializer, QXmlResultItems
 from PySide2.QtXml import QDomDocument, QDomNodeList
 
-from lxml import etree
+# lxml package
+from lxml import etree    
 
+# python-docx package
+from docx import Document
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.enum.table import WD_TABLE_ALIGNMENT
+
+# local package
 from ui.Module import Ui_ModuleWindow
 from RegisterConst import RegisterConst
 from QSqlQueryBfTableModel import QSqlQueryBfTableModel
@@ -156,7 +165,8 @@ class uiModuleWindow(QWidget):
         newRow, order = self.getNewRowAndDisplayOrder(model, row, maxOrder)
         query.exec_("UPDATE RegisterMap SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))
 
-        query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, OffsetAddress, Type) VALUES ('%s', '%s', '%s', '%s')"%(memMapId, order, 0x0000, type))
+        query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, OffsetAddress, Description, Type) "\
+                    "VALUES ('%s', '%s', '%s', '%s', '%s')"%(memMapId, order, 0x0000, "This is no name register map", type))
 
         query.exec_("SELECT max(id) FROM RegisterMap")
         query.next()
@@ -605,6 +615,100 @@ class uiModuleWindow(QWidget):
             ipxactFile.write("  </ipxact:memoryMaps>\n")
             ipxactFile.write("</ipxact:component>\n")
             ipxactFile.close()  
+        return
+
+    def exporDocx(self):
+        fileName, filterUsed = QFileDialog.getSaveFileName(self, "Export Word file", QDir.homePath(), "Word File (*.docx)")
+        if fileName !='':
+            f_name, f_ext = os.path.splitext(os.path.basename(fileName))
+            # add .docx
+            if f_ext != ".docx":
+                fileName += ".docx"
+            docx = Document()
+
+            # memory map
+            memoryMapQueryModel = QSqlQueryModel()
+            memoryMapQueryModel.setQuery("SELECT * FROM MemoryMap", self.conn)
+
+            title = docx.add_heading('MemoryMap Table\n', level = 1)
+            title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+            fields = ['memoryMapName', 'memoryMapDescription']
+            table = docx.add_table(rows=memoryMapQueryModel.rowCount() + 1, cols=len(fields), style='Table Grid')
+            for i, row in enumerate(table.rows):
+                for j, (cell, field) in enumerate(zip(row.cells, fields)):
+                    if i == 0: # table header
+                        cell.text = fields[j].upper()
+                    else:
+                        memMapRecord = memoryMapQueryModel.record(i - 1)
+                        if field == 'memoryMapName':
+                            cell.text = memMapRecord.value("Name")
+            docx.add_page_break()
+
+            for i in range(memoryMapQueryModel.rowCount()):
+                memMapRecord = memoryMapQueryModel.record(i)
+                docx.add_heading('%s'%(memMapRecord.value("Name").upper()), level = 2)
+
+                # register map
+                regMapQueryModel = QSqlQueryModel()
+                regMapQueryModel.setQuery("SELECT * FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memMapRecord.value("id"), self.conn)
+                for j in range(regMapQueryModel.rowCount()):
+                    regMapRecord = regMapQueryModel.record(j)
+                    docx.add_heading('%s'%(regMapRecord.value("Name")), level = 3)
+                    docx.add_paragraph('Description : %s'%(regMapRecord.value("Description")))
+                    docx.add_paragraph('BaseAddress : %s'%(regMapRecord.value("OffsetAddress")))
+                    #docx.add_paragraph('Width : %bits'%(regMapRecord.value("Width")))
+            
+                    # register
+                    regQueryModel = QSqlQueryModel()
+                    regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
+
+                    fields = ['registerName', 'registerAddr', 'registerDescription']
+                    table = docx.add_table(rows=regQueryModel.rowCount() + 1, cols=len(fields), style='Table Grid')
+                    for r, row in enumerate(table.rows):
+                        for c, (cell, field) in enumerate(zip(row.cells, fields)):
+                            if r == 0:
+                                cell.text = fields[c].upper()
+                            else:
+                                regRecord = regQueryModel.record(r - 1)
+                                if field == 'registerName':
+                                    cell.text = regRecord.value("Name")
+                                if field == 'registerAddr':
+                                    cell.text = "%s"%regRecord.value("OffsetAddress")
+                                if field == 'registerDescription':
+                                    cell.text = regRecord.value("Description")
+
+                    for k in range(regQueryModel.rowCount()):
+                        regRecord = regQueryModel.record(k)
+                        docx.add_heading('%s'%(regRecord.value("Name")), level = 4)
+                        docx.add_paragraph('Description : %s'%(regRecord.value("Description")))
+                        docx.add_paragraph('BaseAddress : %s'%(regRecord.value("OffsetAddress")))
+
+                        # bitfield
+                        bfQueryModel = QSqlQueryModel()
+                        bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
+
+                        fields = ['bitFieldName', 'registerOffset', 'bitFieldWidth', 'bitFieldResetValue', 'bitFieldDescription']
+                        table = docx.add_table(rows=bfQueryModel.rowCount() + 1, cols=len(fields), style='Table Grid')
+                        for r, row in enumerate(table.rows):
+                            for c, (cell, field) in enumerate(zip(row.cells, fields)):
+                                if r == 0:
+                                    cell.text = fields[c].upper()
+                                else:
+                                    bfRecord = bfQueryModel.record(r - 1)
+                                    if field == 'bitFieldName':
+                                        cell.text = bfRecord.value("Name")
+                                    if field == 'registerOffset':
+                                        cell.text = "%s"%(bfRecord.value("RegisterOffset"))
+                                    if field == 'bitFieldWidth':
+                                        cell.text = "%s"%(bfRecord.value("Width"))
+                                    if field == 'bitFieldResetValue':
+                                        cell.text = "%s"%(bfRecord.value("DefaultValue"))
+                                    if field == 'bitFieldDescription':
+                                        cell.text = bfRecord.value("Description")
+                    docx.add_page_break()
+            docx.add_page_break()
+            docx.save(fileName)
+            QMessageBox.information(self, "Exporting docx", "Done!", QMessageBox.Yes)
         return
 
     def setupDesignViewModels(self, fileName):  
