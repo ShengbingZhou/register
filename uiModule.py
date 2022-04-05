@@ -390,7 +390,7 @@ class uiModuleWindow(QWidget):
                             bfUID = bfRefNode.find("BF-UID").text
                             regOffset  = bfRefNode.find("RegOffset").text.lower().replace("'h", "0x").replace("'d", "")
                             bitOffset  = bfRefNode.find("BitOffset").text.lower().replace("'h", "0x").replace("'d", "")
-                            sliceWidth = bfRefNode.find("SliceWidth").text.lower().replace("'h", "0x").replace("'d", "")
+                            sliceWidth = bfRefNode.find("SliceWidth").text
                             for m in range(len(bfNodes)):
                                 bfNode = bfNodes[m]
                                 if bfUIDs[m].text == bfUID:
@@ -400,9 +400,14 @@ class uiModuleWindow(QWidget):
                                         bfDfValue = bfNode.find("DefaultValue").text.replace("'h", "0x").replace("'d", "").replace("'b", "").replace("'", "")
                                         bfAccess  = bfNode.find("Access").text.lower()
                                         bfVisibility  = bfNode.find("Visibility").text.lower()
+                                        bfWidth = bfNode.find("Width").text
+                                        if sliceWidth != None:
+                                            w = sliceWidth.lower().replace("'h", "0x").replace("'d", "")
+                                        else:
+                                            w = bfWidth.lower().replace("'h", "0x").replace("'d", "")
                                         # TODO: process default value to get sliced value
                                         query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, Name, Description, RegisterOffset, Width, DefaultValue, Access, Visibility) " \
-                                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, sliceWidth, bfDfValue, bfAccess, bfVisibility))
+                                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, w, bfDfValue, bfAccess, bfVisibility))
                                         bfDisplayOrder += 1
                                     break
                 dlgProgress.close()
