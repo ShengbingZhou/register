@@ -33,7 +33,7 @@ class RegisterConst:
     RegIdRole      = Qt.UserRole + 4
     BfIdRole       = Qt.UserRole + 5
     BfEnumIdRole   = Qt.UserRole + 6
-    RegMapTypeRole = Qt.UserRole + 7 # check regmap type
+    RegMapTypeRole = Qt.UserRole + 7
     
     @staticmethod
     def recordExist(record):
@@ -63,9 +63,9 @@ class RegisterConst:
                     text += "<span style='font-size:%spx'>"%fontSize 
                 for i in range(_regOff + _bfW, regB + 1):
                     if regB > (_regOff + _bfW):
-                        text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
+                        text += "%s "%(regB) if (regW < 10 or regB > 9) else "%s "%(regB)
                     else:
-                        text += "%s"%(regB) if (regW < 10 or regB > 9) else "0%s"%(regB)
+                        text += "%s"%(regB) if (regW < 10 or regB > 9) else "%s"%(regB)
                     regB -= 1
                     if regB < 0:
                         break
@@ -89,9 +89,9 @@ class RegisterConst:
                 bfColorsIndex = 0 if (bfColorsIndex + 1) >= len(bfColors) else bfColorsIndex + 1
                 for j in range(_regOff, _regOff + _bfW):
                     if j < (_regOff + _bfW - 1):
-                        text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
+                        text += "%s "%(regB) if (regW < 10 or regB > 9) else "%s "%(regB)
                     else:
-                        text += "%s"%(regB) if (regW < 10 or regB > 9) else "0%s"%(regB)
+                        text += "%s"%(regB) if (regW < 10 or regB > 9) else "%s"%(regB)
                     regB -= 1
                     if regB < 0:
                         break
@@ -104,7 +104,7 @@ class RegisterConst:
             if fontSize != None:
                 text += "<span style='font-size:%spx'>"%fontSize
             for k in range(0, regB + 1):
-                text += "%s "%(regB) if (regW < 10 or regB > 9) else "0%s "%(regB)
+                text += "%s "%(regB) if (regW < 10 or regB > 9) else "%s "%(regB)
                 regB -= 1
             if fontSize != None:
                 text += "</span>"
