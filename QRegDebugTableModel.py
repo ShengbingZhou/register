@@ -2,7 +2,7 @@ from PySide2.QtWidgets import QWidget, QStyledItemDelegate, QStyleOptionViewItem
 from PySide2.QtSql import QSqlDatabase, QSqlQueryModel, QSqlQuery
 from PySide2.QtCore import Qt, QAbstractTableModel, QModelIndex, QSize
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QColor, QIcon, QPainter
-from RegisterConst import RegisterConst
+from QRegisterConst import QRegisterConst
 
 class QRegDebugTableModel(QStandardItemModel):
 
@@ -21,7 +21,7 @@ class QRegDebugTableModel(QStandardItemModel):
     def data(self, index, role):
         value = QStandardItemModel.data(self, index, role)
         if role == Qt.BackgroundColorRole:
-            tableName = QStandardItemModel.data(self, index, RegisterConst.NameRole)
+            tableName = QStandardItemModel.data(self, index, QRegisterConst.NameRole)
             #if tableName == "Register":
             #    value = QColor('lightgrey')
         return value

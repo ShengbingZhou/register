@@ -7,7 +7,7 @@ from PySide2.QtCore import Qt, Slot, QDir
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel
 from ui.Welcome import Ui_WelcomeWindow
-from RegisterConst import RegisterConst
+from QRegisterConst import QRegisterConst
 
 class uiWelcomeWindow(QWidget):
     
@@ -17,7 +17,7 @@ class uiWelcomeWindow(QWidget):
         self.ui.setupUi(self)
         self.ui.listView.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.icon = QIcon('icon/file32.png')
-        with open (RegisterConst.StyleFile) as file:
+        with open (QRegisterConst.StyleFile) as file:
             style = file.read()
         self.setStyleSheet(style)
         self.ui.listView.doubleClicked.connect(self.do_listView_doubleCliced)

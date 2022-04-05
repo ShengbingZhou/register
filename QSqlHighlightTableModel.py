@@ -2,7 +2,7 @@ from PySide2.QtSql import QSqlTableModel, QSqlQuery
 from PySide2.QtCore import Qt, QRect, QSize
 from PySide2.QtGui import QColor, QTextDocument, QAbstractTextDocumentLayout
 from PySide2.QtWidgets import QWidget, QStyledItemDelegate, QStyle, QStyleOptionViewItem, QApplication
-from RegisterConst import RegisterConst
+from QRegisterConst import QRegisterConst
 
 class QSqlHighlightTableModel(QSqlTableModel):
 
@@ -12,7 +12,7 @@ class QSqlHighlightTableModel(QSqlTableModel):
     def data(self, index, role):
         value = QSqlTableModel.data(self, index, role)
         if role == Qt.BackgroundColorRole:
-            if RegisterConst.recordExist(QSqlTableModel.record(self, index.row())) == False:
+            if QRegisterConst.recordExist(QSqlTableModel.record(self, index.row())) == False:
                 value = QColor('grey')
         if role == Qt.DisplayRole:
             if self.tableName() == "Register":
@@ -20,7 +20,7 @@ class QSqlHighlightTableModel(QSqlTableModel):
                 if field == "Value": # show bitfield usage info in this column
                     regId = self.record(index.row()).value("id")
                     regW  = self.record(index.row()).value("Width")
-                    value  = RegisterConst.genColoredRegBitsUsage(self.database(), None, regId, regW, None)
+                    value  = QRegisterConst.genColoredRegBitsUsage(self.database(), None, regId, regW, None)
         return value
 
     def flags(self, index):

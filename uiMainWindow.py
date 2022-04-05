@@ -1,15 +1,17 @@
+# built-in package
 import sys
 import os
-import shutil
 
-from PySide2.QtWidgets import QWidget, QMainWindow, QMessageBox, QTabBar, QStyle, QDesktopWidget, QFileDialog
+# pyside2 package
+from PySide2.QtWidgets import QWidget, QMainWindow, QMessageBox, QTabBar, QDesktopWidget, QFileDialog
 from PySide2.QtCore import Qt, Slot, QDir
-from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord
 from PySide2.QtGui import QIcon
+
+# local package
 from ui.Main import Ui_MainWindow
 from uiWelcome import uiWelcomeWindow
 from uiModule import uiModuleWindow
-from RegisterConst import RegisterConst
+from QRegisterConst import QRegisterConst
 
 class uiMainWindow(QMainWindow):
     
@@ -17,7 +19,7 @@ class uiMainWindow(QMainWindow):
         super().__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setWindowTitle("Register Tool v%s"%(RegisterConst.Version))
+        self.setWindowTitle("Register Tool v%s"%(QRegisterConst.Version))
         self.setWindowIcon(QIcon('icon/module32.png'))
         self.ui.actionSave_As.setVisible(False)
         self.ui.menuEdit.setTitle('')
@@ -26,7 +28,7 @@ class uiMainWindow(QMainWindow):
         centerPoint = QDesktopWidget().availableGeometry().center()
         rect.moveCenter(centerPoint)
         self.move(rect.topLeft())
-        with open (RegisterConst.StyleFile) as file:
+        with open (QRegisterConst.StyleFile) as file:
             style = file.read()
         self.setStyleSheet(style)
         
@@ -38,7 +40,7 @@ class uiMainWindow(QMainWindow):
         self.welcomeWindow.setAttribute(Qt.WA_DeleteOnClose)
         self.welcomeWindow.updateRecentFiles('')
         self.welcomeWindow.setMainWindow(self)
-        index = self.ui.tabWidget.addTab(self.welcomeWindow, RegisterConst.WelcomeTabText)
+        index = self.ui.tabWidget.addTab(self.welcomeWindow, QRegisterConst.WelcomeTabText)
         self.ui.tabWidget.setCurrentIndex(index)   
         self.ui.tabWidget.tabBar().setTabButton(0, QTabBar.RightSide, None)
     
@@ -86,7 +88,7 @@ class uiMainWindow(QMainWindow):
 
     @Slot()
     def on_actionOpen_triggered(self):
-        fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open register file", QDir.homePath(), "Register File (*%s)"%RegisterConst.DesignFileExt)
+        fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open register file", QDir.homePath(), "Register File (*%s)"%QRegisterConst.DesignFileExt)
         if fileName != '':
             self.openFile(fileName)
         return
@@ -126,7 +128,7 @@ class uiMainWindow(QMainWindow):
         if self.ui.tabWidget.currentIndex() < 0:
             return
         tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
-        if tabText != RegisterConst.WelcomeTabText:
+        if tabText != QRegisterConst.WelcomeTabText:
             moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
             moduleWindow.exporIpxact()
         return  
@@ -136,7 +138,7 @@ class uiMainWindow(QMainWindow):
         if self.ui.tabWidget.currentIndex() < 0:
             return
         tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
-        if tabText != RegisterConst.WelcomeTabText:
+        if tabText != QRegisterConst.WelcomeTabText:
             moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
             moduleWindow.exporDocx()
         return        
@@ -146,7 +148,7 @@ class uiMainWindow(QMainWindow):
         if self.ui.tabWidget.currentIndex() < 0:
             return
         tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
-        if tabText != RegisterConst.WelcomeTabText:
+        if tabText != QRegisterConst.WelcomeTabText:
             moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
             fileName = moduleWindow.saveDatabase()
             if fileName != '':
@@ -165,9 +167,9 @@ class uiMainWindow(QMainWindow):
         if self.ui.tabWidget.currentIndex() < 0:
             return
         tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
-        if tabText != RegisterConst.WelcomeTabText:
+        if tabText != QRegisterConst.WelcomeTabText:
             moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-            moduleWindow.setView(RegisterConst.DesignView)
+            moduleWindow.setView(QRegisterConst.DesignView)
         return
     
     @Slot()
@@ -175,9 +177,9 @@ class uiMainWindow(QMainWindow):
         if self.ui.tabWidget.currentIndex() < 0:
             return
         tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
-        if tabText != RegisterConst.WelcomeTabText:
+        if tabText != QRegisterConst.WelcomeTabText:
             moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-            moduleWindow.setView(RegisterConst.DebugView)
+            moduleWindow.setView(QRegisterConst.DebugView)
         return
     
     @Slot()
@@ -185,7 +187,7 @@ class uiMainWindow(QMainWindow):
         if self.ui.tabWidget.currentIndex() < 0:
             return
         tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
-        if tabText != RegisterConst.WelcomeTabText:
+        if tabText != QRegisterConst.WelcomeTabText:
             moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
             moduleWindow.close()
         
