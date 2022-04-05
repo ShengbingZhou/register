@@ -55,19 +55,30 @@ class QRegisterConst:
             return True
 
     @staticmethod
+    def second(item):
+        return item[1]
+
+    @staticmethod
     def genColoredRegBitsUsage(conn, bfId, regId, regW, fontSize):
-        bfColors = ["LightSalmon", "PowderBlue", "LightPink", "Aquamarine", "Bisque", "LightBlue", "DarkKhaki", "DarkSeaGreen"] 
-        bfColorsIndex = 0
         if regW == None:
-            return None
+            return
+            
+        regW = int(regW)
+        bfColors = ["DarkSeaGreen", "LightSalmon", "PowderBlue", "LightPink", "Aquamarine", "Bisque", "LightBlue", "DarkKhaki"] 
+        bfColorsIndex = 0
+
         regB = regW - 1
         text = ""
-        bfQuery = QSqlQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY RegisterOffset DESC"%(regId), conn)
+        bfList = []
+        bfQuery = QSqlQuery("SELECT * FROM Bitfield WHERE RegisterId=%s"%(regId), conn)
         while bfQuery.next():
-            _regOff = bfQuery.value("RegisterOffset")
-            _bfW  = bfQuery.value("Width")
-            _bfId = bfQuery.value("id")
+            bfList.append((bfQuery.value("id"), int(bfQuery.value("RegisterOffset")), int(bfQuery.value("Width"))))
 
+        bfList.sort(key = QRegisterConst.second, reverse = True) # sort by register offset desc order
+        for item in bfList:
+            _bfId   = item[0]
+            _regOff = item[1]
+            _bfW    = item[2]
             # unused bits before bitfield 
             if _bfW > 0 and regB > (_regOff + _bfW - 1):
                 if fontSize != None:

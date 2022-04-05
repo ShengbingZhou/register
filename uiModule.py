@@ -791,9 +791,9 @@ class uiModuleWindow(QWidget):
                 regRecord = regQueryModel.record(j)
                 if QRegisterConst.recordExist(regRecord) == True:
                     regItem0 = QStandardItem(self.regIcon, regRecord.value("name"))
-                    regItem1 = QStandardItem(str(regRecord.value("OffsetAddress")))
+                    regItem1 = QStandardItem(regRecord.value("OffsetAddress"))
                     regItem2 = QStandardItem(regRecord.value("Description"))
-                    regItem3 = QStandardItem(str(regRecord.value("Value")))
+                    regItem3 = QStandardItem(regRecord.value("Value"))
                     regItems = [regItem0, regItem1, regItem2, regItem3]
                     for r in regItems:
                         r.setData("Register", QRegisterConst.NameRole)
@@ -808,7 +808,7 @@ class uiModuleWindow(QWidget):
                         bfItem0 = QStandardItem(" ")
                         bfItem1 = QStandardItem(" ")
                         bfItem2 = QStandardItem(bfRecord.value("name"))
-                        bfItem3 = QStandardItem(str(bfRecord.value("Value")))
+                        bfItem3 = QStandardItem(bfRecord.value("Value"))
                         bfItems = [bfItem0, bfItem1, bfItem2, bfItem3]
                         for r in bfItems:
                             r.setData("Bitfield", QRegisterConst.NameRole)                        
