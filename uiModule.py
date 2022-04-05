@@ -653,14 +653,14 @@ class uiModuleWindow(QWidget):
 
             for i in range(memoryMapQueryModel.rowCount()):
                 memMapRecord = memoryMapQueryModel.record(i)
-                docx.add_heading('%s'%(memMapRecord.value("Name").upper()), level = 2)
+                docx.add_heading('MemoryMap: %s'%(memMapRecord.value("Name")), level = 2)
 
                 # register map
                 regMapQueryModel = QSqlQueryModel()
                 regMapQueryModel.setQuery("SELECT * FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memMapRecord.value("id"), self.conn)
                 for j in range(regMapQueryModel.rowCount()):
                     regMapRecord = regMapQueryModel.record(j)
-                    docx.add_heading('%s'%(regMapRecord.value("Name")), level = 3)
+                    docx.add_heading('RegisterMap: %s'%(regMapRecord.value("Name")), level = 3)
                     docx.add_paragraph('Description : %s'%(regMapRecord.value("Description")))
                     docx.add_paragraph('BaseAddress : %s'%(regMapRecord.value("OffsetAddress")))
                     #docx.add_paragraph('Width : %bits'%(regMapRecord.value("Width")))
@@ -687,7 +687,7 @@ class uiModuleWindow(QWidget):
 
                     for k in range(regQueryModel.rowCount()):
                         regRecord = regQueryModel.record(k)
-                        docx.add_heading('%s'%(regRecord.value("Name")), level = 4)
+                        docx.add_heading('Register: %s'%(regRecord.value("Name")), level = 4)
                         docx.add_paragraph('Description : %s'%(regRecord.value("Description")))
                         docx.add_paragraph('Address : %s'%(regRecord.value("OffsetAddress")))
 
@@ -695,7 +695,7 @@ class uiModuleWindow(QWidget):
                         bfQueryModel = QSqlQueryModel()
                         bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
 
-                        fields = ['Name', 'Offset', 'Width', 'ResetValue', 'Description']
+                        fields = ['Name', 'Bits', 'ResetValue', 'Description']
                         table = docx.add_table(rows=bfQueryModel.rowCount() + 1, cols=len(fields), style='Table Grid')
                         for r, row in enumerate(table.rows):
                             for c, (cell, field) in enumerate(zip(row.cells, fields)):
@@ -706,10 +706,8 @@ class uiModuleWindow(QWidget):
                                     bfRecord = bfQueryModel.record(r - 1)
                                     if field == 'Name':
                                         cell.text = bfRecord.value("Name")
-                                    if field == 'Offset':
-                                        cell.text = "%s"%(bfRecord.value("RegisterOffset"))
-                                    if field == 'Width':
-                                        cell.text = "%s"%(bfRecord.value("Width"))
+                                    if field == 'Bits':
+                                        cell.text = "[%s:%s]"%(bfRecord.value("Width") + bfRecord.value("RegisterOffset")-1, bfRecord.value("RegisterOffset"))
                                     if field == 'ResetValue':
                                         cell.text = "%s"%(bfRecord.value("DefaultValue"))
                                     if field == 'Description':
