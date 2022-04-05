@@ -314,6 +314,12 @@ class uiModuleWindow(QWidget):
             sp1 = etree.parse(fileName)
             root = sp1.getroot()
     
+            # reset var
+            memMapDisplayOrder = 0
+            regMapDisplayOrder = 0
+            regDisplayOrder = 0
+            bfDisplayOrder = 0
+
             # find memory map
             memMapNodes = root.findall('MemoryMap')
             if len(memMapNodes) == 0:
@@ -323,17 +329,15 @@ class uiModuleWindow(QWidget):
                 return False
 
             # start to import
-            regMapDisplayOrder = 0
-            regDisplayOrder = 0
-            bfDisplayOrder = 0
             query = QSqlQuery(self.conn)
-            for memMap in memMapNodes:
+            for memMap in memMapNodes: # only one memory map in yoda
                 # add memory record
                 memMapAddr = root.find("Properties/Address").text.lower().replace("'h", "0x").replace("'d", "")
-                query.exec_("INSERT INTO MemoryMap (OffsetAddress) VALUES ('%s')"%(memMapAddr))
+                query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name) VALUES ('%s', '%s', '%s')"%(memMapDisplayOrder, memMapAddr, "MemoryMap"))
                 query.exec_("SELECT max(id) FROM MemoryMap")
                 query.next()
                 memMapId = query.record().value(0)
+                memMapDisplayOrder += 1
 
                 # import regmap/reg/bf
                 bfNodes = memMap.findall("BitFields/BitField")
@@ -425,6 +429,12 @@ class uiModuleWindow(QWidget):
             sp1 = etree.parse(fileName)
             root = sp1.getroot()
             
+            # reset var
+            memMapDisplayOrder = 0
+            regMapDisplayOrder = 0
+            regDisplayOrder = 0
+            bfDisplayOrder = 0            
+
             # find memory map
             memMapNodes = root.findall('ipxact:memoryMaps/ipxact:memoryMap', root.nsmap)
             if len(memMapNodes) == 0:
@@ -434,19 +444,17 @@ class uiModuleWindow(QWidget):
                 return False
 
             # start to import
-            regMapDisplayOrder = 0
-            regDisplayOrder = 0
-            bfDisplayOrder = 0
             query = QSqlQuery(self.conn)
             for memMap in range(len(memMapNodes)):
                 memMapNode = memMapNodes[memMap]
                 memMapName = memMapNode.find("ipxact:name", root.nsmap).text
 
                 # add memory record
-                query.exec_("INSERT INTO MemoryMap (OffsetAddress, Name) VALUES ('%s', '%s')"%(0, memMapName))
+                query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name) VALUES ('%s', '%s', '%s')"%(memMapDisplayOrder, 0x0000, memMapName))
                 query.exec_("SELECT max(id) FROM MemoryMap")
                 query.next()
                 memMapId = query.record().value(0)
+                memMapDisplayOrder += 1
 
                 # get regmap nodes
                 regMapNodes = memMapNode.findall("ipxact:addressBlock", root.nsmap)
@@ -809,6 +817,7 @@ class uiModuleWindow(QWidget):
         tableName = str(index.data(RegisterConst.NameRole))
         
         self.treeViewPopMenu = QMenu(self)
+        addMemMapAction = QAction("+ MemMap", self)
         addRegMapAction = QAction("+ RegMap", self)
         addRegModAction = QAction("+ RegMod", self)
         addRegAction = QAction("+ Reg", self)
@@ -816,37 +825,38 @@ class uiModuleWindow(QWidget):
         addBfEnumAction = QAction("+ Bitfield Enum", self)
         
         if tableName == "MemoryMap":
+            self.treeViewPopMenu.addAction(addMemMapAction)
+            addMemMapAction.triggered.connect(self.on_pbAddMemMap_clicked)
             self.treeViewPopMenu.addAction(addRegMapAction)
             addRegMapAction.triggered.connect(self.on_pbAddRegMap_clicked)
             self.treeViewPopMenu.addAction(addRegModAction)
             addRegModAction.triggered.connect(self.do_pbAddRegMod_clicked)
         elif tableName == "RegisterMap":
+            self.treeViewPopMenu.addAction(addRegMapAction)
+            addRegMapAction.triggered.connect(self.on_pbAddRegMap_clicked)
+            self.treeViewPopMenu.addAction(addRegModAction)
+            addRegModAction.triggered.connect(self.do_pbAddRegMod_clicked)
             regMapType = index.data(RegisterConst.RegMapTypeRole)
             regMapType = RegisterConst.RegMap if regMapType == None or regMapType == '' else int(regMapType) # default as regmap if not set
             if regMapType == RegisterConst.RegMap:
                 self.treeViewPopMenu.addAction(addRegAction)
                 addRegAction.triggered.connect(self.on_pbAddReg_clicked)
         elif tableName == "Register":
+            self.treeViewPopMenu.addAction(addRegAction)
+            addRegAction.triggered.connect(self.on_pbAddReg_clicked)
             self.treeViewPopMenu.addAction(addBfAction)
             addBfAction.triggered.connect(self.on_pbAddBf_clicked)
         elif tableName == "Bitfield":
+            self.treeViewPopMenu.addAction(addBfAction)
+            addBfAction.triggered.connect(self.on_pbAddBf_clicked)
             self.treeViewPopMenu.addAction(addBfEnumAction)
             addBfEnumAction.triggered.connect(self.on_pbAddBfEnum_clicked)
-
-        # do not allow to add anything if bitfield is selected to make usage simple
-        # elif tableName == "BitfieldEnum":
-        #    self.treeViewPopMenu.addAction(addRegMapAction)
-        #    addRegMapAction.triggered.connect(self.on_pbAddRegMap_clicked)
-        #    self.treeViewPopMenu.addAction(addRegModAction)
-        #    addRegModAction.triggered.connect(self.do_pbAddRegMod_clicked)
-        #    self.treeViewPopMenu.addAction(addRegAction)
-        #    addRegAction.triggered.connect(self.on_pbAddReg_clicked)
-        #    self.treeViewPopMenu.addAction(addBfAction)
-        #    addBfAction.triggered.connect(self.on_pbAddBf_clicked)
-        #    self.treeViewPopMenu.addAction(addBfEnumAction)
-        #    addBfEnumAction.triggered.connect(self.on_pbAddBfEnum_clicked)
+        elif tableName == "BitfieldEnum":
+            self.treeViewPopMenu.addAction(addBfEnumAction)
+            addBfEnumAction.triggered.connect(self.on_pbAddBfEnum_clicked)
         
-        if tableName != "MemoryMap" or index.row() != 0:
+        parent = self.treeViewTableModel.itemFromIndex(index.parent()) if tableName != "MemoryMap" else self.treeViewTableModel.invisibleRootItem()
+        if tableName != "MemoryMap" or parent.rowCount() > 1:
             self.treeViewPopMenu.addSeparator()
             delAction = QAction("Delete", self)
             self.treeViewPopMenu.addAction(delAction)
@@ -928,8 +938,9 @@ class uiModuleWindow(QWidget):
                         self.ui.tableView.showColumn(self.__bfValueIndex)
                         self.__bfValueIndex = None
                     self.ui.tableView.hideColumn(0) # id
-                    self.ui.tableView.showColumn(1) # offset address
-                    self.ui.tableView.showColumn(2) # notes
+                    self.ui.tableView.hideColumn(1) # order
+                    self.ui.tableView.showColumn(2) # offset address
+                    self.ui.tableView.showColumn(3) # name
                     self.ui.tableView.resizeColumnsToContents()
                     
                 # update tips
