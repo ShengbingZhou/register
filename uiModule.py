@@ -578,8 +578,10 @@ class uiModuleWindow(QWidget):
             if f_ext != ".xml":
                 fileName += ".xml"               
             ipxactFile = open(fileName, "w")
+            ipxactFile.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
             ipxactFile.write("<ipxact:component xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ipxact=\"http://www.accellera.org/XMLSchema/IPXACT/1685-2014\" xsi:schemaLocation=\"http://www.accellera.org/XMLSchema/IPXACT/1685-2014 http://www.accellera.org/XMLSchema/IPXACT/1685-2014/index.xsd\">\n")
             ipxactFile.write("  <ipxact:vendor>Register@ShengbingZhou (shengbingzhou@outlook.com)</ipxact:vendor>\n")
+            ipxactFile.write("  <ipxact:library>%s</ipxact:library>\n"%"")
             ipxactFile.write("  <ipxact:name>%s</ipxact:name>\n"%f_name)
             ipxactFile.write("  <ipxact:version>1.0</ipxact:version>\n")
             ipxactFile.write("  <ipxact:memoryMaps>\n")
