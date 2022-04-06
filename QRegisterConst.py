@@ -3,7 +3,7 @@ import os
 
 # pyside2 package
 from PySide2.QtWidgets import QFileDialog, QMessageBox, QProgressDialog
-from PySide2.QtCore import Qt, QDir
+from PySide2.QtCore import Qt, QDir, QCoreApplication
 from PySide2.QtSql import QSqlQuery, QSqlQueryModel
 
 # python-docx package
@@ -161,6 +161,13 @@ class QRegisterConst:
                         cell.text = memMapRecord.value("Name")
         docx.add_page_break()
 
+        # setup progress dialog
+        dlgProgress = QProgressDialog(parent)
+        dlgProgress.setWindowTitle("Exporting ...")
+        dlgProgress.setWindowModality(Qt.WindowModal)
+        dlgProgress.setMinimum(0)
+        dlgProgress.show()
+
         for i in range(memoryMapQueryModel.rowCount()):
             memMapRecord = memoryMapQueryModel.record(i)
             docx.add_heading('MemoryMap: %s'%(memMapRecord.value("Name")), level = 2)
@@ -169,10 +176,10 @@ class QRegisterConst:
             regMapQueryModel = QSqlQueryModel()
             regMapQueryModel.setQuery("SELECT * FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memMapRecord.value("id"), conn)
             
-            # setup progress dialog
-            dlgProgress = QProgressDialog("Exporting %s ..."%fileName, "Cancel", 0, regMapQueryModel.rowCount(), parent)
-            dlgProgress.setWindowTitle("Importing...")
-            dlgProgress.setWindowModality(Qt.WindowModal)                
+            # progress dialog
+            dlgProgress.setMaximum(memoryMapQueryModel.rowCount())
+            dlgProgress.setValue(0)
+            QCoreApplication.processEvents()              
             
             for j in range(regMapQueryModel.rowCount()):
                 regMapRecord = regMapQueryModel.record(j)
@@ -183,6 +190,7 @@ class QRegisterConst:
                 # update progress dialog
                 dlgProgress.setLabelText("Exporting register map '%s' to %s "%(regMapRecord.value("Name"), fileName))
                 dlgProgress.setValue(j)
+                QCoreApplication.processEvents()    
 
                 # register
                 regQueryModel = QSqlQueryModel()
@@ -233,8 +241,8 @@ class QRegisterConst:
                                 if field == 'Description':
                                     cell.text = bfRecord.value("Description")
                 docx.add_page_break()
-            dlgProgress.close()
         docx.add_page_break()
         docx.save(fileName)
+        dlgProgress.close()
         QMessageBox.information(parent, "Exporting docx", "Done!", QMessageBox.Yes)
         return

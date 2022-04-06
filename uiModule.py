@@ -5,7 +5,7 @@ import datetime
 
 # pyside2 package
 from PySide2.QtWidgets import QWidget, QAbstractItemView, QMessageBox, QMenu, QAction, QFileDialog, QProgressDialog
-from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize, QEvent, QDir, QFile, QUrl, QDir
+from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QEvent, QDir, QCoreApplication
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
 
@@ -464,6 +464,12 @@ class uiModuleWindow(QWidget):
                         os.remove(self.newFileName)
                     return False
 
+                dlgProgress = QProgressDialog(self)
+                dlgProgress.setWindowTitle("Importing IP-XACT ...")
+                dlgProgress.setWindowModality(Qt.WindowModal)
+                dlgProgress.setMinimum(0)
+                dlgProgress.show()
+
                 # start to import
                 query = QSqlQuery(self.conn)
                 for memMap in range(len(memMapNodes)):
@@ -482,10 +488,10 @@ class uiModuleWindow(QWidget):
                     # get regmap nodes
                     regMapNodes = memMapNode.findall("%s:addressBlock"%ns, root.nsmap)
 
-                    # prepare progress dialog
-                    dlgProgress = QProgressDialog("Importing %s ..."%fileName, "Cancel", 0, len(regMapNodes), self)
-                    dlgProgress.setWindowTitle("Importing...")
-                    dlgProgress.setWindowModality(Qt.WindowModal)
+                    # progress dialog
+                    dlgProgress.setMaximum(len(regMapNodes))
+                    dlgProgress.setValue(0)
+                    QCoreApplication.processEvents()
 
                     for i in range(len(regMapNodes)):
                         regMapNode = regMapNodes[i]
@@ -510,6 +516,7 @@ class uiModuleWindow(QWidget):
 
                         dlgProgress.setLabelText("Importing register map '%s' from %s "%(regMapName, fileName))
                         dlgProgress.setValue(i)
+                        QCoreApplication.processEvents()
                     
                         regNodes = regMapNode.findall("%s:register"%ns, root.nsmap)
                         for j in range(len(regNodes)):
@@ -548,8 +555,7 @@ class uiModuleWindow(QWidget):
                                 query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, Name, Description, RegisterOffset, Width, DefaultValue, Access) " \
                                             "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, bfWidth, bfDefaultVal, bfAccess))
                                 bfDisplayOrder += 1
-                    dlgProgress.close()
-
+                dlgProgress.close()
                 self.memMapTableModel.select()
                 self.regMapTableModel.select()
                 self.regTableModel.select()
