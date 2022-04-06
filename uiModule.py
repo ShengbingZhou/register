@@ -145,7 +145,7 @@ class uiModuleWindow(QWidget):
         newRow, order = self.getNewRowAndDisplayOrder(model, row, maxOrder)
         query.exec_("UPDATE MemoryMap SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))
 
-        query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress) VALUES ('%s', '%s')"%(order, 0x0000))
+        query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, User) VALUES ('%s', '%s', '%s')"%(order, 0x0000, os.getlogin()))
 
         query.exec_("SELECT max(id) FROM MemoryMap")
         query.next()
@@ -163,8 +163,8 @@ class uiModuleWindow(QWidget):
         newRow, order = self.getNewRowAndDisplayOrder(model, row, maxOrder)
         query.exec_("UPDATE RegisterMap SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))
 
-        query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, OffsetAddress, Description, Type) "\
-                    "VALUES ('%s', '%s', '%s', '%s', '%s')"%(memMapId, order, 0x0000, "This is no name register map", type))
+        query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, OffsetAddress, Description, Type, User) "\
+                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s')"%(memMapId, order, 0x0000, "This is no name register map", type, os.getlogin()))
 
         query.exec_("SELECT max(id) FROM RegisterMap")
         query.next()
@@ -185,8 +185,8 @@ class uiModuleWindow(QWidget):
         newRow, order = self.getNewRowAndDisplayOrder(model, row, maxOrder)
         query.exec_("UPDATE Register SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))
 
-        query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, OffsetAddress, Description, Width) " \
-                    "VALUES ('%s', '%s', '%s', '%s', '%s')"%(regMapId, order, OffsetAddress, "This is no name register", Width))
+        query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, OffsetAddress, Description, Width, User) " \
+                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s')"%(regMapId, order, OffsetAddress, "This is no name register", Width, os.getlogin()))
 
         query.exec_("SELECT max(id) FROM Register")
         query.next()
@@ -204,8 +204,8 @@ class uiModuleWindow(QWidget):
         newRow, order = self.getNewRowAndDisplayOrder(model, row, maxOrder)
         query.exec_("UPDATE Bitfield SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))
 
-        query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, RegisterOffset, Description, Width, Access, DefaultValue, Value) " \
-                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, order, 0, "This is no name bitfield", Width, 'rw', 0, 0))
+        query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, RegisterOffset, Description, Width, Access, DefaultValue, Value, User) " \
+                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, order, 0, "This is no name bitfield", Width, 'rw', 0, 0, os.getlogin()))
 
         query.exec_("SELECT max(id) FROM Bitfield")
         query.next()
@@ -223,8 +223,8 @@ class uiModuleWindow(QWidget):
         newRow, order = self.getNewRowAndDisplayOrder(model, row, maxOrder)
         query.exec_("UPDATE BitfieldEnum SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))
 
-        query.exec_("INSERT INTO BitfieldEnum (BitfieldId, DisplayOrder, Description, Value) " \
-                    "VALUES ('%s', '%s', '%s', '%s')"%(bfId, order, "This is no name enum", 0))
+        query.exec_("INSERT INTO BitfieldEnum (BitfieldId, DisplayOrder, Description, Value, User) " \
+                    "VALUES ('%s', '%s', '%s', '%s', '%s')"%(bfId, order, "This is no name enum", 0, os.getlogin()))
 
         query.exec_("SELECT max(id) FROM BitfieldEnum")
         query.next()
@@ -381,8 +381,9 @@ class uiModuleWindow(QWidget):
                         regDesc = regNode.find("Description").text
                         regAddr = regNode.find("Address").text.lower().replace("'h", "0x").replace("'d", "")
                         regWidth = regNode.find("Width").text.lower().replace("'h", "0x").replace("'d", "")
-                        query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width) " \
-                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth))
+                        regVisibility  = regNode.find("Visibility").text.lower()
+                        query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width, Visibility) " \
+                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth, regVisibility))
                         query.exec_("SELECT max(id) FROM Register")
                         query.next()
                         regId = query.record().value(0)
@@ -402,9 +403,11 @@ class uiModuleWindow(QWidget):
                                     if bfName != "RESERVED":
                                         bfDesc = bfNode.find("Description").text
                                         bfDfValue = bfNode.find("DefaultValue").text.replace("'h", "0x").replace("'d", "").replace("'b", "").replace("'", "")
+                                        bfAccess  = bfNode.find("Access").text.lower()
+                                        bfVisibility  = bfNode.find("Visibility").text.lower()
                                         # TODO: process default value to get sliced value
-                                        query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, Name, Description, RegisterOffset, Width, DefaultValue) " \
-                                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, sliceWidth, bfDfValue))
+                                        query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, Name, Description, RegisterOffset, Width, DefaultValue, Access, Visibility) " \
+                                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, sliceWidth, bfDfValue, bfAccess, bfVisibility))
                                         bfDisplayOrder += 1
                                     break
                 dlgProgress.close()
