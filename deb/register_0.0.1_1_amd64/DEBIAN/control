@@ -1,0 +1,6 @@
+Package: register
+Version: 0.0.1
+Architecture: amd64
+Maintainer: Shengbing Zhou <shengbingzhou@outlook.com>
+Description: A tool to help RTL designer to define register/bitfield/etc.
+ This tool is to help you to define register, bitfield, etc. It supports import and export ipxact format xml as well. In future, this tool will support hardware debug.

@@ -2,7 +2,7 @@
 import sys
 import os
 
-from PySide2.QtWidgets import QApplication, QMainWindow
+from PySide2.QtWidgets import QApplication
 from uiMainWindow import uiMainWindow
 
 os.environ["QT_FONT_DPI"] = "96" # fix dpi on different monitor
