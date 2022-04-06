@@ -5,6 +5,7 @@ import os
 from PySide2.QtWidgets import QFileDialog, QMessageBox, QProgressDialog
 from PySide2.QtCore import Qt, QDir, QCoreApplication
 from PySide2.QtSql import QSqlQuery, QSqlQueryModel
+from PySide2.QtGui import QColor
 
 # python-docx package
 from docx import Document, oxml, shared
@@ -61,9 +62,13 @@ class QRegisterConst:
             return
 
         regW = int(regW)
-        bfColors = ["DarkSeaGreen", "LightSalmon", "PowderBlue", "LightPink", "Aquamarine", "Bisque", "LightBlue", "DarkKhaki"] 
+        
         bfColorsIndex = 0
-
+        bfColors = ["DarkSeaGreen", "LightSalmon", "PowderBlue", "LightPink", "Aquamarine", "Bisque", "LightBlue", "DarkKhaki"] 
+        
+        bfQColors = [QColor(0x8FBC8F), QColor(0xFFA07A), QColor(0xB0E0E6), QColor(0xFFB6C1), QColor(0x66CDAA), QColor(0xFFE4C4), QColor(0xADD8E6), QColor(0xBDB76B)]
+        value = []
+            
         regB = regW - 1
         text = ""
         bfQuery = QSqlQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY CAST(RegisterOffset as int) DESC"%(regId), conn)
@@ -71,58 +76,46 @@ class QRegisterConst:
             _bfId   = bfQuery.value("id")
             _regOff = int(bfQuery.value("RegisterOffset"))
             _bfW    = int(bfQuery.value("Width"))
+
             # unused bits before bitfield 
             if _bfW > 0 and regB > (_regOff + _bfW - 1):
-                if fontSize != None:
-                    text += "<span style='font-size:%spx'>"%fontSize 
+                text = ""
                 for i in range(_regOff + _bfW, regB + 1):
                     if regB > (_regOff + _bfW):
-                        text += "%s "%(regB) if (regW < 10 or regB > 9) else "%s "%(regB)
+                        text += "%s,"%(regB)
                     else:
-                        text += "%s"%(regB) if (regW < 10 or regB > 9) else "%s"%(regB)
+                        text += "%s"%(regB)
                     regB -= 1
                     if regB < 0:
                         break
-                if fontSize != None:
-                    text += " </span>"
-                else:
-                    text += " "
+                value.append((None, text))
 
             # bitfield bits
             if _bfW > 0 and regB >= 0:
-                if _bfId == bfId:
-                    if fontSize != None:
-                        text += "<span style='font-size:%spx;background-color:%s;font-weight:bold;color:red'>"%(fontSize, bfColors[bfColorsIndex])
-                    else:
-                        text += "<span style='background-color:%s;font-weight:bold;color:red'>"%(bfColors[bfColorsIndex])
-                else:
-                    if fontSize != None:
-                        text += "<span style='font-size:%spx;background-color:%s'>"%(fontSize, bfColors[bfColorsIndex])
-                    else:
-                        text += "<span style='background-color:%s'>"%(bfColors[bfColorsIndex])
-                bfColorsIndex = 0 if (bfColorsIndex + 1) >= len(bfColors) else bfColorsIndex + 1
+                text = ""
+                bfColorsIndex = 0 if (bfColorsIndex + 1) >= len(bfQColors) else bfColorsIndex + 1
                 for j in range(_regOff, _regOff + _bfW):
                     if j < (_regOff + _bfW - 1):
-                        text += "%s "%(regB) if (regW < 10 or regB > 9) else "%s "%(regB)
+                        text += "%s,"%(regB)
                     else:
-                        text += "%s"%(regB) if (regW < 10 or regB > 9) else "%s"%(regB)
+                        text += "%s"%(regB)
                     regB -= 1
                     if regB < 0:
                         break
-                text += "</span>"
-                if regB >= 0:
-                    text += "<span style='font-size:%spx'> </span>"%fontSize if fontSize != None else " "
-
+                value.append((bfQColors[bfColorsIndex], text))
+                
         # left unsed bits
         if regB >= 0:
-            if fontSize != None:
-                text += "<span style='font-size:%spx'>"%fontSize
+            text = ""
             for k in range(0, regB + 1):
-                text += "%s "%(regB) if (regW < 10 or regB > 9) else "%s "%(regB)
+                if k > 0:
+                    text += "%s,"%(regB)
+                else:
+                    text += "%s"%(regB)
                 regB -= 1
-            if fontSize != None:
-                text += "</span>"
-        return text
+            value.append((None, text))
+
+        return value
 
     @staticmethod
     def exporDocx(parent, conn):

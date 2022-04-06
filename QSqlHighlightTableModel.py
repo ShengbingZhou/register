@@ -1,6 +1,6 @@
 from PySide2.QtSql import QSqlTableModel, QSqlQuery
 from PySide2.QtCore import Qt, QRect, QSize
-from PySide2.QtGui import QColor, QTextDocument, QAbstractTextDocumentLayout
+from PySide2.QtGui import QColor, QTextDocument, QBrush, QFontMetrics
 from PySide2.QtWidgets import QWidget, QStyledItemDelegate, QStyle, QStyleOptionViewItem, QApplication
 from QRegisterConst import QRegisterConst
 
@@ -46,20 +46,32 @@ class QRegValueDisplayDelegate(QStyledItemDelegate):
         return editor.setGeometry(option.rect)
 
     def paint(self, painter, option, index):
-        options = option
-        self.initStyleOption(options,index)
-        style = QApplication.style() if options.widget is None else options.widget.style()
-        doc = QTextDocument()
-        doc.setHtml(options.text)
-        options.text = ""
-        style.drawControl(QStyle.CE_ItemViewItem, options, painter)
-        textRect = style.subElementRect(QStyle.SE_ItemViewItemText, options)
-        painter.save()
-        painter.translate(textRect.topLeft())
-        painter.setClipRect(textRect.translated(-textRect.topLeft()))
-        doc.documentLayout().draw(painter, QAbstractTextDocumentLayout.PaintContext())
-        painter.restore()
+        self.initStyleOption(option, index)
+        value = index.data()
+        margin = 5
+        
+        fm = QFontMetrics(painter.font())
+        pixelsWide = fm.width(" ZB ")
+        rect = QRect(option.rect.left() + margin, option.rect.top() + margin, pixelsWide, option.rect.height() - 2*margin)
 
+        defaultBrush = painter.brush()
+        #defaultPen = painter.pen()
+        for i in range(len(value)):
+            digits = value[i][1].split(',')
+            for d in digits:
+                if value[i][0] is None:
+                    painter.setPen(defaultBrush.color())
+                    painter.setBrush(defaultBrush)
+                else:
+                    painter.setPen(value[i][0])
+                    painter.setBrush(QBrush(value[i][0]))
+                painter.drawRect(rect)
+                painter.setPen(defaultBrush.color())
+                painter.setBrush(defaultBrush)
+                painter.drawText(rect, Qt.AlignCenter, d)
+                rect.setX(rect.x() + pixelsWide + 2)
+                rect.setWidth(pixelsWide)
+        
     def sizeHint(self, option, index):
         options = option
         self.initStyleOption(options, index)
