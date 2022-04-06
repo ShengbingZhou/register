@@ -1038,20 +1038,21 @@ class uiModuleWindow(QWidget):
                 self.bfTableModel.setParentId(regId)
                 self.bfTableModel.setFilter("RegisterId=%s"%regId)
                 self.bfTableModel.select()
-                if self.ui.tableViewReg.model() != self.regTableModel or regMapId != self.regTableModel.parentId or self.__treeViewCurrentTable != "Register":
-                    self.__regValueIndex = self.regTableModel.record().indexOf("Value")
-                    self.regTableModel.setHeaderData(self.__regValueIndex, Qt.Horizontal, "Bits")
+                if self.ui.tableViewReg.model() != self.regTableModel or regMapId != self.regTableModel.parentId or self.__treeViewCurrentTable != "Register":                    
                     self.regTableModel.setParentId(regMapId)
                     self.regTableModel.setFilter("RegisterMapId=%s"%regMapId)
-                    self.regTableModel.select()
-                    self.ui.tableViewReg.setItemDelegateForColumn(self.__regValueIndex, QRegValueDisplayDelegate())
+                    self.regTableModel.select()                    
                     if self.ui.tableViewReg.model() != self.regTableModel:
+                        self.__regValueIndex = self.regTableModel.record().indexOf("Value")
+                        self.ui.tableViewReg.setItemDelegateForColumn(self.__regValueIndex, QRegValueDisplayDelegate())
+                        self.regTableModel.setHeaderData(self.__regValueIndex, Qt.Horizontal, "Bits")
                         self.ui.tableViewReg.setModel(self.regTableModel)
                         self.ui.tableViewReg.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
                     self.ui.tableViewReg.hideColumn(0) # id
                     self.ui.tableViewReg.hideColumn(1) # regmap id
                     self.ui.tableViewReg.hideColumn(2) # order
-                    self.ui.tableViewReg.resizeColumnsToContents()
+                    self.ui.tableViewReg.resizeColumnToContents(self.__regValueIndex) # slow, half time of resizeColumnsToContents()
+                    #self.ui.tableViewReg.resizeColumnsToContents() # very slow, xxx ms.
 
                 # update tips
                 self.ui.pbAddMemMap.setEnabled(False)
