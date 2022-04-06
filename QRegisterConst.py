@@ -15,7 +15,7 @@ from docx.shared import Inches
 class QRegisterConst:
 
     # tool version
-    Version = "0.0.3-(alpha)"
+    Version = "0.0.4-(alpha)"
     
     # style file
     StyleFile = "style/style.qss"
