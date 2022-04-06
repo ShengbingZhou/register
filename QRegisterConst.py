@@ -2,7 +2,7 @@
 import os
 
 # pyside2 package
-from PySide2.QtWidgets import QFileDialog, QMessageBox
+from PySide2.QtWidgets import QFileDialog, QMessageBox, QProgressDialog
 from PySide2.QtCore import Qt, QDir
 from PySide2.QtSql import QSqlQuery, QSqlQueryModel
 
@@ -126,101 +126,115 @@ class QRegisterConst:
     @staticmethod
     def exporDocx(parent, conn):
         fileName, filterUsed = QFileDialog.getSaveFileName(parent, "Export Word file", QDir.homePath(), "Word File (*.docx)")
-        if fileName !='':
-            f_name, f_ext = os.path.splitext(os.path.basename(fileName))
-            # add .docx
-            if f_ext != ".docx":
-                fileName += ".docx"
-            docx = Document()
-            docx.styles['Heading 1'].font.size = shared.Pt(11)
-            docx.styles['Heading 2'].font.size = shared.Pt(10)
-            docx.styles['Heading 3'].font.size = shared.Pt(9)
-            docx.styles['Heading 4'].font.size = shared.Pt(8)
-            docx.styles['Normal'].font.size = shared.Pt(8)
+        if fileName == '':
+            QMessageBox.warning(parent, "Exporting docx", "file name is empty.", QMessageBox.Yes)
+            return
+
+        f_name, f_ext = os.path.splitext(os.path.basename(fileName))
+        # add .docx
+        if f_ext != ".docx":
+            fileName += ".docx"
+        docx = Document()
+        docx.styles['Heading 1'].font.size = shared.Pt(11)
+        docx.styles['Heading 2'].font.size = shared.Pt(10)
+        docx.styles['Heading 3'].font.size = shared.Pt(9)
+        docx.styles['Heading 4'].font.size = shared.Pt(8)
+        docx.styles['Normal'].font.size = shared.Pt(8)
+                    
+        # memory map
+        memoryMapQueryModel = QSqlQueryModel()
+        memoryMapQueryModel.setQuery("SELECT * FROM MemoryMap", conn)
+
+        title = docx.add_heading('MemoryMap Table\n', level = 1)
+        title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+        fields = ['Name', 'Description']
+        table = docx.add_table(rows=memoryMapQueryModel.rowCount() + 1, cols=len(fields), style='Table Grid')
+
+        for i, row in enumerate(table.rows):
+            for j, (cell, field) in enumerate(zip(row.cells, fields)):
+                if i == 0: # table header
+                    cell.text = fields[j]
+                    cell._tc.get_or_add_tcPr().append(oxml.parse_xml(r'<w:shd {} w:fill="c0c0c0"/>'.format(oxml.ns.nsdecls('w'))))
+                else:
+                    memMapRecord = memoryMapQueryModel.record(i - 1)
+                    if field == 'Name':
+                        cell.text = memMapRecord.value("Name")
+        docx.add_page_break()
+
+        for i in range(memoryMapQueryModel.rowCount()):
+            memMapRecord = memoryMapQueryModel.record(i)
+            docx.add_heading('MemoryMap: %s'%(memMapRecord.value("Name")), level = 2)
+
+            # register map
+            regMapQueryModel = QSqlQueryModel()
+            regMapQueryModel.setQuery("SELECT * FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memMapRecord.value("id"), conn)
             
-            # memory map
-            memoryMapQueryModel = QSqlQueryModel()
-            memoryMapQueryModel.setQuery("SELECT * FROM MemoryMap", conn)
+            # setup progress dialog
+            dlgProgress = QProgressDialog("Exporting %s ..."%fileName, "Cancel", 0, regMapQueryModel.rowCount(), parent)
+            dlgProgress.setWindowTitle("Importing...")
+            dlgProgress.setWindowModality(Qt.WindowModal)                
+            
+            for j in range(regMapQueryModel.rowCount()):
+                regMapRecord = regMapQueryModel.record(j)
+                docx.add_heading('RegisterMap: %s'%(regMapRecord.value("Name")), level = 3)
+                docx.add_paragraph("Description : %s\n" \
+                                    "BaseAddress : %s"%(regMapRecord.value("Description"), regMapRecord.value("OffsetAddress")))
 
-            title = docx.add_heading('MemoryMap Table\n', level = 1)
-            title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-            fields = ['Name', 'Description']
-            table = docx.add_table(rows=memoryMapQueryModel.rowCount() + 1, cols=len(fields), style='Table Grid')
+                # update progress dialog
+                dlgProgress.setLabelText("Exporting register map '%s' to %s "%(regMapRecord.value("Name"), fileName))
+                dlgProgress.setValue(j)
 
-            for i, row in enumerate(table.rows):
-                for j, (cell, field) in enumerate(zip(row.cells, fields)):
-                    if i == 0: # table header
-                        cell.text = fields[j]
-                        cell._tc.get_or_add_tcPr().append(oxml.parse_xml(r'<w:shd {} w:fill="c0c0c0"/>'.format(oxml.ns.nsdecls('w'))))
-                    else:
-                        memMapRecord = memoryMapQueryModel.record(i - 1)
-                        if field == 'Name':
-                            cell.text = memMapRecord.value("Name")
-            docx.add_page_break()
+                # register
+                regQueryModel = QSqlQueryModel()
+                regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), conn)
 
-            for i in range(memoryMapQueryModel.rowCount()):
-                memMapRecord = memoryMapQueryModel.record(i)
-                docx.add_heading('MemoryMap: %s'%(memMapRecord.value("Name")), level = 2)
+                fields = ['Name', 'Address', 'Description']
+                table = docx.add_table(rows=regQueryModel.rowCount() + 1, cols=len(fields), style='Table Grid')
+                for r, row in enumerate(table.rows):
+                    for c, (cell, field) in enumerate(zip(row.cells, fields)):
+                        if r == 0:
+                            cell.text = fields[c]
+                            cell._tc.get_or_add_tcPr().append(oxml.parse_xml(r'<w:shd {} w:fill="c0c0c0"/>'.format(oxml.ns.nsdecls('w'))))
+                        else:
+                            regRecord = regQueryModel.record(r - 1)
+                            if field == 'Name':
+                                cell.text = regRecord.value("Name")
+                            if field == 'Address':
+                                cell.text = "%s"%regRecord.value("OffsetAddress")
+                            if field == 'Description':
+                                cell.text = regRecord.value("Description")
 
-                # register map
-                regMapQueryModel = QSqlQueryModel()
-                regMapQueryModel.setQuery("SELECT * FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memMapRecord.value("id"), conn)
-                for j in range(regMapQueryModel.rowCount()):
-                    regMapRecord = regMapQueryModel.record(j)
-                    docx.add_heading('RegisterMap: %s'%(regMapRecord.value("Name")), level = 3)
-                    docx.add_paragraph("Description : %s\n" \
-                                       "BaseAddress : %s"%(regMapRecord.value("Description"), regMapRecord.value("OffsetAddress")))
+                for k in range(regQueryModel.rowCount()):
+                    regRecord = regQueryModel.record(k)
+                    docx.add_heading('Register: %s'%(regRecord.value("Name")), level = 4)
+                    docx.add_paragraph('Description : %s\n' \
+                                        'Address : %s'%(regRecord.value("Description"), regRecord.value("OffsetAddress")))
 
-                    # register
-                    regQueryModel = QSqlQueryModel()
-                    regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), conn)
+                    # bitfield
+                    bfQueryModel = QSqlQueryModel()
+                    bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), conn)
 
-                    fields = ['Name', 'Address', 'Description']
-                    table = docx.add_table(rows=regQueryModel.rowCount() + 1, cols=len(fields), style='Table Grid')
+                    fields = ['Name', 'Bits', 'ResetValue', 'Description']
+                    table = docx.add_table(rows=bfQueryModel.rowCount() + 1, cols=len(fields), style='Table Grid')
+                    table.allow_autofit = True
                     for r, row in enumerate(table.rows):
                         for c, (cell, field) in enumerate(zip(row.cells, fields)):
                             if r == 0:
                                 cell.text = fields[c]
                                 cell._tc.get_or_add_tcPr().append(oxml.parse_xml(r'<w:shd {} w:fill="c0c0c0"/>'.format(oxml.ns.nsdecls('w'))))
                             else:
-                                regRecord = regQueryModel.record(r - 1)
+                                bfRecord = bfQueryModel.record(r - 1)
                                 if field == 'Name':
-                                    cell.text = regRecord.value("Name")
-                                if field == 'Address':
-                                    cell.text = "%s"%regRecord.value("OffsetAddress")
+                                    cell.text = bfRecord.value("Name")
+                                if field == 'Bits':
+                                    cell.text = "[%s:%s]"%(int(bfRecord.value("Width")) + int(bfRecord.value("RegisterOffset")) - 1, bfRecord.value("RegisterOffset"))
+                                if field == 'ResetValue':
+                                    cell.text = "%s"%(bfRecord.value("DefaultValue"))
                                 if field == 'Description':
-                                    cell.text = regRecord.value("Description")
-
-                    for k in range(regQueryModel.rowCount()):
-                        regRecord = regQueryModel.record(k)
-                        docx.add_heading('Register: %s'%(regRecord.value("Name")), level = 4)
-                        docx.add_paragraph('Description : %s\n' \
-                                           'Address : %s'%(regRecord.value("Description"), regRecord.value("OffsetAddress")))
-
-                        # bitfield
-                        bfQueryModel = QSqlQueryModel()
-                        bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), conn)
-
-                        fields = ['Name', 'Bits', 'ResetValue', 'Description']
-                        table = docx.add_table(rows=bfQueryModel.rowCount() + 1, cols=len(fields), style='Table Grid')
-                        table.allow_autofit = True
-                        for r, row in enumerate(table.rows):
-                            for c, (cell, field) in enumerate(zip(row.cells, fields)):
-                                if r == 0:
-                                    cell.text = fields[c]
-                                    cell._tc.get_or_add_tcPr().append(oxml.parse_xml(r'<w:shd {} w:fill="c0c0c0"/>'.format(oxml.ns.nsdecls('w'))))
-                                else:
-                                    bfRecord = bfQueryModel.record(r - 1)
-                                    if field == 'Name':
-                                        cell.text = bfRecord.value("Name")
-                                    if field == 'Bits':
-                                        cell.text = "[%s:%s]"%(int(bfRecord.value("Width")) + int(bfRecord.value("RegisterOffset")) - 1, bfRecord.value("RegisterOffset"))
-                                    if field == 'ResetValue':
-                                        cell.text = "%s"%(bfRecord.value("DefaultValue"))
-                                    if field == 'Description':
-                                        cell.text = bfRecord.value("Description")
-                    docx.add_page_break()
-            docx.add_page_break()
-            docx.save(fileName)
-            QMessageBox.information(parent, "Exporting docx", "Done!", QMessageBox.Yes)
+                                    cell.text = bfRecord.value("Description")
+                docx.add_page_break()
+            dlgProgress.close()
+        docx.add_page_break()
+        docx.save(fileName)
+        QMessageBox.information(parent, "Exporting docx", "Done!", QMessageBox.Yes)
         return
