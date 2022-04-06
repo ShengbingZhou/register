@@ -579,7 +579,7 @@ class uiModuleWindow(QWidget):
                 fileName += ".xml"               
             ipxactFile = open(fileName, "w")
             ipxactFile.write("<ipxact:component xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ipxact=\"http://www.accellera.org/XMLSchema/IPXACT/1685-2014\" xsi:schemaLocation=\"http://www.accellera.org/XMLSchema/IPXACT/1685-2014 http://www.accellera.org/XMLSchema/IPXACT/1685-2014/index.xsd\">\n")
-            ipxactFile.write("  <ipxact:vendor>Register@ShengbingZhou</ipxact:vendor>\n")
+            ipxactFile.write("  <ipxact:vendor>Register@ShengbingZhou (shengbingzhou@outlook.com)</ipxact:vendor>\n")
             ipxactFile.write("  <ipxact:name>%s</ipxact:name>\n"%f_name)
             ipxactFile.write("  <ipxact:version>1.0</ipxact:version>\n")
             ipxactFile.write("  <ipxact:memoryMaps>\n")
@@ -591,6 +591,7 @@ class uiModuleWindow(QWidget):
                 memMapRecord = memoryMapQueryModel.record(i)
                 ipxactFile.write("    <ipxact:memoryMap>\n")
                 ipxactFile.write("      <ipxact:name>%s</ipxact:name>\n"%memMapRecord.value("Name"))
+                ipxactFile.write("      <ipxact:description>%s</ipxact:description>\n"%memMapRecord.value("description"))
                 
                 # register map
                 regMapQueryModel = QSqlQueryModel()
