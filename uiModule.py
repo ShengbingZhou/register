@@ -1051,8 +1051,8 @@ class uiModuleWindow(QWidget):
                     self.ui.tableViewReg.hideColumn(0) # id
                     self.ui.tableViewReg.hideColumn(1) # regmap id
                     self.ui.tableViewReg.hideColumn(2) # order
-                    self.ui.tableViewReg.resizeColumnToContents(self.__regValueIndex) # slow, half time of resizeColumnsToContents()
-                    #self.ui.tableViewReg.resizeColumnsToContents() # very slow, xxx ms.
+                    #self.ui.tableViewReg.resizeColumnToContents(self.__regValueIndex) # slow, half time of resizeColumnsToContents()
+                    self.ui.tableViewReg.resizeColumnsToContents() # very slow, xxx ms.
 
                 # update tips
                 self.ui.pbAddMemMap.setEnabled(False)
