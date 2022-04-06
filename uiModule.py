@@ -8,8 +8,6 @@ from PySide2.QtWidgets import QWidget, QAbstractItemView, QMessageBox, QMenu, QA
 from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QSize, QEvent, QDir, QFile, QUrl, QDir
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
-from PySide2.QtXmlPatterns import QXmlQuery, QXmlSerializer, QXmlResultItems
-from PySide2.QtXml import QDomDocument, QDomNodeList
 
 # lxml package
 from lxml import etree    
@@ -772,15 +770,20 @@ class uiModuleWindow(QWidget):
         self.treeViewTableModel = QStandardItemModel()
         root = self.treeViewTableModel.invisibleRootItem()
 
+        # first memory map item in treeview
+        firstMemMapItem = None
+
         # memory map
         memoryMapQueryModel = QSqlQueryModel()
         memoryMapQueryModel.setQuery("SELECT id, Name FROM MemoryMap", self.conn)
         for i in range(memoryMapQueryModel.rowCount()):
             memMapRecord = memoryMapQueryModel.record(i)
-            self.memoryMapItem = QStandardItem(self.moduleIcon, memMapRecord.value("name"))
-            self.memoryMapItem.setData("MemoryMap", RegisterConst.NameRole)
-            self.memoryMapItem.setData(memMapRecord.value("id"), RegisterConst.MemMapIdRole)
-            root.appendRow(self.memoryMapItem)            
+            memoryMapItem = QStandardItem(self.moduleIcon, memMapRecord.value("name"))
+            memoryMapItem.setData("MemoryMap", RegisterConst.NameRole)
+            memoryMapItem.setData(memMapRecord.value("id"), RegisterConst.MemMapIdRole)
+            root.appendRow(memoryMapItem)
+            if firstMemMapItem is None:
+                firstMemMapItem = memoryMapItem
 
             # register map
             regMapQueryModel = QSqlQueryModel()
@@ -792,7 +795,7 @@ class uiModuleWindow(QWidget):
                 regMapitem.setData(memMapRecord.value("id"), RegisterConst.MemMapIdRole)
                 regMapitem.setData(regMapRecord.value("id"), RegisterConst.RegMapIdRole)
                 regMapitem.setData(regMapRecord.value("Type"), RegisterConst.RegMapTypeRole)
-                self.memoryMapItem.appendRow(regMapitem)
+                memoryMapItem.appendRow(regMapitem)
                 if RegisterConst.recordExist(regMapRecord) == False:
                     regMapitem.setData(QColor('grey'), Qt.BackgroundColorRole)
             
@@ -845,20 +848,22 @@ class uiModuleWindow(QWidget):
         self.ui.treeView.setModel(self.treeViewTableModel)
         self.ui.treeView.expandAll()
 
-        # connect slots
+        # connect treeView selection change slot
         treeViewSelectionModel = self.ui.treeView.selectionModel()
         treeViewSelectionModel.currentChanged.connect(self.do_treeView_currentChanged)
 
+        # connect treeView quick menu slot
         self.ui.treeView.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.treeView.customContextMenuRequested.connect(self.do_treeView_contextMenuRequested)
         
         # select memory map node
-        memoryMapItemIndex = self.treeViewTableModel.indexFromItem(self.memoryMapItem)
-        treeViewSelectionModel.select(memoryMapItemIndex, QItemSelectionModel.ClearAndSelect)
-        self.do_treeView_currentChanged(memoryMapItemIndex, None)
+        if firstMemMapItem != None:
+            firstMemMapItemIndex = self.treeViewTableModel.indexFromItem(firstMemMapItem)
+            treeViewSelectionModel.select(firstMemMapItemIndex, QItemSelectionModel.ClearAndSelect)
+            self.do_treeView_currentChanged(firstMemMapItemIndex, None)
     
     def setupDebugViewModels(self):
-        # clear existing item
+        # clear existing debug models
         for model in self.regDebugModels:
             model.clear()
         self.regDebugModels.clear()
@@ -873,7 +878,7 @@ class uiModuleWindow(QWidget):
                 debugModel.setRegMapId(regMapRecord.value("id"))
                 debugModel.setHorizontalHeaderLabels(["Name", "Address", "Description", "Value"])
                 self.regDebugModels.append(debugModel)
-            
+
             # register
             regQueryModel = QSqlQueryModel()
             regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
