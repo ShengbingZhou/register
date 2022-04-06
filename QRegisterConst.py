@@ -37,14 +37,15 @@ class QRegisterConst:
     # reg access value option
     RegAccessValues = ['r', 'w', 'rw', 'rc', 'wc']
 
-    # special role
+    # special role for treeview item
     NameRole       = Qt.UserRole + 1
-    MemMapIdRole   = Qt.UserRole + 2
-    RegMapIdRole   = Qt.UserRole + 3
-    RegIdRole      = Qt.UserRole + 4
-    BfIdRole       = Qt.UserRole + 5
-    BfEnumIdRole   = Qt.UserRole + 6
-    RegMapTypeRole = Qt.UserRole + 7
+    infoIdRole     = Qt.UserRole + 2
+    MemMapIdRole   = Qt.UserRole + 3
+    RegMapIdRole   = Qt.UserRole + 4
+    RegIdRole      = Qt.UserRole + 5
+    BfIdRole       = Qt.UserRole + 6
+    BfEnumIdRole   = Qt.UserRole + 7
+    RegMapTypeRole = Qt.UserRole + 8
     
     @staticmethod
     def recordExist(record):

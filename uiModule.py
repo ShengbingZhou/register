@@ -124,7 +124,8 @@ class uiModuleWindow(QWidget):
     def newInfoRow(self, model, date):
         r = model.record()
         r.remove(r.indexOf('id'))
-        r.setValue("Version", QRegisterConst.Version)
+        r.setValue("Name", "Information")
+        r.setValue("Version", "1.0")
         r.setValue("Author", os.getlogin())
         r.setValue("LastUpdateDate", date)
         model.insertRecord(-1, r)
@@ -437,8 +438,6 @@ class uiModuleWindow(QWidget):
             # import ipxact xml file
             self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
             if self.setupDesignViewModels(newName):
-                infoId = self.newInfoRow(self.infoTableModel, now).value("id")
-
                 # find root
                 sp1 = etree.parse(fileName)
                 root = sp1.getroot()
@@ -472,6 +471,16 @@ class uiModuleWindow(QWidget):
 
                 # start to import
                 query = QSqlQuery(self.conn)
+                n = root.find("%s:name"%ns, root.nsmap)
+                infoName = "" if n is None else n.text
+                n = root.find("%s:vendor"%ns, root.nsmap)
+                infoVendor = "" if n is None else n.text
+                n = root.find("%s:library"%ns, root.nsmap)
+                infoLib = "" if n is None else n.text
+                n = root.find("%s:version"%ns, root.nsmap)
+                infoVer = "" if n is None else n.text
+                query.exec_("INSERT INTO info (Name, Version, Vendor, Library) VALUES ('%s', '%s', '%s', '%s')"%(infoName, infoVer, infoVendor, infoLib))
+
                 for memMap in range(len(memMapNodes)):
                     memMapNode = memMapNodes[memMap]
                     memMapName = memMapNode.find("%s:name"%ns, root.nsmap).text
@@ -556,6 +565,7 @@ class uiModuleWindow(QWidget):
                                             "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, bfWidth, bfDefaultVal, bfAccess))
                                 bfDisplayOrder += 1
                 dlgProgress.close()
+                self.infoTableModel.select()
                 self.memMapTableModel.select()
                 self.regMapTableModel.select()
                 self.regTableModel.select()
@@ -580,12 +590,17 @@ class uiModuleWindow(QWidget):
             ipxactFile = open(fileName, "w")
             ipxactFile.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
             ipxactFile.write("<ipxact:component xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ipxact=\"http://www.accellera.org/XMLSchema/IPXACT/1685-2014\" xsi:schemaLocation=\"http://www.accellera.org/XMLSchema/IPXACT/1685-2014 http://www.accellera.org/XMLSchema/IPXACT/1685-2014/index.xsd\">\n")
-            ipxactFile.write("  <ipxact:vendor>Register@ShengbingZhou (shengbingzhou@outlook.com)</ipxact:vendor>\n")
-            ipxactFile.write("  <ipxact:library>%s</ipxact:library>\n"%"")
-            ipxactFile.write("  <ipxact:name>%s</ipxact:name>\n"%f_name)
-            ipxactFile.write("  <ipxact:version>1.0</ipxact:version>\n")
+
+            # info
+            infoQueryModel = QSqlQueryModel()
+            infoQueryModel.setQuery("SELECT * FROM info", self.conn)
+            infoRecord = infoQueryModel.record(0)
+            ipxactFile.write("  <ipxact:vendor>%s</ipxact:vendor>\n"%infoRecord.value("Vendor"))
+            ipxactFile.write("  <ipxact:library>%s</ipxact:library>\n"%infoRecord.value("Library"))
+            ipxactFile.write("  <ipxact:name>%s</ipxact:name>\n"%infoRecord.value("Name"))
+            ipxactFile.write("  <ipxact:version>%s</ipxact:version>\n"%infoRecord.value("Version"))
             ipxactFile.write("  <ipxact:memoryMaps>\n")
-            
+
             # memory map
             memoryMapQueryModel = QSqlQueryModel()
             memoryMapQueryModel.setQuery("SELECT * FROM MemoryMap", self.conn)
@@ -700,8 +715,16 @@ class uiModuleWindow(QWidget):
         self.treeViewTableModel = QStandardItemModel()
         root = self.treeViewTableModel.invisibleRootItem()
 
-        # first memory map item in treeview
-        firstMemMapItem = None
+        # info
+        infoQueryModel = QSqlQueryModel()
+        infoQueryModel.setQuery("SELECT id, Name FROM info", self.conn)
+        infoItem = None
+        if infoQueryModel.rowCount() > 0:
+            infoRecord = infoQueryModel.record(0)
+            infoItem = QStandardItem(self.moduleIcon, "Information")
+            infoItem.setData("info", QRegisterConst.NameRole)
+            infoItem.setData(infoRecord.value("id"), QRegisterConst.infoIdRole)
+            root.appendRow(infoItem)
 
         # memory map
         memoryMapQueryModel = QSqlQueryModel()
@@ -712,8 +735,6 @@ class uiModuleWindow(QWidget):
             memoryMapItem.setData("MemoryMap", QRegisterConst.NameRole)
             memoryMapItem.setData(memMapRecord.value("id"), QRegisterConst.MemMapIdRole)
             root.appendRow(memoryMapItem)
-            if firstMemMapItem is None:
-                firstMemMapItem = memoryMapItem
 
             # register map
             regMapQueryModel = QSqlQueryModel()
@@ -787,8 +808,8 @@ class uiModuleWindow(QWidget):
         self.ui.treeView.customContextMenuRequested.connect(self.do_treeView_contextMenuRequested)
         
         # select memory map node
-        if firstMemMapItem != None:
-            firstMemMapItemIndex = self.treeViewTableModel.indexFromItem(firstMemMapItem)
+        if infoItem != None:
+            firstMemMapItemIndex = self.treeViewTableModel.indexFromItem(infoItem)
             treeViewSelectionModel.select(firstMemMapItemIndex, QItemSelectionModel.ClearAndSelect)
             self.do_treeView_currentChanged(firstMemMapItemIndex, None)
     
@@ -872,7 +893,10 @@ class uiModuleWindow(QWidget):
         addBfAction = QAction("+ Bitfield", self)
         addBfEnumAction = QAction("+ Bitfield Enum", self)
         
-        if tableName == "MemoryMap":
+        if tableName == "info":
+            self.treeViewPopMenu.addAction(addMemMapAction)
+            addMemMapAction.triggered.connect(self.on_pbAddMemMap_clicked)
+        elif tableName == "MemoryMap":
             self.treeViewPopMenu.addAction(addMemMapAction)
             addMemMapAction.triggered.connect(self.on_pbAddMemMap_clicked)
             self.treeViewPopMenu.addAction(addRegMapAction)
@@ -904,7 +928,7 @@ class uiModuleWindow(QWidget):
             addBfEnumAction.triggered.connect(self.on_pbAddBfEnum_clicked)
         
         parent = self.treeViewTableModel.itemFromIndex(index.parent()) if tableName != "MemoryMap" else self.treeViewTableModel.invisibleRootItem()
-        if tableName != "MemoryMap" or parent.rowCount() > 1:
+        if tableName != "info":
             self.treeViewPopMenu.addSeparator()
             delAction = QAction("Delete", self)
             self.treeViewPopMenu.addAction(delAction)
@@ -971,7 +995,31 @@ class uiModuleWindow(QWidget):
     def do_treeView_currentChanged(self, current, previous):
         if self.view == QRegisterConst.DesignView:
             tableName = str(current.data(QRegisterConst.NameRole))
-            if tableName == "MemoryMap": # mem map selected, show mem map table
+            if tableName == "info": # info selected, show info table
+                self.ui.tableView.setVisible(True)
+                self.ui.tableViewReg.setVisible(False)    
+                if self.ui.tableView.model() != self.infoTableModel:
+                    self.ui.tableView.setModel(self.infoTableModel)
+                    self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    if self.__regMapTypeIndex != None:
+                        self.ui.tableView.showColumn(self.__regMapTypeIndex)
+                        self.__regMapTypeIndex = None
+                    if self.__bfValueIndex != None:
+                        self.ui.tableView.showColumn(self.__bfValueIndex)
+                        self.__bfValueIndex = None
+                    self.ui.tableView.hideColumn(0) # id
+                    self.ui.tableView.hideColumn(1) # offset
+                    self.ui.tableView.hideColumn(2) # last update
+                    self.ui.tableView.resizeColumnsToContents()
+                    
+                # update tips
+                self.ui.pbAddMemMap.setEnabled(True)
+                self.ui.pbAddRegMap.setEnabled(False)
+                self.ui.pbAddReg.setEnabled(False)
+                self.ui.pbAddBf.setEnabled(False)
+                self.ui.pbAddBfEnum.setEnabled(False)
+                self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add new memory map.</br></br>"%self.ui.pbAddMemMap.text())
+            elif tableName == "MemoryMap": # mem map selected, show mem map table
                 self.ui.tableView.setVisible(True)
                 self.ui.tableViewReg.setVisible(False)    
                 memMapId = int(current.data(QRegisterConst.MemMapIdRole))
@@ -1154,7 +1202,7 @@ class uiModuleWindow(QWidget):
                     self.ui.tableView.selectRow(current.row())                    
         else: # debug view
             tableName = str(current.data(QRegisterConst.NameRole))
-            if tableName != "MemoryMap":          
+            if tableName != "info" and tableName != "MemoryMap":       
                 for regDebugModel in self.regDebugModels:
                     regMapId = int(current.data(QRegisterConst.RegMapIdRole))
                     if regDebugModel.id == regMapId:
@@ -1174,7 +1222,7 @@ class uiModuleWindow(QWidget):
     def on_pbAddMemMap_clicked(self):
         current = self.ui.treeView.selectedIndexes().pop()
         tableName = str(current.data(QRegisterConst.NameRole))
-        newMemMapRowIndex = current.row() + 1
+        newMemMapRowIndex = -1 if tableName != "MemoryMap" else current.row() + 1
         r = self.newMemMapRow(self.memMapTableModel, newMemMapRowIndex)
         
         newMemMapItem = QStandardItem(self.moduleIcon, r.value("name"))
@@ -1182,7 +1230,9 @@ class uiModuleWindow(QWidget):
         newMemMapItem.setData(r.value("id"), QRegisterConst.MemMapIdRole)
 
         root = self.treeViewTableModel.invisibleRootItem()
-        if tableName == "MemoryMap":
+        if tableName == "info":
+            root.appendRow(newMemMapItem)
+        elif tableName == "MemoryMap":
             if (current.row() + 1) == root.rowCount(): # current is last one
                 root.appendRow(newMemMapItem)
                 item = root.child(current.row() + 1)
@@ -1353,46 +1403,53 @@ class uiModuleWindow(QWidget):
         current = self.ui.treeView.selectedIndexes().pop()
         tableName = str(current.data(QRegisterConst.NameRole))
 
-        # remove node
+        # get parent node item
         parent = self.treeViewTableModel.itemFromIndex(current.parent()) if tableName != "MemoryMap" else self.treeViewTableModel.invisibleRootItem()
-        if tableName != "MemoryMap" or parent.rowCount() > 1:
-            # remove from table
-            if tableName == "MemoryMap":
-                memMapId = int(current.data(QRegisterConst.MemMapIdRole))
-                query = QSqlQuery(self.conn)
-                query.exec_("DELETE FROM MemoryMap WHERE id=%s"%memMapId)
-                self.memMapTableModel.select()
-                self.regMapTableModel.select()
-                self.regTableModel.select()
-                self.bfTableModel.select()
-                self.bfEnumTableModel.select()
-            elif tableName == "RegisterMap":
-                regMapId = int(current.data(QRegisterConst.RegMapIdRole))
-                query = QSqlQuery(self.conn)
-                query.exec_("DELETE FROM RegisterMap WHERE id=%s"%regMapId)
-                self.regMapTableModel.select()
-                self.regTableModel.select()
-                self.bfTableModel.select()
-                self.bfEnumTableModel.select()
-            elif tableName == "Register":
-                regId = int(current.data(QRegisterConst.RegIdRole))
-                query = QSqlQuery(self.conn)
-                query.exec_("DELETE FROM Register WHERE id=%s"%regId)
-                self.regTableModel.select()
-                self.bfTableModel.select()
-                self.bfEnumTableModel.select()
-            elif tableName == "Bitfield":
-                bfId = int(current.data(QRegisterConst.BfIdRole))
-                query = QSqlQuery(self.conn)
-                query.exec_("DELETE FROM Bitfield WHERE id=%s"%bfId)
-                self.bfTableModel.select()
-                self.bfEnumTableModel.select()
-            elif tableName == "BitfieldEnum":
-                bfEnumId = int(current.data(QRegisterConst.BfEnumIdRole))
-                query = QSqlQuery(self.conn)
-                query.exec_("DELETE FROM BitfieldEnum WHERE id=%s"%bfEnumId)
-                self.bfEnumTableModel.select()
+
+        # remove from table
+        if tableName == "MemoryMap":
+            memMapId = int(current.data(QRegisterConst.MemMapIdRole))
+            query = QSqlQuery(self.conn)
+            query.exec_("DELETE FROM MemoryMap WHERE id=%s"%memMapId)
+            self.memMapTableModel.select()
+            self.regMapTableModel.select()
+            self.regTableModel.select()
+            self.bfTableModel.select()
+            self.bfEnumTableModel.select()
             # remove from tree
             parent.removeRow(current.row())
-        
+        elif tableName == "RegisterMap":
+            regMapId = int(current.data(QRegisterConst.RegMapIdRole))
+            query = QSqlQuery(self.conn)
+            query.exec_("DELETE FROM RegisterMap WHERE id=%s"%regMapId)
+            self.regMapTableModel.select()
+            self.regTableModel.select()
+            self.bfTableModel.select()
+            self.bfEnumTableModel.select()
+            # remove from tree
+            parent.removeRow(current.row())
+        elif tableName == "Register":
+            regId = int(current.data(QRegisterConst.RegIdRole))
+            query = QSqlQuery(self.conn)
+            query.exec_("DELETE FROM Register WHERE id=%s"%regId)
+            self.regTableModel.select()
+            self.bfTableModel.select()
+            self.bfEnumTableModel.select()
+            # remove from tree
+            parent.removeRow(current.row())
+        elif tableName == "Bitfield":
+            bfId = int(current.data(QRegisterConst.BfIdRole))
+            query = QSqlQuery(self.conn)
+            query.exec_("DELETE FROM Bitfield WHERE id=%s"%bfId)
+            self.bfTableModel.select()
+            self.bfEnumTableModel.select()
+            # remove from tree
+            parent.removeRow(current.row())
+        elif tableName == "BitfieldEnum":
+            bfEnumId = int(current.data(QRegisterConst.BfEnumIdRole))
+            query = QSqlQuery(self.conn)
+            query.exec_("DELETE FROM BitfieldEnum WHERE id=%s"%bfEnumId)
+            self.bfEnumTableModel.select()
+            # remove from tree
+            parent.removeRow(current.row())
         return
