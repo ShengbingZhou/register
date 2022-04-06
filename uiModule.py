@@ -199,8 +199,8 @@ class uiModuleWindow(QWidget):
         newRow, order = self.getNewRowAndDisplayOrder(model, row, maxOrder)
         query.exec_("UPDATE Bitfield SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))
 
-        query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, RegisterOffset, Description, Width, Access, DefaultValue, Value, User) " \
-                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, order, 0, "This is no name bitfield", Width, 'rw', 0, 0, os.getlogin()))
+        query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, RegisterOffset, Description, Width, Access, DefaultValue, Value, ClockSignal, ResetSignal, ResetType, User) " \
+                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, order, 0, "This is no name bitfield", Width, 'rw', 0, 0, 'clk', 'rstn', 'async', os.getlogin()))
 
         query.exec_("SELECT max(id) FROM Bitfield")
         query.next()
