@@ -158,8 +158,8 @@ class uiModuleWindow(QWidget):
         newRow, order = self.getNewRowAndDisplayOrder(model, row, maxOrder)
         query.exec_("UPDATE RegisterMap SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))
 
-        query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, OffsetAddress, Range, Description, Type, User) "\
-                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(memMapId, order, 0x0000, 0x0000, "This is no name register map", type, os.getlogin()))
+        query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, OffsetAddress, Range, Width, Description, Type, User) "\
+                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(memMapId, order, 0x0000, 0x0000, 32, "This is no name register map", type, os.getlogin()))
 
         query.exec_("SELECT max(id) FROM RegisterMap")
         query.next()
@@ -509,6 +509,12 @@ class uiModuleWindow(QWidget):
                         n = regMapNode.find("%s:description"%ns, root.nsmap)
                         regMapDesc = "" if n == None else n.text
 
+                        n = regMapNode.find("%s:width"%ns, root.nsmap)
+                        regMapWidth = "" if n == None else n.text
+
+                        n = regMapNode.find("%s:range"%ns, root.nsmap)
+                        regMapRange = "" if n == None else n.text.replace("'h", "0x").replace("'d", "")
+
                         regMapAddr = regMapNode.find("%s:baseAddress"%ns, root.nsmap)
                         params = regMapNode.findall("%s:parameters/%s:parameter"%(ns, ns), root.nsmap)
                         for param in params:
@@ -516,8 +522,9 @@ class uiModuleWindow(QWidget):
                                 regMapAddr = param.find("%s:value"%ns, root.nsmap)
                                 break
                         regMapAddr = regMapAddr.text.lower().replace("'h", "0x").replace("'d", "")
-                        query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, Name, Description, OffsetAddress) " \
-                                    "VALUES ('%s', '%s', '%s', '%s', '%s')"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr))
+
+                        query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, Name, Description, OffsetAddress, Width, Range) " \
+                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr, regMapWidth, regMapRange))
                         query.exec_("SELECT max(id) FROM RegisterMap")
                         query.next()
                         regMapId = query.record().value(0)
