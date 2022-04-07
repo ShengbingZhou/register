@@ -6,8 +6,8 @@ import datetime
 # pyside2 package
 from PySide2.QtWidgets import QWidget, QAbstractItemView, QMessageBox, QMenu, QAction, QFileDialog, QProgressDialog
 from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QEvent, QDir, QCoreApplication, QRect
-from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor, QFontMetrics, QPainter, QBrush 
-from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
+from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor, QFontMetrics, QPainter, QBrush, QFont
+from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlQuery
 
 # lxml package
 from lxml import etree    
@@ -737,6 +737,9 @@ class uiModuleWindow(QWidget):
             infoItem = QStandardItem(self.moduleIcon, "Information")
             infoItem.setData("info", QRegisterConst.NameRole)
             infoItem.setData(infoRecord.value("id"), QRegisterConst.infoIdRole)
+            font = infoItem.font()
+            font.setBold(True)
+            infoItem.setFont(font)
             root.appendRow(infoItem)
 
         # memory map
@@ -747,6 +750,9 @@ class uiModuleWindow(QWidget):
             memoryMapItem = QStandardItem(self.moduleIcon, memMapRecord.value("name"))
             memoryMapItem.setData("MemoryMap", QRegisterConst.NameRole)
             memoryMapItem.setData(memMapRecord.value("id"), QRegisterConst.MemMapIdRole)
+            font = memoryMapItem.font()
+            font.setBold(True)
+            memoryMapItem.setFont(font)
             root.appendRow(memoryMapItem)
 
             # register map
@@ -804,6 +810,9 @@ class uiModuleWindow(QWidget):
                             bfEnumItem.setData(regRecord.value("id"), QRegisterConst.RegIdRole)
                             bfEnumItem.setData(bfRecord.value("id"), QRegisterConst.BfIdRole)
                             bfEnumItem.setData(bfEnumRecord.value("id"), QRegisterConst.BfEnumIdRole)
+                            font = bfEnumItem.font()
+                            font.setItalic(True)
+                            bfEnumItem.setFont(font)
                             bfItem.appendRow(bfEnumItem)
                             if QRegisterConst.recordExist(bfEnumRecord) == False:
                                 bfEnumItem.setData(QColor('grey'), Qt.BackgroundColorRole)
@@ -971,7 +980,6 @@ class uiModuleWindow(QWidget):
             model = self.bfEnumTableModel
             idRole = QRegisterConst.BfEnumIdRole
         
-        # update treeview node accordingly
         # update tree node name if "Name" is changed, or change tree node background color if "Exist" is changed
         if model != None:
             fieldName = model.record().fieldName(bottomRight.column())
@@ -996,10 +1004,13 @@ class uiModuleWindow(QWidget):
                         else:
                             self.treeViewTableModel.itemFromIndex(child).setData(None, Qt.BackgroundColorRole)
 
-        # resize columns                            
-        if tableName == "Register":
-            self.ui.tableViewReg.resizeColumnsToContents()            
-        else:
+        # resize columns
+        #if tableName == "Register":
+        #    self.ui.tableViewReg.resizeColumnsToContents() # kind of slow (xxx ms) in case of many rows      
+        #else:
+        if tableName == "Bitfield":
+            self.ui.labelDescription.update()
+        if tableName != "Register":
             self.ui.tableView.resizeColumnsToContents()
             
         return
@@ -1245,6 +1256,9 @@ class uiModuleWindow(QWidget):
         newMemMapItem = QStandardItem(self.moduleIcon, r.value("name"))
         newMemMapItem.setData("MemoryMap", QRegisterConst.NameRole)
         newMemMapItem.setData(r.value("id"), QRegisterConst.MemMapIdRole)
+        font = newMemMapItem.font()
+        font.setBold(True)
+        newMemMapItem.setFont(font)
 
         root = self.treeViewTableModel.invisibleRootItem()
         if tableName == "info":
@@ -1399,7 +1413,10 @@ class uiModuleWindow(QWidget):
         newBfEnumItem.setData(regId, QRegisterConst.RegIdRole)
         newBfEnumItem.setData(bfId, QRegisterConst.BfIdRole)
         newBfEnumItem.setData(r.value("id"), QRegisterConst.BfEnumIdRole)
-        
+        font = newBfEnumItem.font()
+        font.setItalic(True)
+        newBfEnumItem.setFont(font)
+
         standardItem = self.treeViewTableModel.itemFromIndex(current)
         if tableName == "Bitfield":
             standardItem.appendRow(newBfEnumItem)
