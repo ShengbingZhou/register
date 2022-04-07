@@ -62,8 +62,8 @@ class QRegisterConst:
             return
 
         bfColorsIndex = 0
-        bfColors  = ["DarkSeaGreen",  "LightSalmon",     "PowderBlue",     "LightPink",      "Aquamarine",     "Bisque",         "LightBlue",      "DarkKhaki"]         
-        bfQColors = [QColor(0x8FBC8F), QColor(0xFFA07A), QColor(0xB0E0E6), QColor(0xFFB6C1), QColor(0x66CDAA), QColor(0xFFE4C4), QColor(0xADD8E6), QColor(0xBDB76B)]
+        bfColors  = ["DarkSeaGreen",  "LightSalmon",     "PowderBlue",     "LightPink",      "Aquamarine",     "Bisque",         "LightSteelBlue", "DarkKhaki"]         
+        bfQColors = [QColor(0x8FBC8F), QColor(0xFFA07A), QColor(0xB0E0E6), QColor(0xFFB6C1), QColor(0x66CDAA), QColor(0xFFE4C4), QColor(0xB0C4DE), QColor(0xBDB76B)]
         value = []
 
         regW = int(regW)
