@@ -38,21 +38,21 @@ class uiModuleWindow(QWidget):
             style = file.read()
         self.setStyleSheet(style)
 
-        self.moduleIcon = QIcon('icon/module32.png')
-        self.regMapIcon = QIcon('icon/regmap32.png')
-        self.regIcon = QIcon('icon/reg32.png')
-        self.bfIcon = QIcon('icon/bf32.png')
-        self.bfenumIcon = QIcon('icon/bfenum32.png')
+        self.moduleIcon = QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/module32.png'))
+        self.regMapIcon = QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/regmap32.png'))
+        self.regIcon = QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/reg32.png'))
+        self.bfIcon = QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/bf32.png'))
+        self.bfenumIcon = QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/bfenum32.png'))
         
-        self.ui.pbAddMemMap.setIcon(QIcon('icon/add32.png'))
-        self.ui.pbAddRegMap.setIcon(QIcon('icon/add32.png'))
-        self.ui.pbAddReg.setIcon(QIcon('icon/add32.png'))
-        self.ui.pbAddBf.setIcon(QIcon('icon/add32.png'))
-        self.ui.pbAddBfEnum.setIcon(QIcon('icon/add32.png'))
+        self.ui.pbAddMemMap.setIcon(QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/add32.png')))
+        self.ui.pbAddRegMap.setIcon(QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/add32.png')))
+        self.ui.pbAddReg.setIcon(QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/add32.png')))
+        self.ui.pbAddBf.setIcon(QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/add32.png')))
+        self.ui.pbAddBfEnum.setIcon(QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/add32.png')))
 
-        self.ui.pbReadAll.setIcon(QIcon('icon/rdall32.png'))
-        self.ui.pbReadSelected.setIcon(QIcon('icon/rdsel32.png'))
-        self.ui.pbWriteAll.setIcon(QIcon('icon/wrall32.png'))
+        self.ui.pbReadAll.setIcon(QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/rdall32.png')))
+        self.ui.pbReadSelected.setIcon(QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/rdsel32.png')))
+        self.ui.pbWriteAll.setIcon(QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/wrall32.png')))
         
         # default as design view, no matter it is a new module or just opened module
         self.view = QRegisterConst.DesignView
@@ -240,7 +240,7 @@ class uiModuleWindow(QWidget):
         now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
         newName = "__%s%s"%(now, QRegisterConst.DesignFileExt)
         newName = QDir.homePath() + "/.reg/" + newName        
-        shutil.copyfile("template/module_template.db", newName)
+        shutil.copyfile(os.path.join(QRegisterConst.BaseDir, "template/module_template.db"), newName)
         self.newFileName = newName
         self.newModule = True
         
@@ -312,7 +312,7 @@ class uiModuleWindow(QWidget):
         now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
         newName = "__%s%s"%(now, QRegisterConst.DesignFileExt)
         newName = QDir.homePath() + "/.reg/" + newName   
-        shutil.copyfile("template/module_template.db", newName)
+        shutil.copyfile(os.path.join(QRegisterConst.BaseDir, "template/module_template.db"), newName)
         self.newFileName = newName
         self.newModule = True  
 
@@ -437,7 +437,7 @@ class uiModuleWindow(QWidget):
             now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
             newName = "__%s%s"%(now, QRegisterConst.DesignFileExt)
             newName = QDir.homePath() + "/.reg/" + newName   
-            shutil.copyfile("template/module_template.db", newName)
+            shutil.copyfile(os.path.join(QRegisterConst.BaseDir, "template/module_template.db"), newName)
             self.newFileName = newName
             self.newModule = True  
 

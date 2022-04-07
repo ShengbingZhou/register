@@ -20,7 +20,7 @@ class uiMainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle("Register Tool v%s"%(QRegisterConst.Version))
-        self.setWindowIcon(QIcon('icon/module32.png'))
+        self.setWindowIcon(QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/module32.png')))
         self.ui.actionSave_As.setVisible(False)
         self.ui.menuEdit.setTitle('')
         self.resize(1600, 900)
@@ -33,7 +33,7 @@ class uiMainWindow(QMainWindow):
         self.setStyleSheet(style)
         
         # TODO: add icon for action items?
-        #self.ui.actionNew.setIcon(QIcon("icon/new32.png"))
+        #self.ui.actionNew.setIcon(QIcon(os.path.join(QRegisterConst.BaseDir, "icon/new32.png")))
         
         # add welcome tab
         self.welcomeWindow = uiWelcomeWindow(self)

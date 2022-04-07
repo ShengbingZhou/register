@@ -1,5 +1,6 @@
 # built-in package
 import os
+import sys
 
 # pyside2 package
 from PySide2.QtWidgets import QFileDialog, QMessageBox, QProgressDialog
@@ -18,8 +19,11 @@ class QRegisterConst:
     # tool version
     Version = "0.0.4-(alpha)"
     
+    # Base Directory
+    BaseDir = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
+
     # style file
-    StyleFile = "style/style.qss"
+    StyleFile = os.path.join(BaseDir, "style/style.qss")
 
     # design file externsion
     DesignFileExt = ".reg"
