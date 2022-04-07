@@ -62,7 +62,7 @@ class QRegisterConst:
             return
 
         bfColorsIndex = 0
-        bfColors = ["DarkSeaGreen", "LightSalmon", "PowderBlue", "LightPink", "Aquamarine", "Bisque", "LightBlue", "DarkKhaki"]         
+        bfColors  = ["DarkSeaGreen",  "LightSalmon",     "PowderBlue",     "LightPink",      "Aquamarine",     "Bisque",         "LightBlue",      "DarkKhaki"]         
         bfQColors = [QColor(0x8FBC8F), QColor(0xFFA07A), QColor(0xB0E0E6), QColor(0xFFB6C1), QColor(0x66CDAA), QColor(0xFFE4C4), QColor(0xADD8E6), QColor(0xBDB76B)]
         value = []
 
@@ -97,9 +97,9 @@ class QRegisterConst:
                     if regB < 0:
                         break
                 if bfId == _bfId:
-                    value.append((bfQColors[bfColorsIndex], text, 1))
+                    value.append((bfQColors[bfColorsIndex], text, _bfId, 1))
                 else:
-                    value.append((bfQColors[bfColorsIndex], text))
+                    value.append((bfQColors[bfColorsIndex], text, _bfId))
                 bfColorsIndex = 0 if (bfColorsIndex + 1) >= len(bfQColors) else bfColorsIndex + 1
 
         # left unsed bits

@@ -60,6 +60,8 @@ class QRegValueDisplayDelegate(QStyledItemDelegate):
             else:
                 painter.setBrush(QBrush(value[i][0]))
             for d in digits:
+                if rect.x() +  pixelsWide > option.rect.left() + option.rect.width():
+                    break
                 painter.setPen(transparent)
                 painter.drawRect(rect)
                 painter.setPen(defaultBrush.color())
@@ -74,6 +76,6 @@ class QRegValueDisplayDelegate(QStyledItemDelegate):
         bits = int(record.value("Width"))
         fm = QFontMetrics(option.font)
         pixelsWide = fm.width(" ZB ") + 1
-        w = pixelsWide * bits + 10 # 2*margin + bits * bits width
+        w = pixelsWide * bits + 10 # bitwidth*bits + 2*margin 
         h = option.rect.height()
         return QSize(w, h)

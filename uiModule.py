@@ -77,6 +77,8 @@ class uiModuleWindow(QWidget):
         if obj == self.ui.labelDescription:
             if event.type() == QEvent.Paint:
                 self.do_labelDescription_paint(event)
+            if event.type() == QEvent.MouseButtonPress:
+                self.do_labelDescription_clicked(event)
         return super(uiModuleWindow, self).eventFilter(obj, event)
     
     def closeEvent(self, event):
@@ -1116,11 +1118,14 @@ class uiModuleWindow(QWidget):
                         self.regTableModel.setHeaderData(self.__regValueIndex, Qt.Horizontal, "Bits")
                         self.ui.tableViewReg.setModel(self.regTableModel)
                         self.ui.tableViewReg.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                        pixelsWide = QFontMetrics(self.ui.tableViewReg.font()).width(" ZB ") + 1
+                        w = pixelsWide * 8 + 10 # bitwidth*bits + 2*margin 
+                        self.ui.tableViewReg.setColumnWidth(self.__regValueIndex, w)
                     self.ui.tableViewReg.hideColumn(0) # id
                     self.ui.tableViewReg.hideColumn(1) # regmap id
                     self.ui.tableViewReg.hideColumn(2) # order
                     #self.ui.tableViewReg.resizeColumnToContents(self.__regValueIndex) # slow, half time of resizeColumnsToContents()
-                    self.ui.tableViewReg.resizeColumnsToContents() # very slow, xxx ms.
+                    #self.ui.tableViewReg.resizeColumnsToContents() # very slow, xxx ms.
 
                 # update tips
                 self.ui.pbAddMemMap.setEnabled(False)
@@ -1466,7 +1471,7 @@ class uiModuleWindow(QWidget):
             t = self.__reg_id_bf_id.split(',')            
             regId = int(t[0])
             bfId  = int(t[1])
-            #self.ui.labelDescription.setText("Tips: \n\n")         
+    
             regQ = QSqlQuery("SELECT Width FROM Register WHERE id=%s"%(regId), self.conn)
             while regQ.next(): # only 1 item
                 regW  = regQ.value(0)
@@ -1487,16 +1492,52 @@ class uiModuleWindow(QWidget):
                         painter.setBrush(defaultBrush)
                     else:
                         painter.setBrush(QBrush(value[i][0]))
+                    defaultPen.setWidth(1)
+                    painter.setPen(defaultPen)
                     startx = rect.x()
                     for d in digits:
-                        defaultPen.setWidth(1)
-                        painter.setPen(defaultPen)                        
                         painter.drawRect(rect)
-                        defaultPen.setWidth(3)
-                        painter.setPen(defaultPen)
                         painter.drawText(rect, Qt.AlignCenter, d)
                         rect.setX(rect.x() + pixelsWide + 1)
                         rect.setWidth(pixelsWide)
                     endx = rect.x() - 1
-                    if len(value[i]) > 2:
+                    # draw highlight line
+                    if len(value[i]) > 3:
+                        defaultPen.setWidth(3)
+                        painter.setPen(defaultPen)
                         painter.drawLine(startx, margin + h + 5, endx, margin + h + 5)
+    
+    @Slot(QEvent)
+    def do_labelDescription_clicked(self, event):
+        if self.view != QRegisterConst.DesignView:
+            return
+        if self.ui.labelDescription.text() == "":
+            mousePos = event.pos()
+            t = self.__reg_id_bf_id.split(',')            
+            regId = int(t[0])
+            bfId  = int(t[1])
+            clickedBfId = None
+            regQ = QSqlQuery("SELECT Width FROM Register WHERE id=%s"%(regId), self.conn)
+            while regQ.next(): # only 1 item
+                regW  = regQ.value(0)
+                value = QRegisterConst.genColoredRegBitsUsage(self.conn, bfId, regId, regW, None)
+                pixelsWide = QFontMetrics(self.ui.labelDescription.font()).width(" ZB ")
+                startx  = 10
+                endx    = 10
+                for i in range(len(value)):
+                    digits = value[i][1].split(',')
+                    for d in digits:
+                        endx += pixelsWide + 1
+                    if mousePos.x() >= startx and mousePos.x() <= endx and len(value[i]) == 3:
+                        clickedBfId = value[i][2]
+                    startx = endx
+            if clickedBfId is not None:
+                treeViewCurrent = self.ui.treeView.selectedIndexes()[0]
+                bfNum = self.treeViewTableModel.rowCount(treeViewCurrent.parent())
+                for i in range(bfNum):
+                    sibling = treeViewCurrent.sibling(i, 0)
+                    if sibling.data(QRegisterConst.BfIdRole) == clickedBfId:
+                        self.ui.treeView.selectionModel().setCurrentIndex(sibling, QItemSelectionModel.ClearAndSelect) 
+                        break
+
+
