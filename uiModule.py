@@ -5,8 +5,8 @@ import datetime
 
 # pyside2 package
 from PySide2.QtWidgets import QWidget, QAbstractItemView, QMessageBox, QMenu, QAction, QFileDialog, QProgressDialog
-from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QEvent, QDir, QCoreApplication
-from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor
+from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QEvent, QDir, QCoreApplication, QRect
+from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor, QFontMetrics, QPainter, QBrush 
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlRecord, QSqlQuery
 
 # lxml package
@@ -33,10 +33,11 @@ class uiModuleWindow(QWidget):
         self.ui.tableView.setAlternatingRowColors(True)
         self.ui.tableViewReg.setAlternatingRowColors(True)
         self.ui.tableViewReg.setVisible(False)
+        self.ui.labelDescription.installEventFilter(self)
         with open (QRegisterConst.StyleFile) as file:
             style = file.read()
         self.setStyleSheet(style)
-        
+
         self.moduleIcon = QIcon('icon/module32.png')
         self.regMapIcon = QIcon('icon/regmap32.png')
         self.regIcon = QIcon('icon/reg32.png')
@@ -73,6 +74,9 @@ class uiModuleWindow(QWidget):
             if  event.type() == QEvent.KeyPress:
                 if event.key() == Qt.Key_Delete:
                     self.do_delete_triggered()
+        if obj == self.ui.labelDescription:
+            if event.type() == QEvent.Paint:
+                self.do_labelDescription_paint(event)
         return super(uiModuleWindow, self).eventFilter(obj, event)
     
     def closeEvent(self, event):
@@ -368,7 +372,7 @@ class uiModuleWindow(QWidget):
 
                     dlgProgress.setLabelText("Importing register map '%s' from %s "%(regMapName, fileName))
                     dlgProgress.setValue(i)
-                 
+
                     regNodes = regMapNode.findall("Registers/Register")
                     for j in range(len(regNodes)):
                         regNode = regNodes[j]
@@ -1155,15 +1159,10 @@ class uiModuleWindow(QWidget):
                 self.ui.pbAddRegMap.setEnabled(False)
                 self.ui.pbAddReg.setEnabled(False)
                 self.ui.pbAddBf.setEnabled(True)
-                self.ui.pbAddBfEnum.setEnabled(True)                
-                regQ = QSqlQuery("SELECT Width FROM Register WHERE id=%s"%(regId), self.conn)
-                text = ""
-                while regQ.next(): # only 1 item
-                    regW = regQ.value(0)
-                    text = "Tips: <pre>"
-                    text += QRegisterConst.genColoredRegBitsUsage(self.conn, bfId, regId, regW, 13)
-                    text += "</pre>"
-                self.ui.labelDescription.setText(text)
+                self.ui.pbAddBfEnum.setEnabled(True)
+                self.__reg_id_bf_id = "%s,%s"%(regId, bfId)
+                self.ui.labelDescription.setText("")
+                self.ui.labelDescription.update()
 
             elif tableName == "BitfieldEnum": # bfenum selected, show bfenum table
                 self.ui.tableView.setVisible(True)
@@ -1460,3 +1459,44 @@ class uiModuleWindow(QWidget):
             # remove from tree
             parent.removeRow(current.row())
         return
+    
+    @Slot(QEvent)
+    def do_labelDescription_paint(self, event):
+        if self.ui.labelDescription.text() == "":
+            t = self.__reg_id_bf_id.split(',')            
+            regId = int(t[0])
+            bfId  = int(t[1])
+            #self.ui.labelDescription.setText("Tips: \n\n")         
+            regQ = QSqlQuery("SELECT Width FROM Register WHERE id=%s"%(regId), self.conn)
+            while regQ.next(): # only 1 item
+                regW  = regQ.value(0)
+                value  = QRegisterConst.genColoredRegBitsUsage(self.conn, bfId, regId, regW, None)
+                
+                fm = QFontMetrics(self.ui.labelDescription.font())
+                pixelsWide = fm.width(" ZB ")
+                
+                painter = QPainter(self.ui.labelDescription)
+                margin  = 10
+                h = self.ui.labelDescription.geometry().height() - margin * 2
+                rect = QRect(margin, margin, pixelsWide, h)
+                defaultBrush = painter.brush()
+                defaultPen   = painter.pen()
+                for i in range(len(value)):
+                    digits = value[i][1].split(',')
+                    if value[i][0] is None:
+                        painter.setBrush(defaultBrush)
+                    else:
+                        painter.setBrush(QBrush(value[i][0]))
+                    startx = rect.x()
+                    for d in digits:
+                        defaultPen.setWidth(1)
+                        painter.setPen(defaultPen)                        
+                        painter.drawRect(rect)
+                        defaultPen.setWidth(3)
+                        painter.setPen(defaultPen)
+                        painter.drawText(rect, Qt.AlignCenter, d)
+                        rect.setX(rect.x() + pixelsWide + 1)
+                        rect.setWidth(pixelsWide)
+                    endx = rect.x() - 1
+                    if len(value[i]) > 2:
+                        painter.drawLine(startx, margin + h + 5, endx, margin + h + 5)

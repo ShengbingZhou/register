@@ -61,16 +61,13 @@ class QRegisterConst:
         if regW == None:
             return
 
-        regW = int(regW)
-        
         bfColorsIndex = 0
-        bfColors = ["DarkSeaGreen", "LightSalmon", "PowderBlue", "LightPink", "Aquamarine", "Bisque", "LightBlue", "DarkKhaki"] 
-        
+        bfColors = ["DarkSeaGreen", "LightSalmon", "PowderBlue", "LightPink", "Aquamarine", "Bisque", "LightBlue", "DarkKhaki"]         
         bfQColors = [QColor(0x8FBC8F), QColor(0xFFA07A), QColor(0xB0E0E6), QColor(0xFFB6C1), QColor(0x66CDAA), QColor(0xFFE4C4), QColor(0xADD8E6), QColor(0xBDB76B)]
         value = []
-            
+
+        regW = int(regW)
         regB = regW - 1
-        text = ""
         bfQuery = QSqlQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY CAST(RegisterOffset as int) DESC"%(regId), conn)
         while bfQuery.next():
             _bfId   = bfQuery.value("id")
@@ -79,12 +76,11 @@ class QRegisterConst:
 
             # unused bits before bitfield 
             if _bfW > 0 and regB > (_regOff + _bfW - 1):
-                text = ""
-                for i in range(_regOff + _bfW, regB + 1):
-                    if regB > (_regOff + _bfW):
-                        text += "%s,"%(regB)
-                    else:
-                        text += "%s"%(regB)
+                text  = ""
+                start = _regOff + _bfW
+                end   = regB + 1
+                for i in range(start, end):
+                    text += "%s,"%(regB) if i < (end - 1) and regB > 0 else "%s"%(regB)
                     regB -= 1
                     if regB < 0:
                         break
@@ -93,25 +89,24 @@ class QRegisterConst:
             # bitfield bits
             if _bfW > 0 and regB >= 0:
                 text = ""
-                bfColorsIndex = 0 if (bfColorsIndex + 1) >= len(bfQColors) else bfColorsIndex + 1
-                for j in range(_regOff, _regOff + _bfW):
-                    if j < (_regOff + _bfW - 1):
-                        text += "%s,"%(regB)
-                    else:
-                        text += "%s"%(regB)
+                start = _regOff
+                end   = _regOff + _bfW               
+                for j in range(_regOff, _regOff + _bfW):                    
+                    text += "%s,"%(regB) if j < (end - 1) and regB > 0 else "%s"%(regB)
                     regB -= 1
                     if regB < 0:
                         break
-                value.append((bfQColors[bfColorsIndex], text))
-                
+                if bfId == _bfId:
+                    value.append((bfQColors[bfColorsIndex], text, 1))
+                else:
+                    value.append((bfQColors[bfColorsIndex], text))
+                bfColorsIndex = 0 if (bfColorsIndex + 1) >= len(bfQColors) else bfColorsIndex + 1
+
         # left unsed bits
         if regB >= 0:
             text = ""
             for k in range(0, regB + 1):
-                if k > 0:
-                    text += "%s,"%(regB)
-                else:
-                    text += "%s"%(regB)
+                text += "%s,"%(regB) if regB > 0 else "%s"%(regB)
                 regB -= 1
             value.append((None, text))
 
@@ -179,7 +174,7 @@ class QRegisterConst:
                 regMapRecord = regMapQueryModel.record(j)
                 docx.add_heading('RegisterMap: %s'%(regMapRecord.value("Name")), level = 3)
                 docx.add_paragraph("Description : %s\n" \
-                                    "BaseAddress : %s"%(regMapRecord.value("Description"), regMapRecord.value("OffsetAddress")))
+                                   "BaseAddress : %s"%(regMapRecord.value("Description"), regMapRecord.value("OffsetAddress")))
 
                 # update progress dialog
                 dlgProgress.setLabelText("Exporting register map '%s' to %s "%(regMapRecord.value("Name"), fileName))

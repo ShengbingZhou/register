@@ -14,13 +14,6 @@ class QSqlHighlightTableModel(QSqlTableModel):
         if role == Qt.BackgroundColorRole:
             if QRegisterConst.recordExist(QSqlTableModel.record(self, index.row())) == False:
                 value = QColor('grey')
-        if role == Qt.DisplayRole:
-            if self.tableName() == "Register":
-                field = self.record().fieldName(index.column())
-                if field == "Value": # show bitfield usage info in this column
-                    regId = self.record(index.row()).value("id")
-                    regW  = self.record(index.row()).value("Width")
-                    value  = QRegisterConst.genColoredRegBitsUsage(self.database(), None, regId, regW, None)
         return value
 
     def flags(self, index):
@@ -47,35 +40,40 @@ class QRegValueDisplayDelegate(QStyledItemDelegate):
 
     def paint(self, painter, option, index):
         self.initStyleOption(option, index)
-        value = index.data()
+
+        record = index.model().record(index.row())
+        regId = record.value("id")
+        regW  = record.value("Width")
+        value  = QRegisterConst.genColoredRegBitsUsage(index.model().database(), None, regId, regW, None)
+
         margin = 5
-        
-        fm = QFontMetrics(painter.font())
+        fm = QFontMetrics(option.font)
         pixelsWide = fm.width(" ZB ")
-        rect = QRect(option.rect.left() + margin, option.rect.top() + margin, pixelsWide, option.rect.height() - 2*margin)
+        rect = QRect(option.rect.left() + margin, option.rect.top() + margin, pixelsWide, option.rect.height() -  2 * margin)
 
         defaultBrush = painter.brush()
-        #defaultPen = painter.pen()
+        transparent  = QColor(0,0,0,0)
         for i in range(len(value)):
             digits = value[i][1].split(',')
+            if value[i][0] is None:
+                painter.setBrush(defaultBrush)
+            else:
+                painter.setBrush(QBrush(value[i][0]))
             for d in digits:
-                if value[i][0] is None:
-                    painter.setPen(defaultBrush.color())
-                    painter.setBrush(defaultBrush)
-                else:
-                    painter.setPen(value[i][0])
-                    painter.setBrush(QBrush(value[i][0]))
+                painter.setPen(transparent)
                 painter.drawRect(rect)
                 painter.setPen(defaultBrush.color())
-                painter.setBrush(defaultBrush)
                 painter.drawText(rect, Qt.AlignCenter, d)
-                rect.setX(rect.x() + pixelsWide + 2)
+                rect.setX(rect.x() + pixelsWide + 1)
                 rect.setWidth(pixelsWide)
-        
+        painter.setPen(defaultBrush.color())
+        painter.setBrush(defaultBrush)
+
     def sizeHint(self, option, index):
-        options = option
-        self.initStyleOption(options, index)
-        doc = QTextDocument()
-        doc.setHtml(options.text)
-        doc.setTextWidth(-1)
-        return QSize(doc.idealWidth(), doc.size().height())
+        record = index.model().record(index.row())
+        bits = int(record.value("Width"))
+        fm = QFontMetrics(option.font)
+        pixelsWide = fm.width(" ZB ") + 1
+        w = pixelsWide * bits + 10 # 2*margin + bits * bits width
+        h = option.rect.height()
+        return QSize(w, h)
