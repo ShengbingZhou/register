@@ -1118,8 +1118,14 @@ class uiModuleWindow(QWidget):
                         self.regTableModel.setHeaderData(self.__regValueIndex, Qt.Horizontal, "Bits")
                         self.ui.tableViewReg.setModel(self.regTableModel)
                         self.ui.tableViewReg.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                        regMapWidth = 8 # bits width
+                        regMapQ = QSqlQuery("SELECT Width FROM RegisterMap WHERE id=%s"%(regMapId), self.conn)
+                        if regMapQ.next():
+                            w = regMapQ.value("Width")
+                            if w is not None and w != "":
+                                regMapWidth = int(w)
                         pixelsWide = QFontMetrics(self.ui.tableViewReg.font()).width(" ZB ") + 1
-                        w = pixelsWide * 8 + 10 # bitwidth*bits + 2*margin 
+                        w = pixelsWide * regMapWidth + 10 # bitwidth*bits + 2*margin 
                         self.ui.tableViewReg.setColumnWidth(self.__regValueIndex, w)
                     self.ui.tableViewReg.hideColumn(0) # id
                     self.ui.tableViewReg.hideColumn(1) # regmap id
