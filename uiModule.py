@@ -255,7 +255,7 @@ class uiModuleWindow(QWidget):
             memMap0Id = self.newMemMapRow(self.memMapTableModel, -1).value("id")  # create memMap row0
             regMap0Id = self.newRegMapRow(self.regMapTableModel, memMap0Id, -1).value("id") # create regMap row0
             reg0Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 32, -1).value("id")   # create register row0
-            bf0Id = self.newBfRow(self.bfTableModel, reg0Id, 8, -1).value("id") # create bitField row0
+            bf0Id = self.newBfRow(self.bfTableModel, reg0Id, 1, -1).value("id") # create bitField row0
             self.newBfEnumRow(self.bfEnumTableModel, bf0Id, -1).value("id")     # create bitFieldeEnum row0
             self.setupTreeView()
             self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
@@ -1385,7 +1385,7 @@ class uiModuleWindow(QWidget):
         regMapId = int(current.data(QRegisterConst.RegMapIdRole))
         regId = int(current.data(QRegisterConst.RegIdRole))
         newBfRowIndex = -1 if tableName != "Bitfield" else current.row() + 1 
-        r = self.newBfRow(self.bfTableModel, regId, 8, newBfRowIndex)
+        r = self.newBfRow(self.bfTableModel, regId, 1, newBfRowIndex)
         
         newBfItem = QStandardItem(self.bfIcon, r.value("name"))
         newBfItem.setData("Bitfield", QRegisterConst.NameRole)
