@@ -89,7 +89,16 @@ class uiModuleWindow(QWidget):
         if self.newModule == True:
             reply = QMessageBox.information(self, "Save register ?", "Register design is created but never saved, do you want to save?", QMessageBox.Yes | QMessageBox.No)
             if reply == QMessageBox.Yes:
+                self.conn.commit()
                 self.mainWindow.on_actionSave_triggered()
+        else:
+            if os.path.isfile(self.newFileName):
+                fileModifiedTime = os.path.getmtime(self.newFileName)
+                if self.fileModifiedTime != fileModifiedTime:
+                    reply = QMessageBox.information(self, "Save register ?", "Register design is changed but not saved, do you want to save?", QMessageBox.Yes | QMessageBox.No)
+                    if reply == QMessageBox.Yes:
+                        self.conn.commit()
+                        self.mainWindow.on_actionSave_triggered()
         self.conn.close()
         if os.path.isfile(self.newFileName):
             os.remove(self.newFileName)
@@ -270,11 +279,12 @@ class uiModuleWindow(QWidget):
         # create temp database
         now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
         newName = "__%s%s"%(now, QRegisterConst.DesignFileExt)
-        newName = QDir.homePath() + "/.reg/" + newName  
+        newName = QDir.homePath() + "/.reg/" + newName
         shutil.copyfile(fileName, newName)
         self.newFileName = newName
         self.fileName = fileName
         self.newModule = False
+        self.fileModifiedTime = os.path.getmtime(newName)
 
         # open existing database
         self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
@@ -300,16 +310,20 @@ class uiModuleWindow(QWidget):
                     # add .reg when saving new file
                     if f_ext != QRegisterConst.DesignFileExt:
                         fileName += QRegisterConst.DesignFileExt
+                self.conn.commit()
                 shutil.copy(self.newFileName, fileName)
+                self.fileModifiedTime = os.path.getmtime(self.newFileName)
                 self.fileName = fileName
                 self.newModule = False
         else:
-            if self.newFileName != '':
+            if os.path.isfile(self.newFileName):
                 if os.path.exists(fileName):
-                    os.remove(fileName)                  
+                    os.remove(fileName)
+                self.conn.commit()
                 shutil.copy(self.newFileName, self.fileName)
+                self.fileModifiedTime = os.path.getmtime(self.newFileName)
                 fileName = self.fileName
-        return fileName    
+        return fileName
 
     def importYodaSp1(self, fileName):
         # create temp database

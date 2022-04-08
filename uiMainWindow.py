@@ -57,7 +57,8 @@ class uiMainWindow(QMainWindow):
         moduleWindow = uiModuleWindow(self)
         moduleWindow.setAttribute(Qt.WA_DeleteOnClose)
         if moduleWindow.openDatabase(fileName):
-            index = self.ui.tabWidget.addTab(moduleWindow, os.path.basename(fileName))
+            f_name, f_ext = os.path.splitext(os.path.basename(fileName))
+            index = self.ui.tabWidget.addTab(moduleWindow, f_name)
             self.ui.tabWidget.setCurrentIndex(index)
             moduleWindow.setMainWindow(self)
             if self.welcomeWindow != None:
