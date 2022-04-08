@@ -17,7 +17,7 @@ from docx.shared import Inches
 class QRegisterConst:
 
     # tool version
-    Version = "0.0.4-(alpha)"
+    Version = "0.0.5-(alpha)"
     
     # Base Directory
     BaseDir = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
