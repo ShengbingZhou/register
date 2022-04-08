@@ -1,16 +1,20 @@
 QMainWindow {
-	background-color:#ececec;
+	background-color: #ececec;
 }
+
 QTreeView {
 	alternate-background-color: #E6FFFF;
 }
+
 QTreeView::Item {
 	height: 30px;
 }
+
 QListView::Item {
 	height: 30px;
 }
-QPushButton{
+
+QPushButton {
 	border-style: solid;
 	border-top-color: rgb(215, 215, 215);
 	border-right-color: rgb(215, 215, 215);
@@ -18,12 +22,14 @@ QPushButton{
 	border-bottom-color: rgb(215, 215, 215);
 	border-width: 1px;
 	border-radius: 10px;
-	color: rgb(0,0,0);
+	color: rgb(0, 0, 0);
 	padding: 2px;
-	background-color: rgb(255,255,255);
-	min-height:25px;
+	background-color: rgb(255, 255, 255);
+	min-height: 25px;
+	min-width: 160px;
 }
-QPushButton:hover{
+
+QPushButton:hover {
 	border-style: solid;
 	border-top-color: rgb(195, 195, 195);
 	border-right-color: rgb(195, 195, 195);
@@ -31,11 +37,12 @@ QPushButton:hover{
 	border-bottom-color: rgb(195, 195, 195);
 	border-width: 3px;
 	border-radius: 10px;
-	color: rgb(0,0,0);
+	color: rgb(0, 0, 0);
 	padding: 2px;
-	background-color: rgb(255,255,255);
+	background-color: rgb(255, 255, 255);
 }
-QPushButton:pressed{
+
+QPushButton:pressed {
 	border-style: solid;
 	border-top-color: rgb(195, 195, 195);
 	border-right-color: rgb(195, 195, 195);
@@ -43,11 +50,12 @@ QPushButton:pressed{
 	border-bottom-color: rgb(195, 195, 195);
 	border-width: 3px;
 	border-radius: 10px;
-	color: rgb(0,0,0);
+	color: rgb(0, 0, 0);
 	padding: 2px;
-	background-color: rgb(142,142,142);
+	background-color: rgb(142, 142, 142);
 }
-QPushButton:disabled{
+
+QPushButton:disabled {
 	border-style: solid;
 	border-top-color: rgb(215, 215, 215);
 	border-right-color: rgb(215, 215, 215);
@@ -57,32 +65,37 @@ QPushButton:disabled{
 	border-radius: 10px;
 	color: #808086;
 	padding: 2px;
-	background-color: rgb(142,142,142);
+	background-color: rgb(142, 142, 142);
 }
+
 QMenuBar::item {
-	spacing: 3px; 
+	spacing: 3px;
 	padding: 1px 4px;
 	background: transparent;
 }
-QMenuBar::item:selected { 
-	background:rgb(115, 115, 115);
+
+QMenuBar::item:selected {
+	background: rgb(115, 115, 115);
 }
+
 QMenu {
-	border-width: 2px; 
+	border-width: 2px;
 	border-radius: 10px;
 	border-color: rgb(255, 153, 0);
 	border-style: outset;
 }
+
 QMenu::item {
-	spacing: 3px; 
+	spacing: 3px;
 	padding: 3px 15px;
 }
+
 QMenu::item:selected {
-	spacing: 3px; 
+	spacing: 3px;
 	padding: 3px 15px;
-	background:rgb(115, 115, 115);
-	color:rgb(255, 255, 255);
-	border-width: 1px; 
+	background: rgb(115, 115, 115);
+	color: rgb(255, 255, 255);
+	border-width: 1px;
 	border-radius: 10px;
 	border-color: rgb(58, 58, 58);
 	border-style: inset;

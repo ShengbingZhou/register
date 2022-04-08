@@ -1,3 +1,4 @@
+create deb:
 dpkg-deb --build --root-owner-group register_0.0.1_1_amd64
 
 install:
