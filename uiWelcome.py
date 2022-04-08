@@ -16,7 +16,7 @@ class uiWelcomeWindow(QWidget):
         self.ui = Ui_WelcomeWindow()
         self.ui.setupUi(self)
         self.ui.listView.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.icon = QIcon('icon/file32.png')
+        self.icon = QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/file32.png'))
         with open (QRegisterConst.StyleFile) as file:
             style = file.read()
         self.setStyleSheet(style)
@@ -32,7 +32,7 @@ class uiWelcomeWindow(QWidget):
             dir = QDir.homePath() + "/.reg"
             if not os.path.exists(dir):            
                 os.mkdir(dir)
-            shutil.copyfile("template/recent_files.db", rf)
+            shutil.copyfile(os.path.join(QRegisterConst.BaseDir, "template/recent_files.db"), rf)
             self.conn.setDatabaseName(rf)
         if self.conn.open():
             recentFilesTableModel = QSqlTableModel(self, self.conn)

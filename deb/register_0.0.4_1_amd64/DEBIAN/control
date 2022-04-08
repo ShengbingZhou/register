@@ -1,5 +1,5 @@
 Package: register
-Version: 0.0.1
+Version: 0.0.4
 Architecture: amd64
 Maintainer: Shengbing Zhou <shengbingzhou@outlook.com>
 Description: A tool to help RTL designer to define register/bitfield/etc.
