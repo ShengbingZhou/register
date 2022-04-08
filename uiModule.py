@@ -37,6 +37,10 @@ class uiModuleWindow(QWidget):
         with open (QRegisterConst.StyleFile) as file:
             style = file.read()
         self.setStyleSheet(style)
+        font = self.ui.tableView.font()
+        font.setWeight(QFont.Light)
+        self.ui.tableView.setFont(font)
+        self.ui.tableViewReg.setFont(font)
 
         self.moduleIcon = QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/module32.png'))
         self.regMapIcon = QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/regmap32.png'))
@@ -779,6 +783,9 @@ class uiModuleWindow(QWidget):
                     regItem.setData(memMapRecord.value("id"), QRegisterConst.MemMapIdRole)
                     regItem.setData(regMapRecord.value("id"), QRegisterConst.RegMapIdRole)
                     regItem.setData(regRecord.value("id"), QRegisterConst.RegIdRole)
+                    font = regItem.font()
+                    font.setWeight(QFont.Light)
+                    regItem.setFont(font)                    
                     regMapitem.appendRow(regItem)
                     if QRegisterConst.recordExist(regRecord) == False:
                         regItem.setData(QColor('grey'), Qt.BackgroundColorRole)
@@ -794,6 +801,9 @@ class uiModuleWindow(QWidget):
                         bfItem.setData(regMapRecord.value("id"), QRegisterConst.RegMapIdRole)
                         bfItem.setData(regRecord.value("id"), QRegisterConst.RegIdRole)
                         bfItem.setData(bfRecord.value("id"), QRegisterConst.BfIdRole)
+                        font = bfItem.font()
+                        font.setWeight(QFont.Light)
+                        bfItem.setFont(font)                         
                         regItem.appendRow(bfItem)
                         if QRegisterConst.recordExist(bfRecord) == False:
                             bfItem.setData(QColor('grey'), Qt.BackgroundColorRole)                       
@@ -811,6 +821,7 @@ class uiModuleWindow(QWidget):
                             bfEnumItem.setData(bfRecord.value("id"), QRegisterConst.BfIdRole)
                             bfEnumItem.setData(bfEnumRecord.value("id"), QRegisterConst.BfEnumIdRole)
                             font = bfEnumItem.font()
+                            font.setWeight(QFont.Light)
                             font.setItalic(True)
                             bfEnumItem.setFont(font)
                             bfItem.appendRow(bfEnumItem)
@@ -1042,7 +1053,7 @@ class uiModuleWindow(QWidget):
                 self.ui.pbAddReg.setEnabled(False)
                 self.ui.pbAddBf.setEnabled(False)
                 self.ui.pbAddBfEnum.setEnabled(False)
-                self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add new memory map.</br></br>"%self.ui.pbAddMemMap.text())
+                self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new memory map."%self.ui.pbAddMemMap.text())
             elif tableName == "MemoryMap": # mem map selected, show mem map table
                 self.ui.tableView.setVisible(True)
                 self.ui.tableViewReg.setVisible(False)    
@@ -1071,7 +1082,7 @@ class uiModuleWindow(QWidget):
                 self.ui.pbAddReg.setEnabled(False)
                 self.ui.pbAddBf.setEnabled(False)
                 self.ui.pbAddBfEnum.setEnabled(False)
-                self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add new register map.</br></br>"%self.ui.pbAddRegMap.text())
+                self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new register map."%self.ui.pbAddRegMap.text())
                 
             elif tableName == "RegisterMap": # regmap selected, show regmap table
                 self.ui.tableView.setVisible(True)
@@ -1107,9 +1118,9 @@ class uiModuleWindow(QWidget):
                 self.ui.pbAddBf.setEnabled(False)
                 self.ui.pbAddBfEnum.setEnabled(False)
                 if regMapType == QRegisterConst.RegMap:
-                    self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add register.</br></br>"%(self.ui.pbAddReg.text()))
+                    self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add register."%(self.ui.pbAddReg.text()))
                 else:
-                    self.ui.labelDescription.setText("Tips: <br><br>Assign a filename to sub-module.</br></br>")
+                    self.ui.labelDescription.setText("Tips: Assign a filename to sub-module.")
 
             elif tableName == "Register": # reg selected, show reg table
                 self.ui.tableView.setVisible(False)
@@ -1150,7 +1161,7 @@ class uiModuleWindow(QWidget):
                 self.ui.pbAddReg.setEnabled(True)
                 self.ui.pbAddBf.setEnabled(True)
                 self.ui.pbAddBfEnum.setEnabled(False)                
-                self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add bitfield</br></br>"%(self.ui.pbAddBf.text()))
+                self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add bitfield."%(self.ui.pbAddBf.text()))
                 
             elif tableName == "Bitfield": # bf selected, show bf table
                 self.ui.tableView.setVisible(True)
@@ -1213,7 +1224,7 @@ class uiModuleWindow(QWidget):
                 self.ui.pbAddReg.setEnabled(False)
                 self.ui.pbAddBf.setEnabled(False)
                 self.ui.pbAddBfEnum.setEnabled(True)                    
-                self.ui.labelDescription.setText("Tips: <br><br>Click <font color=\"red\">%s</font> to add new bitfield enum.</br></br>"%self.ui.pbAddBfEnum.text())
+                self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new bitfield enum."%self.ui.pbAddBfEnum.text())
 
             # select tableView row
             self.__treeViewCurrentTable = tableName
@@ -1347,7 +1358,10 @@ class uiModuleWindow(QWidget):
         newRegItem.setData(memoryMapId, QRegisterConst.MemMapIdRole)
         newRegItem.setData(regMapId, QRegisterConst.RegMapIdRole)
         newRegItem.setData(r.value("id"), QRegisterConst.RegIdRole)
-    
+        font = newRegItem.font()
+        font.setWeight(QFont.Light)
+        newRegItem.setFont(font) 
+                            
         standardItem = self.treeViewTableModel.itemFromIndex(current)
         if tableName == "RegisterMap":
             standardItem.appendRow(newRegItem)
@@ -1379,7 +1393,10 @@ class uiModuleWindow(QWidget):
         newBfItem.setData(regMapId, QRegisterConst.RegMapIdRole)
         newBfItem.setData(regId, QRegisterConst.RegIdRole)
         newBfItem.setData(r.value("id"), QRegisterConst.BfIdRole)
-
+        font = newBfItem.font()
+        font.setWeight(QFont.Light)
+        newBfItem.setFont(font) 
+        
         standardItem = self.treeViewTableModel.itemFromIndex(current)
         if tableName == "Register":
             standardItem.appendRow(newBfItem)
@@ -1414,6 +1431,7 @@ class uiModuleWindow(QWidget):
         newBfEnumItem.setData(bfId, QRegisterConst.BfIdRole)
         newBfEnumItem.setData(r.value("id"), QRegisterConst.BfEnumIdRole)
         font = newBfEnumItem.font()
+        font.setWeight(QFont.Light)
         font.setItalic(True)
         newBfEnumItem.setFont(font)
 
