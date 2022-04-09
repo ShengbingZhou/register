@@ -646,9 +646,10 @@ class uiModuleWindow(QWidget):
                     ipxactFile.write("      <ipxact:addressBlock>\n")
                     ipxactFile.write("        <ipxact:name>%s</ipxact:name>\n"%(regMapRecord.value("Name")))
                     ipxactFile.write("        <ipxact:description>%s</ipxact:description>\n"%(regMapRecord.value("Description")))
-                    ipxactFile.write("        <ipxact:baseAddress>%s</ipxact:baseAddress>\n"%(str(regMapRecord.value("OffsetAddress")).replace("0x", "'h")))
-                    #ipxactFile.write("        <ipxact:width>%s</ipxact:width>\n"%(regMapRecord.value("Width")))
-                    
+                    ipxactFile.write("        <ipxact:baseAddress>%s</ipxact:baseAddress>\n"%(regMapRecord.value("OffsetAddress")).replace("0x", "'h"))
+                    ipxactFile.write("        <ipxact:range>%s</ipxact:range>\n"%(regMapRecord.value("Range")))
+                    ipxactFile.write("        <ipxact:width>%s</ipxact:width>\n"%(regMapRecord.value("Width")))
+
                     # register
                     regQueryModel = QSqlQueryModel()
                     regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
@@ -672,7 +673,7 @@ class uiModuleWindow(QWidget):
                                 ipxactFile.write("        <ipxact:register>\n")
                                 ipxactFile.write("          <ipxact:name>%s</ipxact:name>\n"%(regRecord.value("Name")))
                                 ipxactFile.write("          <ipxact:description>%s</ipxact:description>\n"%(regRecord.value("Description")))
-                                ipxactFile.write("          <ipxact:addressOffset>%s</ipxact:addressOffset>\n"%(str(regRecord.value("OffsetAddress")).replace("0x", "'h")))
+                                ipxactFile.write("          <ipxact:addressOffset>%s</ipxact:addressOffset>\n"%(regRecord.value("OffsetAddress").replace("0x", "'h")))
                                 ipxactFile.write("          <ipxact:size>%s</ipxact:size>\n"%(regRecord.value("Width")))
                             else:
                                 regAddr = "%s"%(hex(int(regRecord.value("OffsetAddress")) + int(regWidth * (regI - start) / 8)))
@@ -695,7 +696,7 @@ class uiModuleWindow(QWidget):
                                 ipxactFile.write("            <ipxact:volatile>%s</ipxact:volatile>\n"%("true"))
                                 ipxactFile.write("            <ipxact:resets>\n")
                                 ipxactFile.write("              <ipxact:reset>\n")
-                                ipxactFile.write("                <ipxact:value>%s</ipxact:value>\n"%(str(bfRecord.value("DefaultValue")).replace("0x", "'h")))
+                                ipxactFile.write("                <ipxact:value>%s</ipxact:value>\n"%(bfRecord.value("DefaultValue")).replace("0x", "'h"))
                                 ipxactFile.write("              </ipxact:reset>\n")
                                 ipxactFile.write("            </ipxact:resets>\n")
                                 ipxactFile.write("          </ipxact:field>\n")

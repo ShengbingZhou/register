@@ -45,23 +45,6 @@ class QRegDebugValueEditDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
             x = option.rect.left()
             y = option.rect.top()
-            width = option.rect.width()
-            height = option.rect.height()
-
-            painter.setRenderHint(QPainter.Antialiasing)
-            y = (height - 20) / 2
-            painter.setPen(QColor(128, 128, 128))
-            painter.drawRect(x + 5,  y, 15, 20)
-            painter.drawRect(x + 25, y, 15, 20)
-            painter.drawRect(x + 45, y, 15, 20)
-            painter.drawRect(x + 65, y, 15, 20)
-
-            painter.drawRect(x + 95,  y, 15, 20)
-            painter.drawRect(x + 115, y, 15, 20)
-            painter.drawRect(x + 135, y, 15, 20)
-            painter.drawRect(x + 155, y, 15, 20)
-            #painter.drawText(option.rect, Qt.AlignHCenter | Qt.AlignVCenter, str(index.data()))
-            #painter.translate(option.rect.topLeft())
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
         size = super().sizeHint(option, index)

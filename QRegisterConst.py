@@ -55,11 +55,14 @@ class QRegisterConst:
     
     @staticmethod
     def recordExist(record):
-        exist = str(record.value("Exist")).lower()
-        if exist == '0' or exist == "n" or exist == 'no':
-            return False
-        else:
+        exist = record.value("Exist")
+        if exist is None:
             return True
+        else:
+            if exist == '0' or exist == "n" or exist == 'no':
+                return False
+            else:
+                return True
 
     @staticmethod
     def genColoredRegBitsUsage(conn, bfId, regId, regW, fontSize):
