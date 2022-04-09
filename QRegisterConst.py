@@ -1,6 +1,7 @@
 # built-in package
 import os
 import sys
+import re
 
 # pyside2 package
 from PySide2.QtWidgets import QFileDialog, QMessageBox, QProgressDialog
@@ -190,20 +191,35 @@ class QRegisterConst:
                 regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), conn)
 
                 fields = ['Name', 'Address', 'Description']
-                table = docx.add_table(rows=regQueryModel.rowCount() + 1, cols=len(fields), style='Table Grid')
-                for r, row in enumerate(table.rows):
-                    for c, (cell, field) in enumerate(zip(row.cells, fields)):
-                        if r == 0:
-                            cell.text = fields[c]
-                            cell._tc.get_or_add_tcPr().append(oxml.parse_xml(r'<w:shd {} w:fill="c0c0c0"/>'.format(oxml.ns.nsdecls('w'))))
-                        else:
-                            regRecord = regQueryModel.record(r - 1)
-                            if field == 'Name':
-                                cell.text = regRecord.value("Name")
-                            if field == 'Address':
-                                cell.text = "%s"%regRecord.value("OffsetAddress")
-                            if field == 'Description':
-                                cell.text = regRecord.value("Description")
+                table = docx.add_table(1, cols=len(fields), style='Table Grid')
+                for c, (cell, field) in enumerate(zip(table.rows[0].cells, fields)):
+                    cell.text = fields[c]
+                    cell._tc.get_or_add_tcPr().append(oxml.parse_xml(r'<w:shd {} w:fill="c0c0c0"/>'.format(oxml.ns.nsdecls('w'))))                
+
+                regRe = re.compile('\d+:\d+')                
+                for r in range(regQueryModel.rowCount()):
+                    regRecord = regQueryModel.record(r)
+                    regWidth = int(regRecord.value("Width"))
+                    regDesc = regRecord.value("Description")
+                    regMatch = regRe.match(regRecord.value("Array"))
+                    if regMatch is None:
+                        regName = regRecord.value("Name")
+                        regAddr = "%s"%regRecord.value("OffsetAddress")                        
+                        row = table.add_row()
+                        row.cells[0].text = regName
+                        row.cells[1].text = regAddr
+                        row.cells[2].text = regDesc                        
+                    else:                        
+                        regArray = regMatch.string.split(':')
+                        regArray0 = int(regArray[0])
+                        regArray1 = int(regArray[1])
+                        for regI in range(regArray0, regArray1):
+                            regName = "%s%s"%(regRecord.value("Name"), regI)
+                            regAddr = "%s"%(hex(int(regRecord.value("OffsetAddress")) + int(regWidth * regI / 8)))
+                            row = table.add_row()
+                            row.cells[0].text = regName
+                            row.cells[1].text = regAddr
+                            row.cells[2].text = regDesc                             
 
                 for k in range(regQueryModel.rowCount()):
                     regRecord = regQueryModel.record(k)
