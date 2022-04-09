@@ -264,6 +264,7 @@ class uiModuleWindow(QWidget):
             bf0Id = self.newBfRow(self.bfTableModel, reg0Id, 1, -1).value("id") # create bitField row0
             self.newBfEnumRow(self.bfEnumTableModel, bf0Id, -1).value("id")     # create bitFieldeEnum row0
             self.setupTreeView()
+            self.memMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.bfTableModel.dataChanged.connect(self.do_tableView_dataChanged)
@@ -287,6 +288,7 @@ class uiModuleWindow(QWidget):
         self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
         if self.setupDesignViewModels(newName):
             self.setupTreeView()
+            self.memMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.bfTableModel.dataChanged.connect(self.do_tableView_dataChanged)
@@ -439,6 +441,7 @@ class uiModuleWindow(QWidget):
             self.regTableModel.select()
             self.bfTableModel.select()
             self.setupTreeView()
+            self.memMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
             self.bfTableModel.dataChanged.connect(self.do_tableView_dataChanged)
@@ -599,6 +602,7 @@ class uiModuleWindow(QWidget):
                 self.regTableModel.select()
                 self.bfTableModel.select()
                 self.setupTreeView()
+                self.memMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
                 self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
                 self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
                 self.bfTableModel.dataChanged.connect(self.do_tableView_dataChanged)
@@ -727,7 +731,7 @@ class uiModuleWindow(QWidget):
             self.infoTableModel.setTable("info")
             self.infoTableModel.select()
             
-            self.memMapTableModel = QSqlTableModel(self, self.conn)
+            self.memMapTableModel = QSqlHighlightTableModel(self, self.conn)
             self.memMapTableModel.setEditStrategy(QSqlTableModel.OnFieldChange)  
             self.memMapTableModel.setTable("MemoryMap")
             self.memMapTableModel.setSort(self.memMapTableModel.fieldIndex("DisplayOrder"), Qt.AscendingOrder)
@@ -931,7 +935,10 @@ class uiModuleWindow(QWidget):
             if tableViewCurrent != None:
                 treeViewCurrent = self.ui.treeView.selectedIndexes()[0]
                 if tableViewCurrent.row() != self.__treeViewCurrentRow:
-                    sibling = treeViewCurrent.sibling(tableViewCurrent.row(), 0)
+                    if self.__treeViewCurrentTable == "MemoryMap":
+                        sibling = treeViewCurrent.sibling(tableViewCurrent.row() + 1, 0) # information is row 0
+                    else:
+                        sibling = treeViewCurrent.sibling(tableViewCurrent.row(), 0)
                     self.ui.treeView.selectionModel().setCurrentIndex(sibling, QItemSelectionModel.ClearAndSelect)                
         return
     
@@ -1005,7 +1012,10 @@ class uiModuleWindow(QWidget):
         
         model = None
         idRole = None
-        if tableName == "RegisterMap":
+        if tableName == "MemoryMap":
+            model = self.memMapTableModel
+            idRole = QRegisterConst.MemMapIdRole
+        elif tableName == "RegisterMap":
             model = self.regMapTableModel
             idRole = QRegisterConst.RegMapIdRole
         elif tableName == "Register":
@@ -1023,7 +1033,7 @@ class uiModuleWindow(QWidget):
             fieldName = model.record().fieldName(bottomRight.column())
             if fieldName == "Name":
                 itemId = model.data(model.index(bottomRight.row(), 0), Qt.DisplayRole)
-                parentItem = self.treeViewTableModel.itemFromIndex(current.parent())
+                parentItem = self.treeViewTableModel.itemFromIndex(current.parent()) if tableName != "MemoryMap" else self.treeViewTableModel.invisibleRootItem()
                 for i in range(parentItem.rowCount()):
                     child = current.sibling(i, 0)
                     childId = child.data(idRole)
@@ -1032,15 +1042,15 @@ class uiModuleWindow(QWidget):
                         self.treeViewTableModel.itemFromIndex(child).setData(newName, Qt.DisplayRole)
             elif fieldName == "Exist":
                 itemId = model.data(model.index(bottomRight.row(), 0), Qt.DisplayRole) # 'id' is column 0
-                parentItem = self.treeViewTableModel.itemFromIndex(current.parent())
+                parentItem = self.treeViewTableModel.itemFromIndex(current.parent()) if tableName != "MemoryMap" else self.treeViewTableModel.invisibleRootItem()
                 for i in range(parentItem.rowCount()):
                     child = current.sibling(i, 0)
                     childId = child.data(idRole)
                     if childId != None and int(childId) == itemId:
                         if QRegisterConst.recordExist(model.record(bottomRight.row())) == False:
-                            self.treeViewTableModel.itemFromIndex(child).setData(QColor('grey'), Qt.BackgroundColorRole)
+                            self.treeViewTableModel.itemFromIndex(child).setData(QColor('grey'), Qt.TextColorRole)
                         else:
-                            self.treeViewTableModel.itemFromIndex(child).setData(None, Qt.BackgroundColorRole)
+                            self.treeViewTableModel.itemFromIndex(child).setData(None, Qt.TextColorRole)
 
         # resize columns
         #if tableName == "Register":
@@ -1253,19 +1263,22 @@ class uiModuleWindow(QWidget):
                 self.ui.pbAddBfEnum.setEnabled(True)                    
                 self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new bitfield enum."%self.ui.pbAddBfEnum.text())
 
-            # select tableView row
+            # get table view current selected row
             self.__treeViewCurrentTable = tableName
             self.__treeViewCurrentRow = current.row()
+            if tableName == "MemoryMap":
+                self.__treeViewCurrentRow -= 1 # row 0 is information row
             if tableName == "Register":
                 tableViewCurrents = self.ui.tableViewReg.selectionModel().selectedIndexes()                
             else:
                 tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()
             tableViewCurrent = None if len(tableViewCurrents) == 0 else tableViewCurrents[0]
-            if tableViewCurrent == None or tableViewCurrent.row() != current.row():
+            # update table view selected row
+            if tableViewCurrent == None or tableViewCurrent.row() != self.__treeViewCurrentRow:
                 if tableName == "Register":
-                    self.ui.tableViewReg.selectRow(current.row())
+                    self.ui.tableViewReg.selectRow(self.__treeViewCurrentRow)
                 else:
-                    self.ui.tableView.selectRow(current.row())                    
+                    self.ui.tableView.selectRow(self.__treeViewCurrentRow)
         else: # debug view
             tableName = str(current.data(QRegisterConst.NameRole))
             if tableName != "info" and tableName != "MemoryMap":       
