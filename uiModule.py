@@ -38,7 +38,8 @@ class uiModuleWindow(QWidget):
             style = file.read()
         self.setStyleSheet(style)
         font = self.ui.tableView.font()
-        font.setWeight(QFont.Light)
+        #font.setWeight(QFont.Light)
+        font.setPointSize(font.pointSize() - 2)
         self.ui.tableView.setFont(font)
         self.ui.tableViewReg.setFont(font)
 
@@ -798,7 +799,7 @@ class uiModuleWindow(QWidget):
                     regItem.setData(regMapRecord.value("id"), QRegisterConst.RegMapIdRole)
                     regItem.setData(regRecord.value("id"), QRegisterConst.RegIdRole)
                     font = regItem.font()
-                    font.setWeight(QFont.Light)
+                    font.setPointSize(font.pointSize() - 2)
                     regItem.setFont(font)                    
                     regMapitem.appendRow(regItem)
                     if QRegisterConst.recordExist(regRecord) == False:
@@ -816,7 +817,7 @@ class uiModuleWindow(QWidget):
                         bfItem.setData(regRecord.value("id"), QRegisterConst.RegIdRole)
                         bfItem.setData(bfRecord.value("id"), QRegisterConst.BfIdRole)
                         font = bfItem.font()
-                        font.setWeight(QFont.Light)
+                        font.setPointSize(font.pointSize() - 2)
                         bfItem.setFont(font)                         
                         regItem.appendRow(bfItem)
                         if QRegisterConst.recordExist(bfRecord) == False:
@@ -835,7 +836,7 @@ class uiModuleWindow(QWidget):
                             bfEnumItem.setData(bfRecord.value("id"), QRegisterConst.BfIdRole)
                             bfEnumItem.setData(bfEnumRecord.value("id"), QRegisterConst.BfEnumIdRole)
                             font = bfEnumItem.font()
-                            font.setWeight(QFont.Light)
+                            font.setPointSize(font.pointSize() - 2)
                             font.setItalic(True)
                             bfEnumItem.setFont(font)
                             bfItem.appendRow(bfEnumItem)
@@ -1373,7 +1374,7 @@ class uiModuleWindow(QWidget):
         newRegItem.setData(regMapId, QRegisterConst.RegMapIdRole)
         newRegItem.setData(r.value("id"), QRegisterConst.RegIdRole)
         font = newRegItem.font()
-        font.setWeight(QFont.Light)
+        font.setPointSize(font.pointSize() - 2)
         newRegItem.setFont(font) 
                             
         standardItem = self.treeViewTableModel.itemFromIndex(current)
@@ -1408,7 +1409,7 @@ class uiModuleWindow(QWidget):
         newBfItem.setData(regId, QRegisterConst.RegIdRole)
         newBfItem.setData(r.value("id"), QRegisterConst.BfIdRole)
         font = newBfItem.font()
-        font.setWeight(QFont.Light)
+        font.setPointSize(font.pointSize() - 2)
         newBfItem.setFont(font) 
         
         standardItem = self.treeViewTableModel.itemFromIndex(current)
@@ -1445,7 +1446,7 @@ class uiModuleWindow(QWidget):
         newBfEnumItem.setData(bfId, QRegisterConst.BfIdRole)
         newBfEnumItem.setData(r.value("id"), QRegisterConst.BfEnumIdRole)
         font = newBfEnumItem.font()
-        font.setWeight(QFont.Light)
+        font.setPointSize(font.pointSize() - 2)
         font.setItalic(True)
         newBfEnumItem.setFont(font)
 
