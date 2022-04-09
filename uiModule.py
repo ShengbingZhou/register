@@ -140,7 +140,7 @@ class uiModuleWindow(QWidget):
     def newInfoRow(self, model, date):
         r = model.record()
         r.remove(r.indexOf('id'))
-        r.setValue("Name", "Information")
+        r.setValue("Name", "NoName Component")
         r.setValue("Version", "1.0")
         r.setValue("Author", os.getlogin())
         r.setValue("LastUpdateDate", date)
@@ -156,7 +156,7 @@ class uiModuleWindow(QWidget):
         newRow, order = self.getNewRowAndDisplayOrder(model, row, maxOrder)
         query.exec_("UPDATE MemoryMap SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))
 
-        query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, AddressUnitBits, User) VALUES ('%s', '%s', '%s', '%s')"%(order, 0x0000, 8, os.getlogin()))
+        query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, AddressUnitBits, User) VALUES ('%s', '0x%08x', '%s', '%s')"%(order, 0, 8, os.getlogin()))
 
         query.exec_("SELECT max(id) FROM MemoryMap")
         query.next()
@@ -174,8 +174,12 @@ class uiModuleWindow(QWidget):
         newRow, order = self.getNewRowAndDisplayOrder(model, row, maxOrder)
         query.exec_("UPDATE RegisterMap SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))
 
+        if type == QRegisterConst.RegMap:
+            regMapDesc = "This is no name register map"
+        else:
+            regMapDesc = "This is no name register module"
         query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, OffsetAddress, Range, Width, Description, Type, User) "\
-                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(memMapId, order, 0x0000, 0x0000, 32, "This is no name register map", type, os.getlogin()))
+                    "VALUES ('%s', '%s', '0x%08x', '%s', '%s', '%s', '%s', '%s')"%(memMapId, order, 0, 0, 32, regMapDesc, type, os.getlogin()))
 
         query.exec_("SELECT max(id) FROM RegisterMap")
         query.next()
@@ -184,6 +188,7 @@ class uiModuleWindow(QWidget):
             query.exec_("UPDATE RegisterMap SET Name='RegMap%s' WHERE id=%s"%(id, id))
         else:
             query.exec_("UPDATE RegisterMap SET Name='RegMod%s' WHERE id=%s"%(id, id))
+
         model.select()
         r = model.record(newRow)
         return r
@@ -197,12 +202,13 @@ class uiModuleWindow(QWidget):
         query.exec_("UPDATE Register SET DisplayOrder=DisplayOrder+1 WHERE DisplayOrder>=%s"%(order))
 
         query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, OffsetAddress, Description, Width, User) " \
-                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s')"%(regMapId, order, OffsetAddress, "This is no name register", Width, os.getlogin()))
+                    "VALUES ('%s', '%s', '0x%08x', '%s', '%s', '%s')"%(regMapId, order, OffsetAddress, "This is no name register", Width, os.getlogin()))
 
         query.exec_("SELECT max(id) FROM Register")
         query.next()
         id = query.record().value(0)
         query.exec_("UPDATE Register SET Name='Reg%s' WHERE id=%s"%(id, id))
+
         model.select()
         r = model.record(newRow)
         return r
@@ -260,8 +266,8 @@ class uiModuleWindow(QWidget):
             self.newInfoRow(self.infoTableModel, now).value("id")                 # create info   row0
             memMap0Id = self.newMemMapRow(self.memMapTableModel, -1).value("id")  # create memMap row0
             regMap0Id = self.newRegMapRow(self.regMapTableModel, memMap0Id, -1).value("id") # create regMap row0
-            reg0Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 32, -1).value("id")   # create register row0
-            bf0Id = self.newBfRow(self.bfTableModel, reg0Id, 1, -1).value("id") # create bitField row0
+            reg0Id = self.newRegRow(self.regTableModel, regMap0Id, 0, 32, -1).value("id") # create register row0
+            bf0Id = self.newBfRow(self.bfTableModel, reg0Id, 1, -1).value("id") # create bitField      row0
             self.newBfEnumRow(self.bfEnumTableModel, bf0Id, -1).value("id")     # create bitFieldeEnum row0
             self.setupTreeView()
             self.memMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
@@ -360,8 +366,8 @@ class uiModuleWindow(QWidget):
             query = QSqlQuery(self.conn)
             for memMap in memMapNodes: # only one memory map in yoda
                 # add memory record
-                memMapAddr = root.find("Properties/Address").text.lower().replace("'h", "0x").replace("'d", "")
-                query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name) VALUES ('%s', '%s', '%s')"%(memMapDisplayOrder, memMapAddr, "MemoryMap"))
+                memMapAddr = QRegisterConst.strToInt(root.find("Properties/Address").text.lower())
+                query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name) VALUES ('%s', '0x%08x', '%s')"%(memMapDisplayOrder, memMapAddr, "MemoryMap"))
                 query.exec_("SELECT max(id) FROM MemoryMap")
                 query.next()
                 memMapId = query.record().value(0)
@@ -381,9 +387,9 @@ class uiModuleWindow(QWidget):
                     regMapNode = regMapNodes[i]
                     regMapName = regMapNode.find("Name").text
                     regMapDesc = regMapNode.find("Description").text
-                    regMapAddr = regMapNode.find("Address").text.lower().replace("'h", "0x").replace("'d", "")
+                    regMapAddr = QRegisterConst.strToInt(regMapNode.find("Address").text.lower())
                     query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, Name, Description, OffsetAddress) " \
-                                "VALUES ('%s', '%s', '%s', '%s', '%s')"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr))
+                                "VALUES ('%s', '%s', '%s', '%s', '0x%08x')"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr))
                     query.exec_("SELECT max(id) FROM RegisterMap")
                     query.next()
                     regMapId = query.record().value(0)
@@ -394,15 +400,15 @@ class uiModuleWindow(QWidget):
 
                     regNodes = regMapNode.findall("Registers/Register")
                     for j in range(len(regNodes)):
-                        regNode = regNodes[j]
-                        regName = regNode.find("Name").text
-                        regDesc = regNode.find("Description").text
-                        regAddr = regNode.find("Address").text.lower().replace("'h", "0x").replace("'d", "")
-                        regWidth = regNode.find("Width").text.lower().replace("'h", "0x").replace("'d", "")
+                        regNode  = regNodes[j]
+                        regName  = regNode.find("Name").text
+                        regDesc  = regNode.find("Description").text
+                        regAddr  = QRegisterConst.strToInt(regNode.find("Address").text.lower())
+                        regWidth = QRegisterConst.strToInt(regNode.find("Width").text.lower())
                         regVisibilityNode = regNode.find("Visibility")
                         regVisibility  = "" if regVisibilityNode is None else regNode.find("Visibility").text.lower()
                         query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width, Visibility) " \
-                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth, regVisibility))
+                                    "VALUES ('%s', '%s', '%s', '%s', '0x%08x', '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth, regVisibility))
                         query.exec_("SELECT max(id) FROM Register")
                         query.next()
                         regId = query.record().value(0)
@@ -412,8 +418,8 @@ class uiModuleWindow(QWidget):
                         for k in range(len(bfRefNodes)):
                             bfRefNode = bfRefNodes[k]
                             bfUID = bfRefNode.find("BF-UID").text
-                            regOffset  = bfRefNode.find("RegOffset").text.lower().replace("'h", "0x").replace("'d", "")
-                            bitOffset  = bfRefNode.find("BitOffset").text.lower().replace("'h", "0x").replace("'d", "")
+                            regOffset  = QRegisterConst.strToInt(bfRefNode.find("RegOffset").text.lower())
+                            bitOffset  = QRegisterConst.strToInt(bfRefNode.find("BitOffset").text.lower())
                             sliceWidth = bfRefNode.find("SliceWidth").text
                             for m in range(len(bfNodes)):
                                 bfNode = bfNodes[m]
@@ -421,14 +427,14 @@ class uiModuleWindow(QWidget):
                                     bfName = bfNode.find("Name").text
                                     if bfName != "RESERVED":
                                         bfDesc = bfNode.find("Description").text
-                                        bfDfValue = bfNode.find("DefaultValue").text.replace("'h", "0x").replace("'d", "").replace("'b", "").replace("'", "")
+                                        bfDfValue = QRegisterConst.strToInt(bfNode.find("DefaultValue").text.lower())
                                         bfAccess  = bfNode.find("Access").text.lower()
                                         bfVisibility  = bfNode.find("Visibility").text.lower()
                                         bfWidth = bfNode.find("Width").text
                                         if sliceWidth != None:
-                                            w = sliceWidth.lower().replace("'h", "0x").replace("'d", "")
+                                            w = QRegisterConst.strToInt(sliceWidth.lower())
                                         else:
-                                            w = bfWidth.lower().replace("'h", "0x").replace("'d", "")
+                                            w = QRegisterConst.strToInt(bfWidth.lower())
                                         # TODO: process default value to get sliced value
                                         query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, Name, Description, RegisterOffset, Width, DefaultValue, Access, Visibility) " \
                                                     "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, w, bfDfValue, bfAccess, bfVisibility))
@@ -496,7 +502,7 @@ class uiModuleWindow(QWidget):
                 # start to import
                 query = QSqlQuery(self.conn)
                 n = root.find("%s:name"%ns, root.nsmap)
-                infoName = "" if n is None else n.text
+                infoName = "NoName Component" if n is None else n.text
                 n = root.find("%s:vendor"%ns, root.nsmap)
                 infoVendor = "" if n is None else n.text
                 n = root.find("%s:library"%ns, root.nsmap)
@@ -512,7 +518,7 @@ class uiModuleWindow(QWidget):
                     memMapDesc = "" if n is None else n.text
 
                     # add memory record
-                    query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name, Description) VALUES ('%s', '%s', '%s', '%s')"%(memMapDisplayOrder, 0x0000, memMapName, memMapDesc))
+                    query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name, Description) VALUES ('%s', '0x%08x', '%s', '%s')"%(memMapDisplayOrder, 0, memMapName, memMapDesc))
                     query.exec_("SELECT max(id) FROM MemoryMap")
                     query.next()
                     memMapId = query.record().value(0)
@@ -534,10 +540,10 @@ class uiModuleWindow(QWidget):
                         regMapDesc = "" if n == None else n.text
 
                         n = regMapNode.find("%s:width"%ns, root.nsmap)
-                        regMapWidth = "" if n == None else n.text
+                        regMapWidth = 0 if n == None else QRegisterConst.strToInt(n.text.lower())
 
                         n = regMapNode.find("%s:range"%ns, root.nsmap)
-                        regMapRange = "" if n == None else n.text.replace("'h", "0x").replace("'d", "")
+                        regMapRange = 0 if n == None else QRegisterConst.strToInt(n.text.lower())
 
                         regMapAddr = regMapNode.find("%s:baseAddress"%ns, root.nsmap)
                         params = regMapNode.findall("%s:parameters/%s:parameter"%(ns, ns), root.nsmap)
@@ -545,10 +551,10 @@ class uiModuleWindow(QWidget):
                             if param.find("%s:name"%ns, root.nsmap).text == regMapAddr.text:
                                 regMapAddr = param.find("%s:value"%ns, root.nsmap)
                                 break
-                        regMapAddr = regMapAddr.text.lower().replace("'h", "0x").replace("'d", "")
+                        regMapAddr = QRegisterConst.strToInt(regMapAddr.text.lower())
 
                         query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, Name, Description, OffsetAddress, Width, Range) " \
-                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr, regMapWidth, regMapRange))
+                                    "VALUES ('%s', '%s', '%s', '%s', '0x%08x', '%s', '%s')"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr, regMapWidth, regMapRange))
                         query.exec_("SELECT max(id) FROM RegisterMap")
                         query.next()
                         regMapId = query.record().value(0)
@@ -566,10 +572,10 @@ class uiModuleWindow(QWidget):
                             n = regNode.find("%s:description"%ns, root.nsmap)
                             regDesc = "" if n == None else n.text
 
-                            regAddr = regNode.find("%s:addressOffset"%ns, root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
-                            regWidth = regNode.find("%s:size"%ns, root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
+                            regAddr  = QRegisterConst.strToInt(regNode.find("%s:addressOffset"%ns, root.nsmap).text.lower())
+                            regWidth = QRegisterConst.strToInt(regNode.find("%s:size"%ns, root.nsmap).text.lower())
                             query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width) " \
-                                        "VALUES ('%s', '%s', '%s', '%s', '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth))
+                                        "VALUES ('%s', '%s', '%s', '%s', '0x%08x', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth))
                             query.exec_("SELECT max(id) FROM Register")
                             query.next()
                             regId = query.record().value(0)
@@ -586,11 +592,11 @@ class uiModuleWindow(QWidget):
                                 n = bfNode.find("%s:access"%ns, root.nsmap)
                                 bfAccess = "" if n == None else n.text
 
-                                regOffset = bfNode.find("%s:bitOffset"%ns, root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
-                                bfWidth   = bfNode.find("%s:bitWidth"%ns, root.nsmap).text.lower().replace("'h", "0x").replace("'d", "")
+                                regOffset = QRegisterConst.strToInt(bfNode.find("%s:bitOffset"%ns, root.nsmap).text.lower())
+                                bfWidth   = QRegisterConst.strToInt(bfNode.find("%s:bitWidth"%ns, root.nsmap).text.lower())
                                 
                                 n = bfNode.find("%s:resets/%s:reset/%s:value"%(ns,ns,ns), root.nsmap)
-                                bfDefaultVal = 0 if n is None else n.text.lower().replace("'h", "0x").replace("'d", "")
+                                bfDefaultVal = 0 if n is None else QRegisterConst.strToInt(n.text.lower())
                                 
                                 query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, Name, Description, RegisterOffset, Width, DefaultValue, Access) " \
                                             "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, bfWidth, bfDefaultVal, bfAccess))
@@ -665,7 +671,7 @@ class uiModuleWindow(QWidget):
                             start = 0
                             end   = 0
                         else:
-                            regWidth = int(regRecord.value("Width"))
+                            regWidth = QRegisterConst.strToInt(regRecord.value("Width"))
                             regArray = regMatch.string.split(':')
                             regArray0 = int(regArray[0])
                             regArray1 = int(regArray[1])
@@ -680,7 +686,7 @@ class uiModuleWindow(QWidget):
                                 ipxactFile.write("          <ipxact:addressOffset>%s</ipxact:addressOffset>\n"%(regRecord.value("OffsetAddress").replace("0x", "'h")))
                                 ipxactFile.write("          <ipxact:size>%s</ipxact:size>\n"%(regRecord.value("Width")))
                             else:
-                                regAddr = "%s"%(hex(int(regRecord.value("OffsetAddress")) + int(regWidth * (regI - start) / 8)))
+                                regAddr = "%s"%(hex(QRegisterConst.strToInt(regRecord.value("OffsetAddress")) + int(regWidth * (regI - start) / 8)))
                                 ipxactFile.write("        <ipxact:register>\n")
                                 ipxactFile.write("          <ipxact:name>%s%s</ipxact:name>\n"%(regRecord.value("Name"), regI))
                                 ipxactFile.write("          <ipxact:description>%s</ipxact:description>\n"%(regRecord.value("Description")))
@@ -1390,9 +1396,32 @@ class uiModuleWindow(QWidget):
         tableName = str(current.data(QRegisterConst.NameRole))
         memoryMapId = int(current.data(QRegisterConst.MemMapIdRole))
         regMapId = int(current.data(QRegisterConst.RegMapIdRole))
-        newRegRowIndex = -1 if tableName != "Register" else current.row() + 1
-        r = self.newRegRow(self.regTableModel, regMapId, 0, 32, newRegRowIndex)
-        
+        if tableName == "Register":
+            newRegRowIndex = current.row() + 1 # new reg will be right after current one
+            regId = int(current.data(QRegisterConst.RegIdRole))
+            query = self.conn.exec_("SELECT OffsetAddress, Width FROM Register WHERE id=%s"%regId)
+            query.next()
+            regAddr  = QRegisterConst.strToInt(query.value(0))
+            regWidth = QRegisterConst.strToInt(query.value(1))
+            newRegAddr = regAddr + int(regWidth / 8)
+        else:
+            newRegRowIndex = -1                # new reg will be last one
+            if self.regTableModel.rowCount() > 0:
+                regRecord = self.regTableModel.record(self.regTableModel.rowCount() - 1)
+                regId = regRecord.value(0)
+                query = self.conn.exec_("SELECT OffsetAddress, Width FROM Register WHERE id=%s"%regId)
+                query.next()
+                regAddr  = QRegisterConst.strToInt(query.value(0))
+                regWidth = QRegisterConst.strToInt(query.value(1))
+                newRegAddr = regAddr + int(regWidth / 8)
+            else:
+                query = self.conn.exec_("SELECT Width FROM RegisterMap WHERE id=%s"%regMapId)
+                query.next()
+                regMapWidth = int(query.value("Width"))
+                regWidth   = regMapWidth
+                newRegAddr = 0x0000
+        r = self.newRegRow(self.regTableModel, regMapId, newRegAddr, regWidth, newRegRowIndex)
+
         newRegItem = QStandardItem(self.regIcon, r.value("name"))
         newRegItem.setData("Register", QRegisterConst.NameRole)
         newRegItem.setData(memoryMapId, QRegisterConst.MemMapIdRole)

@@ -52,7 +52,27 @@ class QRegisterConst:
     BfIdRole       = Qt.UserRole + 6
     BfEnumIdRole   = Qt.UserRole + 7
     RegMapTypeRole = Qt.UserRole + 8
-    
+
+    @staticmethod
+    def strToInt(text):
+        if text is None:
+            return 0
+        if text.startswith("0x"):         # 0x1234
+            return int(text, 16)
+        if text.startswith("'h"):         # 'h1234
+            text = text.replace("'h", "")
+            return int(text, 16)
+        if text.startswith("'d"):
+            text = text.replace("'d", "") # 'd1234
+            return int(text)
+        if "'h" in text:                  # 16'h1234
+            t = text.split(text, "'h")
+            return int(t[1], 16)
+        if "'d" in text:                  # 16'd1234
+            t = text.split(text, "'d")
+            return int(t[1])
+        return int(text)
+
     @staticmethod
     def recordExist(record):
         exist = record.value("Exist")
@@ -79,7 +99,7 @@ class QRegisterConst:
         bfQuery = QSqlQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY CAST(RegisterOffset as int) DESC"%(regId), conn)
         while bfQuery.next():
             _bfId   = bfQuery.value("id")
-            _regOff = int(bfQuery.value("RegisterOffset"))
+            _regOff = QRegisterConst.strToInt(bfQuery.value("RegisterOffset"))
             _bfW    = int(bfQuery.value("Width"))
 
             # unused bits before bitfield 
@@ -219,7 +239,7 @@ class QRegisterConst:
                         end   = max(regArray0, regArray1)
                         for regI in range(start, end + 1):
                             regName = "%s%s"%(regRecord.value("Name"), regI)
-                            regAddr = "%s"%(hex(int(regRecord.value("OffsetAddress")) + int(regWidth * (regI - start) / 8)))
+                            regAddr = "%s"%(hex(QRegisterConst.strToInt(regRecord.value("OffsetAddress")) + int(regWidth * (regI - start) / 8)))
                             row = table.add_row()
                             row.cells[0].text = regName
                             row.cells[1].text = regAddr
@@ -238,8 +258,8 @@ class QRegisterConst:
                         regArray1 = int(regArray[1])
                         start = min(regArray0, regArray1)
                         end   = max(regArray0, regArray1)
-                        regAddrStart = "%s"%(hex(int(regRecord.value("OffsetAddress"))))
-                        regAddrend   = "%s"%(hex(int(regRecord.value("OffsetAddress")) + int(regWidth * (end - start) / 8)))
+                        regAddrStart = "%s"%(hex(QRegisterConst.strToInt(regRecord.value("OffsetAddress"))))
+                        regAddrend   = "%s"%(hex(QRegisterConst.strToInt(regRecord.value("OffsetAddress")) + int(regWidth * (end - start) / 8)))
                         docx.add_heading('Register: %s%s ~ %s%s'%(regRecord.value("Name"), start, regRecord.value("Name"), end), level = 4)
                         docx.add_paragraph('Description : %s\n' \
                                            'Address : %s ~ %s'%(regRecord.value("Description"), regAddrStart, regAddrend))
@@ -261,7 +281,7 @@ class QRegisterConst:
                                 if field == 'Name':
                                     cell.text = bfRecord.value("Name")
                                 if field == 'Bits':
-                                    cell.text = "[%s:%s]"%(int(bfRecord.value("Width")) + int(bfRecord.value("RegisterOffset")) - 1, bfRecord.value("RegisterOffset"))
+                                    cell.text = "[%s:%s]"%(int(bfRecord.value("Width")) + QRegisterConst.strToInt(bfRecord.value("RegisterOffset")) - 1, QRegisterConst.strToInt(bfRecord.value("RegisterOffset")))
                                 if field == 'ResetValue':
                                     cell.text = "%s"%(bfRecord.value("DefaultValue"))
                                 if field == 'Description':
