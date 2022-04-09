@@ -366,8 +366,10 @@ class uiModuleWindow(QWidget):
             query = QSqlQuery(self.conn)
             for memMap in memMapNodes: # only one memory map in yoda
                 # add memory record
-                memMapAddr = QRegisterConst.strToInt(root.find("Properties/Address").text.lower())
-                query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name) VALUES ('%s', '0x%08x', '%s')"%(memMapDisplayOrder, memMapAddr, "MemoryMap"))
+                memMapAddr = root.find("Properties/Address").text.lower()
+                a = "INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name) VALUES ('%s', '%s', '%s')"%(memMapDisplayOrder, memMapAddr, "MemoryMap")
+                query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name) VALUES ('%s', \"%s\", '%s')"%(memMapDisplayOrder, memMapAddr, "MemoryMap"))
+                a = query.lastError()
                 query.exec_("SELECT max(id) FROM MemoryMap")
                 query.next()
                 memMapId = query.record().value(0)
@@ -387,9 +389,9 @@ class uiModuleWindow(QWidget):
                     regMapNode = regMapNodes[i]
                     regMapName = regMapNode.find("Name").text
                     regMapDesc = regMapNode.find("Description").text
-                    regMapAddr = QRegisterConst.strToInt(regMapNode.find("Address").text.lower())
+                    regMapAddr = regMapNode.find("Address").text.lower()
                     query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, Name, Description, OffsetAddress) " \
-                                "VALUES ('%s', '%s', '%s', '%s', '0x%08x')"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr))
+                                "VALUES ('%s', '%s', '%s', '%s', \"%s\")"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr))
                     query.exec_("SELECT max(id) FROM RegisterMap")
                     query.next()
                     regMapId = query.record().value(0)
@@ -403,12 +405,12 @@ class uiModuleWindow(QWidget):
                         regNode  = regNodes[j]
                         regName  = regNode.find("Name").text
                         regDesc  = regNode.find("Description").text
-                        regAddr  = QRegisterConst.strToInt(regNode.find("Address").text.lower())
+                        regAddr  = regNode.find("Address").text.lower()
                         regWidth = QRegisterConst.strToInt(regNode.find("Width").text.lower())
                         regVisibilityNode = regNode.find("Visibility")
                         regVisibility  = "" if regVisibilityNode is None else regNode.find("Visibility").text.lower()
                         query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width, Visibility) " \
-                                    "VALUES ('%s', '%s', '%s', '%s', '0x%08x', '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth, regVisibility))
+                                    "VALUES ('%s', '%s', '%s', '%s', \"%s\", '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth, regVisibility))
                         query.exec_("SELECT max(id) FROM Register")
                         query.next()
                         regId = query.record().value(0)
@@ -427,7 +429,7 @@ class uiModuleWindow(QWidget):
                                     bfName = bfNode.find("Name").text
                                     if bfName != "RESERVED":
                                         bfDesc = bfNode.find("Description").text
-                                        bfDfValue = QRegisterConst.strToInt(bfNode.find("DefaultValue").text.lower())
+                                        bfDfValue = bfNode.find("DefaultValue").text.lower()
                                         bfAccess  = bfNode.find("Access").text.lower()
                                         bfVisibility  = bfNode.find("Visibility").text.lower()
                                         bfWidth = bfNode.find("Width").text
@@ -437,7 +439,7 @@ class uiModuleWindow(QWidget):
                                             w = QRegisterConst.strToInt(bfWidth.lower())
                                         # TODO: process default value to get sliced value
                                         query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, Name, Description, RegisterOffset, Width, DefaultValue, Access, Visibility) " \
-                                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, w, bfDfValue, bfAccess, bfVisibility))
+                                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', \"%s\", '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, w, bfDfValue, bfAccess, bfVisibility))
                                         bfDisplayOrder += 1
                                     break
                 dlgProgress.close()
@@ -518,7 +520,7 @@ class uiModuleWindow(QWidget):
                     memMapDesc = "" if n is None else n.text
 
                     # add memory record
-                    query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name, Description) VALUES ('%s', '0x%08x', '%s', '%s')"%(memMapDisplayOrder, 0, memMapName, memMapDesc))
+                    query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name, Description) VALUES ('%s', '%s', '%s', '%s')"%(memMapDisplayOrder, 0, memMapName, memMapDesc))
                     query.exec_("SELECT max(id) FROM MemoryMap")
                     query.next()
                     memMapId = query.record().value(0)
@@ -543,7 +545,7 @@ class uiModuleWindow(QWidget):
                         regMapWidth = 0 if n == None else QRegisterConst.strToInt(n.text.lower())
 
                         n = regMapNode.find("%s:range"%ns, root.nsmap)
-                        regMapRange = 0 if n == None else QRegisterConst.strToInt(n.text.lower())
+                        regMapRange = 0 if n == None else n.text.lower()
 
                         regMapAddr = regMapNode.find("%s:baseAddress"%ns, root.nsmap)
                         params = regMapNode.findall("%s:parameters/%s:parameter"%(ns, ns), root.nsmap)
@@ -551,10 +553,10 @@ class uiModuleWindow(QWidget):
                             if param.find("%s:name"%ns, root.nsmap).text == regMapAddr.text:
                                 regMapAddr = param.find("%s:value"%ns, root.nsmap)
                                 break
-                        regMapAddr = QRegisterConst.strToInt(regMapAddr.text.lower())
+                        regMapAddr = regMapAddr.text.lower()
 
                         query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, Name, Description, OffsetAddress, Width, Range) " \
-                                    "VALUES ('%s', '%s', '%s', '%s', '0x%08x', '%s', '%s')"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr, regMapWidth, regMapRange))
+                                    "VALUES ('%s', '%s', '%s', '%s', \"%s\", '%s', \"%s\")"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr, regMapWidth, regMapRange))
                         query.exec_("SELECT max(id) FROM RegisterMap")
                         query.next()
                         regMapId = query.record().value(0)
@@ -572,10 +574,10 @@ class uiModuleWindow(QWidget):
                             n = regNode.find("%s:description"%ns, root.nsmap)
                             regDesc = "" if n == None else n.text
 
-                            regAddr  = QRegisterConst.strToInt(regNode.find("%s:addressOffset"%ns, root.nsmap).text.lower())
+                            regAddr  = regNode.find("%s:addressOffset"%ns, root.nsmap).text.lower()
                             regWidth = QRegisterConst.strToInt(regNode.find("%s:size"%ns, root.nsmap).text.lower())
                             query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width) " \
-                                        "VALUES ('%s', '%s', '%s', '%s', '0x%08x', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth))
+                                        "VALUES ('%s', '%s', '%s', '%s', \"%s\", '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth))
                             query.exec_("SELECT max(id) FROM Register")
                             query.next()
                             regId = query.record().value(0)
@@ -596,10 +598,10 @@ class uiModuleWindow(QWidget):
                                 bfWidth   = QRegisterConst.strToInt(bfNode.find("%s:bitWidth"%ns, root.nsmap).text.lower())
                                 
                                 n = bfNode.find("%s:resets/%s:reset/%s:value"%(ns,ns,ns), root.nsmap)
-                                bfDefaultVal = 0 if n is None else QRegisterConst.strToInt(n.text.lower())
+                                bfDefaultVal = 0 if n is None else n.text.lower()
                                 
                                 query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, Name, Description, RegisterOffset, Width, DefaultValue, Access) " \
-                                            "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, bfWidth, bfDefaultVal, bfAccess))
+                                            "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', \"%s\", '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, bfWidth, bfDefaultVal, bfAccess))
                                 bfDisplayOrder += 1
                 dlgProgress.close()
                 self.infoTableModel.select()
@@ -1419,7 +1421,7 @@ class uiModuleWindow(QWidget):
                 query.next()
                 regMapWidth = int(query.value("Width"))
                 regWidth   = regMapWidth
-                newRegAddr = 0x0000
+                newRegAddr = 0
         r = self.newRegRow(self.regTableModel, regMapId, newRegAddr, regWidth, newRegRowIndex)
 
         newRegItem = QStandardItem(self.regIcon, r.value("name"))
