@@ -2,6 +2,7 @@
 import os
 import shutil
 import datetime
+import re
 
 # pyside2 package
 from PySide2.QtWidgets import QWidget, QAbstractItemView, QMessageBox, QMenu, QAction, QFileDialog, QProgressDialog
@@ -653,30 +654,52 @@ class uiModuleWindow(QWidget):
                     regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
                     for k in range(regQueryModel.rowCount()):
                         regRecord = regQueryModel.record(k)
-                        ipxactFile.write("        <ipxact:register>\n")
-                        ipxactFile.write("          <ipxact:name>%s</ipxact:name>\n"%(regRecord.value("Name")))
-                        ipxactFile.write("          <ipxact:description>%s</ipxact:description>\n"%(regRecord.value("Description")))
-                        ipxactFile.write("          <ipxact:addressOffset>%s</ipxact:addressOffset>\n"%(str(regRecord.value("OffsetAddress")).replace("0x", "'h")))
-                        ipxactFile.write("          <ipxact:size>%s</ipxact:size>\n"%(regRecord.value("Width")))
+                        regRe     = re.compile('\d+:\d+')  
+                        regMatch  = regRe.match(regRecord.value("Array"))
+                        if regMatch is None:
+                            start = 0
+                            end   = 0
+                        else:
+                            regWidth = int(regRecord.value("Width"))
+                            regArray = regMatch.string.split(':')
+                            regArray0 = int(regArray[0])
+                            regArray1 = int(regArray[1])
+                            start = min(regArray0, regArray1)
+                            end   = max(regArray0, regArray1)
 
-                        # bitfield
-                        bfQueryModel = QSqlQueryModel()
-                        bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
-                        for m in range(bfQueryModel.rowCount()):
-                            bfRecord = bfQueryModel.record(m)
-                            ipxactFile.write("          <ipxact:field>\n")
-                            ipxactFile.write("            <ipxact:name>%s</ipxact:name>\n"%(bfRecord.value("Name")))
-                            ipxactFile.write("            <ipxact:bitOffset>%s</ipxact:bitOffset>\n"%(bfRecord.value("RegisterOffset")))
-                            ipxactFile.write("            <ipxact:bitWidth>%s</ipxact:bitWidth>\n"%(bfRecord.value("Width")))
-                            ipxactFile.write("            <ipxact:access>%s</ipxact:access>\n"%("read-write"))
-                            ipxactFile.write("            <ipxact:volatile>%s</ipxact:volatile>\n"%("true"))
-                            ipxactFile.write("            <ipxact:resets>\n")
-                            ipxactFile.write("              <ipxact:reset>\n")
-                            ipxactFile.write("                <ipxact:value>%s</ipxact:value>\n"%(str(bfRecord.value("DefaultValue")).replace("0x", "'h")))
-                            ipxactFile.write("              </ipxact:reset>\n")
-                            ipxactFile.write("            </ipxact:resets>\n")
-                            ipxactFile.write("          </ipxact:field>\n")
-                        ipxactFile.write("        </ipxact:register>\n")
+                        for regI in range(start, end + 1):
+                            if regMatch is None:
+                                ipxactFile.write("        <ipxact:register>\n")
+                                ipxactFile.write("          <ipxact:name>%s</ipxact:name>\n"%(regRecord.value("Name")))
+                                ipxactFile.write("          <ipxact:description>%s</ipxact:description>\n"%(regRecord.value("Description")))
+                                ipxactFile.write("          <ipxact:addressOffset>%s</ipxact:addressOffset>\n"%(str(regRecord.value("OffsetAddress")).replace("0x", "'h")))
+                                ipxactFile.write("          <ipxact:size>%s</ipxact:size>\n"%(regRecord.value("Width")))
+                            else:
+                                regAddr = "%s"%(hex(int(regRecord.value("OffsetAddress")) + int(regWidth * (regI - start) / 8)))
+                                ipxactFile.write("        <ipxact:register>\n")
+                                ipxactFile.write("          <ipxact:name>%s%s</ipxact:name>\n"%(regRecord.value("Name"), regI))
+                                ipxactFile.write("          <ipxact:description>%s</ipxact:description>\n"%(regRecord.value("Description")))
+                                ipxactFile.write("          <ipxact:addressOffset>%s</ipxact:addressOffset>\n"%(regAddr.replace("0x", "'h")))
+                                ipxactFile.write("          <ipxact:size>%s</ipxact:size>\n"%(regRecord.value("Width")))
+
+                            # bitfield
+                            bfQueryModel = QSqlQueryModel()
+                            bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
+                            for m in range(bfQueryModel.rowCount()):
+                                bfRecord = bfQueryModel.record(m)
+                                ipxactFile.write("          <ipxact:field>\n")
+                                ipxactFile.write("            <ipxact:name>%s</ipxact:name>\n"%(bfRecord.value("Name")))
+                                ipxactFile.write("            <ipxact:bitOffset>%s</ipxact:bitOffset>\n"%(bfRecord.value("RegisterOffset")))
+                                ipxactFile.write("            <ipxact:bitWidth>%s</ipxact:bitWidth>\n"%(bfRecord.value("Width")))
+                                ipxactFile.write("            <ipxact:access>%s</ipxact:access>\n"%("read-write"))
+                                ipxactFile.write("            <ipxact:volatile>%s</ipxact:volatile>\n"%("true"))
+                                ipxactFile.write("            <ipxact:resets>\n")
+                                ipxactFile.write("              <ipxact:reset>\n")
+                                ipxactFile.write("                <ipxact:value>%s</ipxact:value>\n"%(str(bfRecord.value("DefaultValue")).replace("0x", "'h")))
+                                ipxactFile.write("              </ipxact:reset>\n")
+                                ipxactFile.write("            </ipxact:resets>\n")
+                                ipxactFile.write("          </ipxact:field>\n")
+                            ipxactFile.write("        </ipxact:register>\n")
                     ipxactFile.write("      </ipxact:addressBlock>\n")
                 ipxactFile.write("    </ipxact:memoryMap>\n")
             ipxactFile.write("  </ipxact:memoryMaps>\n")
