@@ -717,7 +717,8 @@ class uiModuleWindow(QWidget):
                 ipxactFile.write("    </ipxact:memoryMap>\n")
             ipxactFile.write("  </ipxact:memoryMaps>\n")
             ipxactFile.write("</ipxact:component>\n")
-            ipxactFile.close()  
+            ipxactFile.close()
+        QMessageBox.information(self, "Exporting ipxact", "Done!", QMessageBox.Yes)  
         return
 
     def exporDocx(self):
