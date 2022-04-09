@@ -194,8 +194,7 @@ class QRegisterConst:
                 table = docx.add_table(1, cols=len(fields), style='Table Grid')
                 for c, (cell, field) in enumerate(zip(table.rows[0].cells, fields)):
                     cell.text = fields[c]
-                    cell._tc.get_or_add_tcPr().append(oxml.parse_xml(r'<w:shd {} w:fill="c0c0c0"/>'.format(oxml.ns.nsdecls('w'))))                
-
+                    cell._tc.get_or_add_tcPr().append(oxml.parse_xml(r'<w:shd {} w:fill="c0c0c0"/>'.format(oxml.ns.nsdecls('w'))))
                 regRe = re.compile('\d+:\d+')                
                 for r in range(regQueryModel.rowCount()):
                     regRecord = regQueryModel.record(r)
@@ -213,19 +212,34 @@ class QRegisterConst:
                         regArray = regMatch.string.split(':')
                         regArray0 = int(regArray[0])
                         regArray1 = int(regArray[1])
-                        for regI in range(regArray0, regArray1):
+                        start = min(regArray0, regArray1)
+                        end   = max(regArray0, regArray1)
+                        for regI in range(start, end + 1):
                             regName = "%s%s"%(regRecord.value("Name"), regI)
-                            regAddr = "%s"%(hex(int(regRecord.value("OffsetAddress")) + int(regWidth * regI / 8)))
+                            regAddr = "%s"%(hex(int(regRecord.value("OffsetAddress")) + int(regWidth * (regI - start) / 8)))
                             row = table.add_row()
                             row.cells[0].text = regName
                             row.cells[1].text = regAddr
-                            row.cells[2].text = regDesc                             
+                            row.cells[2].text = regDesc
 
                 for k in range(regQueryModel.rowCount()):
                     regRecord = regQueryModel.record(k)
-                    docx.add_heading('Register: %s'%(regRecord.value("Name")), level = 4)
-                    docx.add_paragraph('Description : %s\n' \
-                                        'Address : %s'%(regRecord.value("Description"), regRecord.value("OffsetAddress")))
+                    regMatch = regRe.match(regRecord.value("Array"))
+                    if regMatch is None:
+                        docx.add_heading('Register: %s'%(regRecord.value("Name")), level = 4)
+                        docx.add_paragraph('Description : %s\n' \
+                                           'Address : %s'%(regRecord.value("Description"), regRecord.value("OffsetAddress")))
+                    else:
+                        regArray = regMatch.string.split(':')
+                        regArray0 = int(regArray[0])
+                        regArray1 = int(regArray[1])
+                        start = min(regArray0, regArray1)
+                        end   = max(regArray0, regArray1)
+                        regAddrStart = "%s"%(hex(int(regRecord.value("OffsetAddress"))))
+                        regAddrend   = "%s"%(hex(int(regRecord.value("OffsetAddress")) + int(regWidth * (end - start) / 8)))
+                        docx.add_heading('Register: %s%s ~ %s%s'%(regRecord.value("Name"), start, regRecord.value("Name"), end), level = 4)
+                        docx.add_paragraph('Description : %s\n' \
+                                           'Address : %s ~ %s'%(regRecord.value("Description"), regAddrStart, regAddrend))
 
                     # bitfield
                     bfQueryModel = QSqlQueryModel()
