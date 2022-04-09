@@ -37,11 +37,6 @@ class uiModuleWindow(QWidget):
         with open (QRegisterConst.StyleFile) as file:
             style = file.read()
         self.setStyleSheet(style)
-        font = self.ui.tableView.font()
-        #font.setWeight(QFont.Light)
-        font.setPointSize(font.pointSize() - 2)
-        self.ui.tableView.setFont(font)
-        self.ui.tableViewReg.setFont(font)
 
         self.moduleIcon = QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/module32.png'))
         self.regMapIcon = QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/regmap32.png'))
@@ -797,10 +792,7 @@ class uiModuleWindow(QWidget):
                     regItem.setData("Register", QRegisterConst.NameRole)
                     regItem.setData(memMapRecord.value("id"), QRegisterConst.MemMapIdRole)
                     regItem.setData(regMapRecord.value("id"), QRegisterConst.RegMapIdRole)
-                    regItem.setData(regRecord.value("id"), QRegisterConst.RegIdRole)
-                    font = regItem.font()
-                    font.setPointSize(font.pointSize() - 2)
-                    regItem.setFont(font)                    
+                    regItem.setData(regRecord.value("id"), QRegisterConst.RegIdRole)                  
                     regMapitem.appendRow(regItem)
                     if QRegisterConst.recordExist(regRecord) == False:
                         regItem.setData(QColor('grey'), Qt.BackgroundColorRole)
@@ -815,10 +807,7 @@ class uiModuleWindow(QWidget):
                         bfItem.setData(memMapRecord.value("id"), QRegisterConst.MemMapIdRole)
                         bfItem.setData(regMapRecord.value("id"), QRegisterConst.RegMapIdRole)
                         bfItem.setData(regRecord.value("id"), QRegisterConst.RegIdRole)
-                        bfItem.setData(bfRecord.value("id"), QRegisterConst.BfIdRole)
-                        font = bfItem.font()
-                        font.setPointSize(font.pointSize() - 2)
-                        bfItem.setFont(font)                         
+                        bfItem.setData(bfRecord.value("id"), QRegisterConst.BfIdRole)                      
                         regItem.appendRow(bfItem)
                         if QRegisterConst.recordExist(bfRecord) == False:
                             bfItem.setData(QColor('grey'), Qt.BackgroundColorRole)                       
@@ -836,7 +825,6 @@ class uiModuleWindow(QWidget):
                             bfEnumItem.setData(bfRecord.value("id"), QRegisterConst.BfIdRole)
                             bfEnumItem.setData(bfEnumRecord.value("id"), QRegisterConst.BfEnumIdRole)
                             font = bfEnumItem.font()
-                            font.setPointSize(font.pointSize() - 2)
                             font.setItalic(True)
                             bfEnumItem.setFont(font)
                             bfItem.appendRow(bfEnumItem)
@@ -1373,9 +1361,6 @@ class uiModuleWindow(QWidget):
         newRegItem.setData(memoryMapId, QRegisterConst.MemMapIdRole)
         newRegItem.setData(regMapId, QRegisterConst.RegMapIdRole)
         newRegItem.setData(r.value("id"), QRegisterConst.RegIdRole)
-        font = newRegItem.font()
-        font.setPointSize(font.pointSize() - 2)
-        newRegItem.setFont(font) 
                             
         standardItem = self.treeViewTableModel.itemFromIndex(current)
         if tableName == "RegisterMap":
@@ -1408,9 +1393,6 @@ class uiModuleWindow(QWidget):
         newBfItem.setData(regMapId, QRegisterConst.RegMapIdRole)
         newBfItem.setData(regId, QRegisterConst.RegIdRole)
         newBfItem.setData(r.value("id"), QRegisterConst.BfIdRole)
-        font = newBfItem.font()
-        font.setPointSize(font.pointSize() - 2)
-        newBfItem.setFont(font) 
         
         standardItem = self.treeViewTableModel.itemFromIndex(current)
         if tableName == "Register":
@@ -1446,7 +1428,6 @@ class uiModuleWindow(QWidget):
         newBfEnumItem.setData(bfId, QRegisterConst.BfIdRole)
         newBfEnumItem.setData(r.value("id"), QRegisterConst.BfEnumIdRole)
         font = newBfEnumItem.font()
-        font.setPointSize(font.pointSize() - 2)
         font.setItalic(True)
         newBfEnumItem.setFont(font)
 
