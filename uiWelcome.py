@@ -23,6 +23,7 @@ class uiWelcomeWindow(QWidget):
         self.ui.listView.doubleClicked.connect(self.do_listView_doubleCliced)
 
     def updateRecentFiles(self, fileName):
+        # TODO: check all .reg files in ~/.reg folder, and delete all that's changed 3 days before.
         now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
         self.conn = QSqlDatabase.addDatabase("QSQLITE", "%srecent_files.db"%now)
         rf = QDir.homePath() + "/.reg/recent_files.db"

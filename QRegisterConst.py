@@ -132,7 +132,7 @@ class QRegisterConst:
         docx.styles['Heading 2'].font.size = shared.Pt(10)
         docx.styles['Heading 3'].font.size = shared.Pt(9)
         docx.styles['Heading 4'].font.size = shared.Pt(8)
-        docx.styles['Normal'].font.size = shared.Pt(8)
+        docx.styles['Normal'].font.size    = shared.Pt(8)
                     
         # memory map
         memoryMapQueryModel = QSqlQueryModel()

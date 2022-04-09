@@ -1175,8 +1175,8 @@ class uiModuleWindow(QWidget):
                 self.ui.pbAddReg.setEnabled(True)
                 self.ui.pbAddBf.setEnabled(True)
                 self.ui.pbAddBfEnum.setEnabled(False)                
-                self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add bitfield."%(self.ui.pbAddBf.text()))
-                
+                self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add bitfield. Use m:n for register array, like 0:3."%(self.ui.pbAddBf.text()))
+
             elif tableName == "Bitfield": # bf selected, show bf table
                 self.ui.tableView.setVisible(True)
                 self.ui.tableViewReg.setVisible(False)
