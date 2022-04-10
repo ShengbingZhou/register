@@ -331,131 +331,134 @@ class uiModuleWindow(QWidget):
         return fileName
 
     def importYodaSp1(self, fileName):
-        # create temp database
-        now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
-        newName = "__%s%s"%(now, QRegisterConst.DesignFileExt)
-        newName = QDir.homePath() + "/.reg/" + newName   
-        shutil.copyfile(os.path.join(QRegisterConst.BaseDir, "template/module_template.db"), newName)
-        self.newFileName = newName
-        self.newModule = True  
+        try:
+            # create temp database
+            now = datetime.datetime.now().strftime('%Y_%m_%d_%H_%M_%S_%f')
+            newName = "__%s%s"%(now, QRegisterConst.DesignFileExt)
+            newName = QDir.homePath() + "/.reg/" + newName   
+            shutil.copyfile(os.path.join(QRegisterConst.BaseDir, "template/module_template.db"), newName)
+            self.newFileName = newName
+            self.newModule = True  
 
-        # import .sp1 file
-        self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
-        if self.setupDesignViewModels(newName):
-            infoId = self.newInfoRow(self.infoTableModel, now).value("id")
+            # import .sp1 file
+            self.regDebugModels = [] # debug model is a list, each member is mapped to a regmap
+            if self.setupDesignViewModels(newName):
+                infoId = self.newInfoRow(self.infoTableModel, now).value("id")
 
-            # find root
-            sp1 = etree.parse(fileName)
-            root = sp1.getroot()
-    
-            # reset var
-            memMapDisplayOrder = 0
-            regMapDisplayOrder = 0
-            regDisplayOrder = 0
-            bfDisplayOrder = 0
+                # find root
+                sp1 = etree.parse(fileName)
+                root = sp1.getroot()
+        
+                # reset var
+                memMapDisplayOrder = 0
+                regMapDisplayOrder = 0
+                regDisplayOrder = 0
+                bfDisplayOrder = 0
 
-            # find memory map
-            memMapNodes = root.findall('MemoryMap')
-            if len(memMapNodes) == 0:
-                QMessageBox.warning(self, "Error", "Unable to find memory map", QMessageBox.Yes)
-                if os.path.isfile(self.newFileName):
-                    os.remove(self.newFileName)
-                return False
+                # find memory map
+                memMapNodes = root.findall('MemoryMap')
+                if len(memMapNodes) == 0:
+                    QMessageBox.warning(self, "Error", "Unable to find memory map", QMessageBox.Yes)
+                    if os.path.isfile(self.newFileName):
+                        os.remove(self.newFileName)
+                    return False
 
-            # start to import
-            query = QSqlQuery(self.conn)
-            for memMap in memMapNodes: # only one memory map in yoda
-                # add memory record
-                memMapAddr = root.find("Properties/Address").text.lower()
-                a = "INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name) VALUES ('%s', '%s', '%s')"%(memMapDisplayOrder, memMapAddr, "MemoryMap")
-                query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name) VALUES ('%s', \"%s\", '%s')"%(memMapDisplayOrder, memMapAddr, "MemoryMap"))
-                a = query.lastError()
-                query.exec_("SELECT max(id) FROM MemoryMap")
-                query.next()
-                memMapId = query.record().value(0)
-                memMapDisplayOrder += 1
-
-                # import regmap/reg/bf
-                bfNodes = memMap.findall("BitFields/BitField")
-                bfUIDs  = memMap.findall("BitFields/BitField/UID")
-                regMapNodes = memMap.findall("RegisterMaps/RegisterMap")
-
-                # prepare progress dialog
-                dlgProgress = QProgressDialog("Importing %s ..."%fileName, "Cancel", 0, len(regMapNodes), self)
-                dlgProgress.setWindowTitle("Importing...")
-                dlgProgress.setWindowModality(Qt.WindowModal)
-
-                for i in range(len(regMapNodes)):
-                    regMapNode = regMapNodes[i]
-                    regMapName = regMapNode.find("Name").text
-                    regMapDesc = regMapNode.find("Description").text
-                    regMapAddr = regMapNode.find("Address").text.lower()
-                    query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, Name, Description, OffsetAddress) " \
-                                "VALUES ('%s', '%s', '%s', '%s', \"%s\")"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr))
-                    query.exec_("SELECT max(id) FROM RegisterMap")
+                # start to import
+                query = QSqlQuery(self.conn)
+                for memMap in memMapNodes: # only one memory map in yoda
+                    # add memory record
+                    memMapAddr = root.find("Properties/Address").text.lower()
+                    a = "INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name) VALUES ('%s', '%s', '%s')"%(memMapDisplayOrder, memMapAddr, "MemoryMap")
+                    query.exec_("INSERT INTO MemoryMap (DisplayOrder, OffsetAddress, Name) VALUES ('%s', \"%s\", '%s')"%(memMapDisplayOrder, memMapAddr, "MemoryMap"))
+                    a = query.lastError()
+                    query.exec_("SELECT max(id) FROM MemoryMap")
                     query.next()
-                    regMapId = query.record().value(0)
-                    regMapDisplayOrder += 1
+                    memMapId = query.record().value(0)
+                    memMapDisplayOrder += 1
 
-                    dlgProgress.setLabelText("Importing register map '%s' from %s "%(regMapName, fileName))
-                    dlgProgress.setValue(i)
+                    # import regmap/reg/bf
+                    bfNodes = memMap.findall("BitFields/BitField")
+                    bfUIDs  = memMap.findall("BitFields/BitField/UID")
+                    regMapNodes = memMap.findall("RegisterMaps/RegisterMap")
 
-                    regNodes = regMapNode.findall("Registers/Register")
-                    for j in range(len(regNodes)):
-                        regNode  = regNodes[j]
-                        regName  = regNode.find("Name").text
-                        regDesc  = regNode.find("Description").text
-                        regAddr  = regNode.find("Address").text.lower()
-                        regWidth = QRegisterConst.strToInt(regNode.find("Width").text.lower())
-                        regVisibilityNode = regNode.find("Visibility")
-                        regVisibility  = "" if regVisibilityNode is None else regNode.find("Visibility").text.lower()
-                        query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width, Visibility) " \
-                                    "VALUES ('%s', '%s', '%s', '%s', \"%s\", '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth, regVisibility))
-                        query.exec_("SELECT max(id) FROM Register")
+                    # prepare progress dialog
+                    dlgProgress = QProgressDialog("Importing %s ..."%fileName, "Cancel", 0, len(regMapNodes), self)
+                    dlgProgress.setWindowTitle("Importing...")
+                    dlgProgress.setWindowModality(Qt.WindowModal)
+
+                    for i in range(len(regMapNodes)):
+                        regMapNode = regMapNodes[i]
+                        regMapName = regMapNode.find("Name").text
+                        regMapDesc = regMapNode.find("Description").text
+                        regMapAddr = regMapNode.find("Address").text.lower()
+                        query.exec_("INSERT INTO RegisterMap (MemoryMapId, DisplayOrder, Name, Description, OffsetAddress) " \
+                                    "VALUES ('%s', '%s', '%s', '%s', \"%s\")"%(memMapId, regMapDisplayOrder, regMapName, regMapDesc, regMapAddr))
+                        query.exec_("SELECT max(id) FROM RegisterMap")
                         query.next()
-                        regId = query.record().value(0)
-                        regDisplayOrder += 1
+                        regMapId = query.record().value(0)
+                        regMapDisplayOrder += 1
 
-                        bfRefNodes = regNode.findall("BitFieldRefs/BitFieldRef")
-                        for k in range(len(bfRefNodes)):
-                            bfRefNode = bfRefNodes[k]
-                            bfUID = bfRefNode.find("BF-UID").text
-                            regOffset  = QRegisterConst.strToInt(bfRefNode.find("RegOffset").text.lower())
-                            bitOffset  = QRegisterConst.strToInt(bfRefNode.find("BitOffset").text.lower())
-                            sliceWidth = bfRefNode.find("SliceWidth").text
-                            for m in range(len(bfNodes)):
-                                bfNode = bfNodes[m]
-                                if bfUIDs[m].text == bfUID:
-                                    bfName = bfNode.find("Name").text
-                                    if bfName != "RESERVED":
-                                        bfDesc = bfNode.find("Description").text
-                                        bfDfValue = bfNode.find("DefaultValue").text.lower()
-                                        bfAccess  = bfNode.find("Access").text.lower()
-                                        bfVisibility  = bfNode.find("Visibility").text.lower()
-                                        bfWidth = bfNode.find("Width").text
-                                        if sliceWidth != None:
-                                            w = QRegisterConst.strToInt(sliceWidth.lower())
-                                        else:
-                                            w = QRegisterConst.strToInt(bfWidth.lower())
-                                        # TODO: process default value to get sliced value
-                                        query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, Name, Description, RegisterOffset, Width, DefaultValue, Access, Visibility) " \
-                                                    "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', \"%s\", '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, w, bfDfValue, bfAccess, bfVisibility))
-                                        bfDisplayOrder += 1
-                                    break
-                dlgProgress.close()
+                        dlgProgress.setLabelText("Importing register map '%s' from %s "%(regMapName, fileName))
+                        dlgProgress.setValue(i)
 
-            self.memMapTableModel.select()
-            self.regMapTableModel.select()
-            self.regTableModel.select()
-            self.bfTableModel.select()
-            self.setupTreeView()
-            self.memMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
-            self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
-            self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
-            self.bfTableModel.dataChanged.connect(self.do_tableView_dataChanged)
-            self.bfEnumTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+                        regNodes = regMapNode.findall("Registers/Register")
+                        for j in range(len(regNodes)):
+                            regNode  = regNodes[j]
+                            regName  = regNode.find("Name").text
+                            regDesc  = regNode.find("Description").text
+                            regAddr  = regNode.find("Address").text.lower()
+                            regWidth = QRegisterConst.strToInt(regNode.find("Width").text.lower())
+                            regVisibilityNode = regNode.find("Visibility")
+                            regVisibility  = "" if regVisibilityNode is None else regNode.find("Visibility").text.lower()
+                            query.exec_("INSERT INTO Register (RegisterMapId, DisplayOrder, Name, Description, OffsetAddress, Width, Visibility) " \
+                                        "VALUES ('%s', '%s', '%s', '%s', \"%s\", '%s', '%s')"%(regMapId, regDisplayOrder, regName, regDesc, regAddr, regWidth, regVisibility))
+                            query.exec_("SELECT max(id) FROM Register")
+                            query.next()
+                            regId = query.record().value(0)
+                            regDisplayOrder += 1
 
-        return True    
+                            bfRefNodes = regNode.findall("BitFieldRefs/BitFieldRef")
+                            for k in range(len(bfRefNodes)):
+                                bfRefNode = bfRefNodes[k]
+                                bfUID = bfRefNode.find("BF-UID").text
+                                regOffset  = QRegisterConst.strToInt(bfRefNode.find("RegOffset").text.lower())
+                                bitOffset  = QRegisterConst.strToInt(bfRefNode.find("BitOffset").text.lower())
+                                sliceWidth = bfRefNode.find("SliceWidth").text
+                                for m in range(len(bfNodes)):
+                                    bfNode = bfNodes[m]
+                                    if bfUIDs[m].text == bfUID:
+                                        bfName = bfNode.find("Name").text
+                                        if bfName != "RESERVED":
+                                            bfDesc = bfNode.find("Description").text
+                                            bfDfValue = bfNode.find("DefaultValue").text.lower()
+                                            bfAccess  = bfNode.find("Access").text.lower()
+                                            bfVisibility  = bfNode.find("Visibility").text.lower()
+                                            bfWidth = bfNode.find("Width").text
+                                            if sliceWidth != None:
+                                                w = QRegisterConst.strToInt(sliceWidth.lower())
+                                            else:
+                                                w = QRegisterConst.strToInt(bfWidth.lower())
+                                            # TODO: process default value to get sliced value
+                                            query.exec_("INSERT INTO Bitfield (RegisterId, DisplayOrder, Name, Description, RegisterOffset, Width, DefaultValue, Access, Visibility) " \
+                                                        "VALUES ('%s', '%s', '%s', '%s', '%s', '%s', \"%s\", '%s', '%s')"%(regId, bfDisplayOrder, bfName, bfDesc, regOffset, w, bfDfValue, bfAccess, bfVisibility))
+                                            bfDisplayOrder += 1
+                                        break
+                    dlgProgress.close()
+
+                self.memMapTableModel.select()
+                self.regMapTableModel.select()
+                self.regTableModel.select()
+                self.bfTableModel.select()
+                self.setupTreeView()
+                self.memMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+                self.regMapTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+                self.regTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+                self.bfTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+                self.bfEnumTableModel.dataChanged.connect(self.do_tableView_dataChanged)
+        except BaseException as e:
+            QMessageBox.warning(self, "Error", "Failed to import. \n%s"%str(e), QMessageBox.Yes)
+            return False
+        return True
     
     def importIpxact(self, fileName):
         try:
@@ -622,7 +625,9 @@ class uiModuleWindow(QWidget):
 
     def exporIpxact(self):
         fileName, filterUsed = QFileDialog.getSaveFileName(self, "Export ipxact file", QDir.homePath(), "ipxact File (*.xml)")
-        if fileName !='':
+        if fileName == '':
+            return
+        try:
             f_name, f_ext = os.path.splitext(os.path.basename(fileName))
             # add .xml when saving ipxact file
             if f_ext != ".xml":
@@ -670,6 +675,7 @@ class uiModuleWindow(QWidget):
                         regRe     = re.compile('\d+:\d+')  
                         regMatch  = regRe.match(regRecord.value("Array"))
                         if regMatch is None:
+                            regWidth = 0
                             start = 0
                             end   = 0
                         else:
@@ -719,7 +725,10 @@ class uiModuleWindow(QWidget):
             ipxactFile.write("  </ipxact:memoryMaps>\n")
             ipxactFile.write("</ipxact:component>\n")
             ipxactFile.close()
-        QMessageBox.information(self, "Exporting ipxact", "Done!", QMessageBox.Yes)  
+        except BaseException as e:
+            QMessageBox.warning(self, "Exporting ipxact", str(e), QMessageBox.Yes)
+            return
+        QMessageBox.information(self, "Exporting ipxact", "Done!", QMessageBox.Yes)
         return
 
     def exporDocx(self):
