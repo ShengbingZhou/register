@@ -34,10 +34,16 @@ class QRegDebugValueEditDelegate(QStyledItemDelegate):
         return
 
     def setEditorData(self, editor, index: QModelIndex):
-        self.value = index.model().data(index, Qt.EditRole)
+        value = index.model().data(index, Qt.DisplayRole)
+        driverMod   = __import__("QRegAccessDriver")
+        driverClass = getattr(driverMod, "QRegAccessClass")
+        driverClass.writeReg(0x0000, 0x0001)
 
     def setModelData(self, editor, model, index: QModelIndex):
-        model.setData(index, self.value, Qt.EditRole)
+        driverMod   = __import__("QRegAccessDriver")
+        driverClass = getattr(driverMod, "QRegAccessClass")
+        value = driverClass.readReg(0x0000)
+        model.setData(index, value, Qt.DisplayRole)
 
     def updateEditorGeometry(self, editor, option: QStyleOptionViewItem, index: QModelIndex):
         return editor.setGeometry(option.rect)
