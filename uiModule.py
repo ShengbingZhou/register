@@ -920,14 +920,14 @@ class uiModuleWindow(QWidget):
 
                 # bitfield
                 bfQueryModel = QSqlQueryModel()
-                bfQueryModel.setQuery("SELECT Name, Value FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
+                bfQueryModel.setQuery("SELECT Name, DefaultValue, Value FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
                 for k in range(bfQueryModel.rowCount()):
                     bfRecord = bfQueryModel.record(k)
                     if QRegisterConst.recordExist(bfRecord) == True:
                         bfItem0 = QStandardItem(" ")
                         bfItem1 = QStandardItem(" ")
                         bfItem2 = QStandardItem(bfRecord.value("name"))
-                        bfItem3 = QStandardItem(bfRecord.value("Value"))
+                        bfItem3 = QStandardItem(bfRecord.value("DefaultValue"))
                         bfItems = [bfItem0, bfItem1, bfItem2, bfItem3]
                         for r in bfItems:
                             r.setData("Bitfield", QRegisterConst.NameRole)                        
