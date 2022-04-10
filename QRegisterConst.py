@@ -53,6 +53,15 @@ class QRegisterConst:
     BfEnumIdRole   = Qt.UserRole + 7
     RegMapTypeRole = Qt.UserRole + 8
 
+    # hardware access driver
+    try:
+        DriverPath  = QDir.homePath() + "/QRegisterAccessDriver"
+        sys.path.append(DriverPath)
+        DriverMod   = __import__("QRegisterAccess")
+        DriverClass = getattr(DriverMod, "QRegisterAccess")
+    except BaseException as e:
+        DriverClass= None
+
     @staticmethod
     def strToInt(text):
         if text is None:
