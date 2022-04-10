@@ -65,12 +65,18 @@ class QRegisterConst:
         if text.startswith("'d"):
             text = text.replace("'d", "") # 'd1234
             return int(text)
+        if text.startswith("'b"):
+            text = text.replace("'b", "") # 'b1011
+            return int(text, 2)
         if "'h" in text:                  # 16'h1234
             t = text.split(text, "'h")
             return int(t[1], 16)
         if "'d" in text:                  # 16'd1234
             t = text.split(text, "'d")
             return int(t[1])
+        if "'b" in text:                  # 16'b1011
+            t = text.split(text, "'b")
+            return int(t[1], 2)
         return int(text)
 
     @staticmethod
