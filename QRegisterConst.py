@@ -254,7 +254,7 @@ class QRegisterConst:
                         end   = max(regArray0, regArray1)
                         for regI in range(start, end + 1):
                             regName = "%s%s"%(regRecord.value("Name"), regI)
-                            regAddr = "%s"%(hex(QRegisterConst.strToInt(regRecord.value("OffsetAddress")) + int(regWidth * (regI - start) / 8)))
+                            regAddr = hex(QRegisterConst.strToInt(regRecord.value("OffsetAddress")) + int(regWidth * (regI - start) / 8))
                             row = table.add_row()
                             row.cells[0].text = regName
                             row.cells[1].text = regAddr
@@ -273,8 +273,8 @@ class QRegisterConst:
                         regArray1 = int(regArray[1])
                         start = min(regArray0, regArray1)
                         end   = max(regArray0, regArray1)
-                        regAddrStart = "%s"%(hex(QRegisterConst.strToInt(regRecord.value("OffsetAddress"))))
-                        regAddrend   = "%s"%(hex(QRegisterConst.strToInt(regRecord.value("OffsetAddress")) + int(regWidth * (end - start) / 8)))
+                        regAddrStart = hex(QRegisterConst.strToInt(regRecord.value("OffsetAddress")))
+                        regAddrend   = hex(QRegisterConst.strToInt(regRecord.value("OffsetAddress")) + int(regWidth * (end - start) / 8))
                         docx.add_heading('Register: %s%s ~ %s%s'%(regRecord.value("Name"), start, regRecord.value("Name"), end), level = 4)
                         docx.add_paragraph('Description : %s\n' \
                                            'Address : %s ~ %s'%(regRecord.value("Description"), regAddrStart, regAddrend))

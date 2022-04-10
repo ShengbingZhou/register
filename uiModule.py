@@ -681,14 +681,14 @@ class uiModuleWindow(QWidget):
                             end   = max(regArray0, regArray1)
 
                         for regI in range(start, end + 1):
-                            if regMatch is None:
+                            regAddr = hex(QRegisterConst.strToInt(regRecord.value("OffsetAddress")) + int(regWidth * (regI - start) / 8))
+                            if regMatch is None:                                
                                 ipxactFile.write("        <ipxact:register>\n")
                                 ipxactFile.write("          <ipxact:name>%s</ipxact:name>\n"%(regRecord.value("Name")))
                                 ipxactFile.write("          <ipxact:description>%s</ipxact:description>\n"%(regRecord.value("Description")))
-                                ipxactFile.write("          <ipxact:addressOffset>%s</ipxact:addressOffset>\n"%(regRecord.value("OffsetAddress").replace("0x", "'h")))
+                                ipxactFile.write("          <ipxact:addressOffset>%s</ipxact:addressOffset>\n"%(regAddr.replace("0x", "'h")))
                                 ipxactFile.write("          <ipxact:size>%s</ipxact:size>\n"%(regRecord.value("Width")))
                             else:
-                                regAddr = "%s"%(hex(QRegisterConst.strToInt(regRecord.value("OffsetAddress")) + int(regWidth * (regI - start) / 8)))
                                 ipxactFile.write("        <ipxact:register>\n")
                                 ipxactFile.write("          <ipxact:name>%s%s</ipxact:name>\n"%(regRecord.value("Name"), regI))
                                 ipxactFile.write("          <ipxact:description>%s</ipxact:description>\n"%(regRecord.value("Description")))
@@ -700,6 +700,7 @@ class uiModuleWindow(QWidget):
                             bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
                             for m in range(bfQueryModel.rowCount()):
                                 bfRecord = bfQueryModel.record(m)
+                                bfDefaultValue = hex(QRegisterConst.strToInt(bfRecord.value("DefaultValue")))
                                 ipxactFile.write("          <ipxact:field>\n")
                                 ipxactFile.write("            <ipxact:name>%s</ipxact:name>\n"%(bfRecord.value("Name")))
                                 ipxactFile.write("            <ipxact:bitOffset>%s</ipxact:bitOffset>\n"%(bfRecord.value("RegisterOffset")))
@@ -708,7 +709,7 @@ class uiModuleWindow(QWidget):
                                 ipxactFile.write("            <ipxact:volatile>%s</ipxact:volatile>\n"%("true"))
                                 ipxactFile.write("            <ipxact:resets>\n")
                                 ipxactFile.write("              <ipxact:reset>\n")
-                                ipxactFile.write("                <ipxact:value>%s</ipxact:value>\n"%(bfRecord.value("DefaultValue")).replace("0x", "'h"))
+                                ipxactFile.write("                <ipxact:value>%s</ipxact:value>\n"%(bfDefaultValue.replace("0x", "'h")))
                                 ipxactFile.write("              </ipxact:reset>\n")
                                 ipxactFile.write("            </ipxact:resets>\n")
                                 ipxactFile.write("          </ipxact:field>\n")
