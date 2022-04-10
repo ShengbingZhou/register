@@ -44,7 +44,7 @@ class QRegisterConst:
     RegAccessValues = ['r', 'w', 'rw', 'rc', 'wc']
 
     # special role for treeview item
-    NameRole       = Qt.UserRole + 1
+    TableNameRole  = Qt.UserRole + 1
     infoIdRole     = Qt.UserRole + 2
     MemMapIdRole   = Qt.UserRole + 3
     RegMapIdRole   = Qt.UserRole + 4

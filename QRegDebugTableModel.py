@@ -21,9 +21,9 @@ class QRegDebugTableModel(QStandardItemModel):
     def data(self, index, role):
         value = QStandardItemModel.data(self, index, role)
         if role == Qt.BackgroundColorRole:
-            tableName = QStandardItemModel.data(self, index, QRegisterConst.NameRole)
+            tableName = index.data(QRegisterConst.TableNameRole)
             #if tableName == "Register":
-            #    value = QColor('lightgrey')
+            #    value = QColor('lightgrey') # highlight register row
         return value
 
     def setData(self, index, value, role=Qt.EditRole):
