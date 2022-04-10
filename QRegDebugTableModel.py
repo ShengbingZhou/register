@@ -14,7 +14,7 @@ class QRegDebugTableModel(QStandardItemModel):
        
     def flags(self, index):
         flags = QStandardItemModel.flags(self, index)                
-        if index.column() != 3: # value
+        if index.column() != 3: # value column
             flags &= ~Qt.ItemIsEditable
         return flags
 
