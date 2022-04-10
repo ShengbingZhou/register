@@ -42,10 +42,6 @@ class QRegDebugValueEditDelegate(QStyledItemDelegate):
     def updateEditorGeometry(self, editor, option: QStyleOptionViewItem, index: QModelIndex):
         return editor.setGeometry(option.rect)
 
-    def paint(self, painter, option, index):
-            x = option.rect.left()
-            y = option.rect.top()
-
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
         size = super().sizeHint(option, index)
         size.setWidth(200)
