@@ -27,11 +27,11 @@ class QRegDebugTableModel(QStandardItemModel):
         return value
 
     def setData(self, index, value, role=Qt.EditRole):        
-        if QRegisterConst.DriverClass is not None:
+        if QRegisterConst.RegisterAccessDriverClass is not None:
             tableName = index.data(QRegisterConst.TableNameRole)
             if tableName == "Register":            
-                QRegisterConst.DriverClass.writeReg(0x0000, 0x0001)
-                value = hex(QRegisterConst.DriverClass.readReg(0x0000))
+                QRegisterConst.RegisterAccessDriverClass.writeReg(0x0000, 0x0001)
+                value = hex(QRegisterConst.RegisterAccessDriverClass.readReg(0x0000))
             if tableName == "Bitfield":
                 # TODO: calculate register value if curent if bit field
                 a = 0

@@ -1,5 +1,6 @@
 # built-in package
 import os
+import sys
 import shutil
 import datetime
 import re
@@ -121,7 +122,17 @@ class uiModuleWindow(QWidget):
             self.ui.pbReadSelected.setVisible(isDebugView)
             self.ui.pbWriteAll.setVisible(isDebugView)
             if (self.view == QRegisterConst.DebugView):
-                self.setupDebugViewModels()    
+                self.setupDebugViewModels()
+                if QRegisterConst.RegisterAccessDriverClass is None:
+                    if os.path.isfile(QDir.homePath() + "/QRegisterAccessDriver/QRegisterAccess.py"):        
+                        try:
+                            DriverPath  = QDir.homePath() + "/QRegisterAccessDriver"
+                            sys.path.append(DriverPath)
+                            DriverMod   = __import__("QRegisterAccess")
+                            QRegisterConst.RegisterAccessDriverClass = getattr(DriverMod, "QRegisterAccess")
+                        except BaseException as e:
+                            QRegisterConst.RegisterAccessDriverClass= None
+                            QMessageBox.warning(self, "Error", "Failed to import register access driver. %s"%str(e), QMessageBox.Yes)                
             self.do_treeView_currentChanged(self.ui.treeView.selectedIndexes().pop(), None)
 
     def getNewRowAndDisplayOrder(self, model, row, maxOrder):

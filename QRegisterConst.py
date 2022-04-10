@@ -41,7 +41,7 @@ class QRegisterConst:
     RegMod = 1
 
     # reg access value option
-    RegAccessValues = ['r', 'w', 'rw', 'rc', 'wc']
+    RegAccessTypes = ['r', 'w', 'rw', 'rc', 'wc']
 
     # special role for treeview item
     TableNameRole  = Qt.UserRole + 1
@@ -54,13 +54,7 @@ class QRegisterConst:
     RegMapTypeRole = Qt.UserRole + 8
 
     # hardware access driver
-    try:
-        DriverPath  = QDir.homePath() + "/QRegisterAccessDriver"
-        sys.path.append(DriverPath)
-        DriverMod   = __import__("QRegisterAccess")
-        DriverClass = getattr(DriverMod, "QRegisterAccess")
-    except BaseException as e:
-        DriverClass= None
+    RegisterAccessDriverClass= None
 
     @staticmethod
     def strToInt(text):
