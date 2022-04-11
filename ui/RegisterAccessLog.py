@@ -26,25 +26,18 @@ class Ui_RegisterAccessWindow(object):
         self.frame.setFrameShadow(QFrame.Raised)
         self.gridLayout = QGridLayout(self.frame)
         self.gridLayout.setObjectName(u"gridLayout")
-        self.pbOpen = QPushButton(self.frame)
-        self.pbOpen.setObjectName(u"pbOpen")
+        self.gridLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
+        self.pbSave = QPushButton(self.frame)
+        self.pbSave.setObjectName(u"pbSave")
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.pbOpen.sizePolicy().hasHeightForWidth())
-        self.pbOpen.setSizePolicy(sizePolicy)
-        self.pbOpen.setMinimumSize(QSize(200, 0))
-
-        self.gridLayout.addWidget(self.pbOpen, 1, 0, 1, 1)
-
-        self.pbSave = QPushButton(self.frame)
-        self.pbSave.setObjectName(u"pbSave")
         sizePolicy.setHeightForWidth(self.pbSave.sizePolicy().hasHeightForWidth())
         self.pbSave.setSizePolicy(sizePolicy)
         self.pbSave.setMinimumSize(QSize(200, 0))
         self.pbSave.setBaseSize(QSize(0, 0))
 
-        self.gridLayout.addWidget(self.pbSave, 1, 1, 1, 1)
+        self.gridLayout.addWidget(self.pbSave, 0, 1, 1, 1)
 
         self.pbRun = QPushButton(self.frame)
         self.pbRun.setObjectName(u"pbRun")
@@ -53,7 +46,28 @@ class Ui_RegisterAccessWindow(object):
         self.pbRun.setMinimumSize(QSize(200, 0))
         self.pbRun.setBaseSize(QSize(0, 0))
 
-        self.gridLayout.addWidget(self.pbRun, 1, 3, 1, 1)
+        self.gridLayout.addWidget(self.pbRun, 0, 3, 1, 1)
+
+        self.label = QLabel(self.frame)
+        self.label.setObjectName(u"label")
+
+        self.gridLayout.addWidget(self.label, 0, 4, 1, 1)
+
+        self.pbOpen = QPushButton(self.frame)
+        self.pbOpen.setObjectName(u"pbOpen")
+        sizePolicy.setHeightForWidth(self.pbOpen.sizePolicy().hasHeightForWidth())
+        self.pbOpen.setSizePolicy(sizePolicy)
+        self.pbOpen.setMinimumSize(QSize(200, 0))
+
+        self.gridLayout.addWidget(self.pbOpen, 0, 0, 1, 1)
+
+        self.pbClear = QPushButton(self.frame)
+        self.pbClear.setObjectName(u"pbClear")
+        sizePolicy.setHeightForWidth(self.pbClear.sizePolicy().hasHeightForWidth())
+        self.pbClear.setSizePolicy(sizePolicy)
+        self.pbClear.setMinimumSize(QSize(200, 0))
+
+        self.gridLayout.addWidget(self.pbClear, 0, 2, 1, 1)
 
 
         self.verticalLayout.addWidget(self.frame)
@@ -69,7 +83,7 @@ class Ui_RegisterAccessWindow(object):
         self.frame_2.setFrameShadow(QFrame.Raised)
         self.verticalLayout_2 = QVBoxLayout(self.frame_2)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.txtReg = QTextBrowser(self.frame_2)
+        self.txtReg = QTextEdit(self.frame_2)
         self.txtReg.setObjectName(u"txtReg")
 
         self.verticalLayout_2.addWidget(self.txtReg)
@@ -85,8 +99,10 @@ class Ui_RegisterAccessWindow(object):
 
     def retranslateUi(self, RegisterAccessWindow):
         RegisterAccessWindow.setWindowTitle(QCoreApplication.translate("RegisterAccessWindow", u"Form", None))
-        self.pbOpen.setText(QCoreApplication.translate("RegisterAccessWindow", u"Open", None))
         self.pbSave.setText(QCoreApplication.translate("RegisterAccessWindow", u"Save", None))
         self.pbRun.setText(QCoreApplication.translate("RegisterAccessWindow", u"Run", None))
+        self.label.setText(QCoreApplication.translate("RegisterAccessWindow", u"TextLabel", None))
+        self.pbOpen.setText(QCoreApplication.translate("RegisterAccessWindow", u"Open", None))
+        self.pbClear.setText(QCoreApplication.translate("RegisterAccessWindow", u"Clear", None))
     # retranslateUi
 

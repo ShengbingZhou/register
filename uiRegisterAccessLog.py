@@ -11,6 +11,7 @@ class uiRegAccessLogWindow(QWidget):
         super().__init__(parent)
         self.ui = Ui_RegisterAccessWindow()
         self.ui.setupUi(self)
+        self.ui.label.setText("")
         self.tabType = QRegisterConst.RegLogTab
         with open (QRegisterConst.StyleFile) as file:
             style = file.read()
@@ -18,3 +19,6 @@ class uiRegAccessLogWindow(QWidget):
 
     def setMainWindow(self, mainWindow):
         self.mainWindow = mainWindow
+
+    def appendRegLog(self, line):
+        self.ui.txtReg.append(line)

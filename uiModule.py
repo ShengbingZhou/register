@@ -924,6 +924,7 @@ class uiModuleWindow(QWidget):
                 debugModel = QRegDebugTableModel()
                 debugModel.setRegMapId(regMapId)
                 debugModel.setConn(self.conn)
+                debugModel.regWritten.connect(self.do_regWritten)
                 debugModel.setHorizontalHeaderLabels(["Name", "Address", "Description", "Value"])
                 self.regDebugModels.append(debugModel)
 
@@ -967,6 +968,10 @@ class uiModuleWindow(QWidget):
                             r.setData(regId,      QRegisterConst.RegIdRole)
                             r.setData(bfId,       QRegisterConst.BfIdRole)
                         debugModel.appendRow(bfItems)
+
+    @Slot()
+    def do_regWritten(self, rw, regAddr, regData):
+        self.mainWindow.appendRegLog("%s,%s,%s"%(rw, regAddr, regData))
 
     @Slot('QItemSelection', 'QItemSelection')
     def do_tableView_selectionChanged(self, selected, deselected):

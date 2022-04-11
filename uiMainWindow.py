@@ -71,6 +71,9 @@ class uiMainWindow(QMainWindow):
                 self.welcomeWindow.updateRecentFiles(fileName)
         return
 
+    def appendRegLog(self, line):
+        self.regLogWindow.appendRegLog(line)
+
     @Slot(int)
     def on_tabWidget_tabCloseRequested(self, index):
         tab = self.ui.tabWidget.widget(index)

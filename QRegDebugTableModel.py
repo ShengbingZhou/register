@@ -1,10 +1,12 @@
 from PySide2.QtWidgets import QWidget, QStyledItemDelegate, QStyleOptionViewItem, QLabel
 from PySide2.QtSql import QSqlDatabase, QSqlQueryModel, QSqlQuery
-from PySide2.QtCore import Qt, QAbstractTableModel, QModelIndex, QSize
+from PySide2.QtCore import Qt, QAbstractTableModel, QModelIndex, QSize, Signal
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QColor, QIcon, QPainter
 from QRegisterConst import QRegisterConst
 
 class QRegDebugTableModel(QStandardItemModel):
+
+    regWritten = Signal(str, str, str)
 
     def __init__(self):
         QStandardItemModel.__init__(self)
@@ -68,6 +70,9 @@ class QRegDebugTableModel(QStandardItemModel):
         if QRegisterConst.RegisterAccessDriverClass is not None:
             QRegisterConst.RegisterAccessDriverClass.writeReg(regAddr, regValue)
             regValue = QRegisterConst.RegisterAccessDriverClass.readReg(regAddr)
+
+        # trigger signal
+        self.regWritten.emit("w", hex(regAddr), hex(regValue))
 
         # update register and bitfield display value
         value = hex(regValue) # default as reg return value, will be overwritten if it is for bitfield

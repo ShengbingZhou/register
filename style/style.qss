@@ -14,6 +14,10 @@ QListView::Item {
 	height: 30px;
 }
 
+QTabBar::tab {
+    min-width: 160px;
+}
+
 QPushButton {
 	border-style: solid;
 	border-top-color: rgb(215, 215, 215);
