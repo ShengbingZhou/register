@@ -11,6 +11,7 @@ from PySide2.QtGui import QIcon
 from ui.Main import Ui_MainWindow
 from uiWelcome import uiWelcomeWindow
 from uiModule import uiModuleWindow
+from uiRegisterAccessLog import uiRegAccessLogWindow
 from QRegisterConst import QRegisterConst
 
 class uiMainWindow(QMainWindow):
@@ -42,10 +43,16 @@ class uiMainWindow(QMainWindow):
         self.welcomeWindow.setMainWindow(self)
         self.ui.tabWidget.addTab(self.welcomeWindow, "Welcome")
         self.ui.tabWidget.tabBar().setTabButton(0, QTabBar.RightSide, None)
+        
+        # create reigster log tab but hide it at default
+        self.regLogWindow = uiRegAccessLogWindow(self)
+        self.regLogWindow.setMainWindow(self)
+        index = self.ui.tabWidget.addTab(self.regLogWindow, "RegLog")
+        self.ui.tabWidget.setTabVisible(index, False)
     
     def closeEvent(self, event):
         for i in range(self.ui.tabWidget.count()):
-            tab = moduleWindow = self.ui.tabWidget.widget(i)
+            tab = self.ui.tabWidget.widget(i)
             tab.close()
         event.accept()
 
@@ -67,12 +74,23 @@ class uiMainWindow(QMainWindow):
     @Slot(int)
     def on_tabWidget_tabCloseRequested(self, index):
         tab = self.ui.tabWidget.widget(index)
-        tab.close()
+        if tab.tabType == QRegisterConst.RegLogTab:            
+            self.ui.tabWidget.setTabVisible(index, False)
+        else:
+            tab.close()
         return
 
     @Slot()
     def on_actionAbout_triggered(self):
         QMessageBox.information(self, "About", "Copyright by @ShengbingZhou (shengbingzhou@outlook.com) \n\n Source code link: https://github.dev/ShengbingZhou/register \n\n", QMessageBox.Yes)
+
+    @Slot()
+    def on_actionRegister_Access_Log_triggered(self):
+        for i in range(self.ui.tabWidget.count()):
+            tab = self.ui.tabWidget.widget(i)
+            if tab.tabType == QRegisterConst.RegLogTab:            
+                self.ui.tabWidget.setTabVisible(i, True)
+                self.ui.tabWidget.setCurrentIndex(i)
 
     @Slot()
     def on_actionNew_triggered(self):

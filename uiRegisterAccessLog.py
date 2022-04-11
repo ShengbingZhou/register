@@ -5,7 +5,7 @@ from PySide2.QtWidgets import QWidget
 from ui.RegisterAccessLog import Ui_RegisterAccessWindow
 from QRegisterConst import QRegisterConst
 
-class uiWelcomeWindow(QWidget):
+class uiRegAccessLogWindow(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -16,3 +16,5 @@ class uiWelcomeWindow(QWidget):
             style = file.read()
         self.setStyleSheet(style)
 
+    def setMainWindow(self, mainWindow):
+        self.mainWindow = mainWindow
