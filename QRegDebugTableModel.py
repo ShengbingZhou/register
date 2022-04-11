@@ -67,7 +67,7 @@ class QRegDebugTableModel(QStandardItemModel):
         # access hardware
         if QRegisterConst.RegisterAccessDriverClass is not None:
             QRegisterConst.RegisterAccessDriverClass.writeReg(regAddr, regValue)
-            regValue = hex(QRegisterConst.RegisterAccessDriverClass.readReg(regAddr))
+            regValue = QRegisterConst.RegisterAccessDriverClass.readReg(regAddr)
 
         # update register and bitfield display value
         value = hex(regValue) # default as reg return value, will be overwritten if it is for bitfield
