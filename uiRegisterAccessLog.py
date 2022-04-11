@@ -11,6 +11,7 @@ class uiWelcomeWindow(QWidget):
         super().__init__(parent)
         self.ui = Ui_RegisterAccessWindow()
         self.ui.setupUi(self)
+        self.tabType = QRegisterConst.RegLogTab
         with open (QRegisterConst.StyleFile) as file:
             style = file.read()
         self.setStyleSheet(style)

@@ -35,13 +35,12 @@ class uiMainWindow(QMainWindow):
         # TODO: add icon for action items?
         #self.ui.actionNew.setIcon(QIcon(os.path.join(QRegisterConst.BaseDir, "icon/new32.png")))
         
-        # add welcome tab
+        # add 1st tab: welcome tab
         self.welcomeWindow = uiWelcomeWindow(self)
         self.welcomeWindow.setAttribute(Qt.WA_DeleteOnClose)
         self.welcomeWindow.updateRecentFiles('')
         self.welcomeWindow.setMainWindow(self)
-        index = self.ui.tabWidget.addTab(self.welcomeWindow, QRegisterConst.WelcomeTabText)
-        self.ui.tabWidget.setCurrentIndex(index)   
+        self.ui.tabWidget.addTab(self.welcomeWindow, "Welcome")
         self.ui.tabWidget.tabBar().setTabButton(0, QTabBar.RightSide, None)
     
     def closeEvent(self, event):
@@ -67,8 +66,6 @@ class uiMainWindow(QMainWindow):
 
     @Slot(int)
     def on_tabWidget_tabCloseRequested(self, index):
-        if (index < 0):
-            return
         tab = self.ui.tabWidget.widget(index)
         tab.close()
         return
@@ -128,30 +125,27 @@ class uiMainWindow(QMainWindow):
     def on_actionExportIP_XACT_triggered(self):
         if self.ui.tabWidget.currentIndex() < 0:
             return
-        tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
-        if tabText != QRegisterConst.WelcomeTabText:
-            moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-            moduleWindow.exporIpxact()
+        tab = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        if tab.tabType == QRegisterConst.ModuleTab:
+            tab.exporIpxact()
         return  
 
     @Slot()
     def on_actionExportDocx_triggered(self):
         if self.ui.tabWidget.currentIndex() < 0:
             return
-        tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
-        if tabText != QRegisterConst.WelcomeTabText:
-            moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-            moduleWindow.exporDocx()
+        tab = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        if tab.tabType == QRegisterConst.ModuleTab:
+            tab.exporDocx()
         return        
 
     @Slot()
     def on_actionSave_triggered(self):
         if self.ui.tabWidget.currentIndex() < 0:
             return
-        tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
-        if tabText != QRegisterConst.WelcomeTabText:
-            moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-            fileName = moduleWindow.saveDatabase()
+        tab = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        if tab.tabType == QRegisterConst.ModuleTab:
+            fileName = tab.saveDatabase()
             if fileName != '':
                 f_name, f_ext = os.path.splitext(os.path.basename(fileName))
                 self.ui.tabWidget.setTabText(self.ui.tabWidget.currentIndex(), f_name)
@@ -167,30 +161,27 @@ class uiMainWindow(QMainWindow):
     def on_actionDesignView_triggered(self):
         if self.ui.tabWidget.currentIndex() < 0:
             return
-        tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
-        if tabText != QRegisterConst.WelcomeTabText:
-            moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-            moduleWindow.setView(QRegisterConst.DesignView)
+        tab = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        if tab.tabType == QRegisterConst.ModuleTab:
+            tab.setView(QRegisterConst.DesignView)
         return
     
     @Slot()
     def on_actionDebugView_triggered(self):
         if self.ui.tabWidget.currentIndex() < 0:
             return
-        tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
-        if tabText != QRegisterConst.WelcomeTabText:
-            moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-            moduleWindow.setView(QRegisterConst.DebugView)
+        tab = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        if tab.tabType == QRegisterConst.ModuleTab:
+            tab.setView(QRegisterConst.DebugView)
         return
     
     @Slot()
     def on_actionClose_triggered(self):
         if self.ui.tabWidget.currentIndex() < 0:
             return
-        tabText = self.ui.tabWidget.tabText(self.ui.tabWidget.currentIndex())
-        if tabText != QRegisterConst.WelcomeTabText:
-            moduleWindow = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
-            moduleWindow.close()
+        tab = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        if tab.tabType == QRegisterConst.ModuleTab:
+            tab.close()
         
     @Slot()
     def on_actionExit_triggered(self):

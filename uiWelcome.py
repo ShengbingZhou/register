@@ -16,6 +16,7 @@ class uiWelcomeWindow(QWidget):
         self.ui = Ui_WelcomeWindow()
         self.ui.setupUi(self)
         self.ui.listView.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.tabType = QRegisterConst.WelcomeTab
         self.icon = QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/file32.png'))
         with open (QRegisterConst.StyleFile) as file:
             style = file.read()

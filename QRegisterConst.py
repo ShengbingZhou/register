@@ -29,8 +29,10 @@ class QRegisterConst:
     # design file externsion
     DesignFileExt = ".reg"
 
-    # welcome tab text const
-    WelcomeTabText = "Welcome"
+    # tab type const
+    WelcomeTab = 0
+    ModuleTab  = 1
+    RegLogTab  = 2
     
     # module view const
     DesignView  = 0

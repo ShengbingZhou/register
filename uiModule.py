@@ -36,6 +36,7 @@ class uiModuleWindow(QWidget):
         self.ui.tableViewReg.setAlternatingRowColors(True)
         self.ui.tableViewReg.setVisible(False)
         self.ui.labelDescription.installEventFilter(self)
+        self.tabType = QRegisterConst.ModuleTab
         with open (QRegisterConst.StyleFile) as file:
             style = file.read()
         self.setStyleSheet(style)
