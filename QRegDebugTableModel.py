@@ -6,17 +6,21 @@ from QRegisterConst import QRegisterConst
 
 class QRegDebugTableModel(QStandardItemModel):
 
-    regWritten = Signal(str, str, str)
+    regWritten = Signal(str, str, str, str)
+    modName = ""
 
     def __init__(self):
         QStandardItemModel.__init__(self)
         
-    def setRegMapId(self, id):
-        self.id = id
-
     def setConn(self, conn):
         self.conn = conn
        
+    def setModuleName(self, moduleName):
+        self.modName = moduleName
+
+    def setRegMapId(self, id):
+        self.id = id
+               
     def flags(self, index):
         flags = QStandardItemModel.flags(self, index)               
         if index.column() != 3: # Value column
@@ -66,13 +70,13 @@ class QRegDebugTableModel(QStandardItemModel):
                     regValue -= (((1 << bfWidth) - 1) << regOff) & regValue
                     regValue += bfValue << regOff
 
+        # trigger signal
+        self.regWritten.emit(self.modName, "w", hex(regAddr), hex(regValue))
+
         # access hardware
         if QRegisterConst.RegisterAccessDriverClass is not None:
-            QRegisterConst.RegisterAccessDriverClass.writeReg(regAddr, regValue)
-            regValue = QRegisterConst.RegisterAccessDriverClass.readReg(regAddr)
-
-        # trigger signal
-        self.regWritten.emit("w", hex(regAddr), hex(regValue))
+            QRegisterConst.RegisterAccessDriverClass.writeReg(self.modName, regAddr, regValue)
+            regValue = QRegisterConst.RegisterAccessDriverClass.readReg(self.modName, regAddr)
 
         # update register and bitfield display value
         value = hex(regValue) # default as reg return value, will be overwritten if it is for bitfield

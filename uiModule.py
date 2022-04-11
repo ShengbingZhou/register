@@ -152,7 +152,7 @@ class uiModuleWindow(QWidget):
     def newInfoRow(self, model, date):
         r = model.record()
         r.remove(r.indexOf('id'))
-        r.setValue("Name", "NoName Component")
+        r.setValue("Name", "NoName Module")
         r.setValue("Version", "1.0")
         r.setValue("Author", os.getlogin())
         r.setValue("LastUpdateDate", date)
@@ -519,7 +519,7 @@ class uiModuleWindow(QWidget):
                 # start to import
                 query = QSqlQuery(self.conn)
                 n = root.find("%s:name"%ns, root.nsmap)
-                infoName = "NoName Component" if n is None else n.text
+                infoName = "NoName Module" if n is None else n.text
                 n = root.find("%s:vendor"%ns, root.nsmap)
                 infoVendor = "" if n is None else n.text
                 n = root.find("%s:library"%ns, root.nsmap)
@@ -914,6 +914,11 @@ class uiModuleWindow(QWidget):
             model.clear()
         self.regDebugModels.clear()
 
+        # info
+        infoQueryModel = QSqlQueryModel()
+        infoQueryModel.setQuery("SELECT id, Name FROM info", self.conn)
+        modName = infoQueryModel.record(0).value("Name")
+        
         # register map
         regMapQueryModel = QSqlQueryModel()
         regMapQueryModel.setQuery("SELECT * FROM RegisterMap ORDER BY DisplayOrder ASC", self.conn)
@@ -922,8 +927,9 @@ class uiModuleWindow(QWidget):
             if QRegisterConst.recordExist(regMapRecord) == True:
                 regMapId = regMapRecord.value("id")
                 debugModel = QRegDebugTableModel()
-                debugModel.setRegMapId(regMapId)
                 debugModel.setConn(self.conn)
+                debugModel.setModuleName(modName)
+                debugModel.setRegMapId(regMapId)
                 debugModel.regWritten.connect(self.do_regWritten)
                 debugModel.setHorizontalHeaderLabels(["Name", "Address", "Description", "Value"])
                 self.regDebugModels.append(debugModel)
@@ -970,8 +976,8 @@ class uiModuleWindow(QWidget):
                         debugModel.appendRow(bfItems)
 
     @Slot()
-    def do_regWritten(self, rw, regAddr, regData):
-        self.mainWindow.appendRegLog("%s,%s,%s"%(rw, regAddr, regData))
+    def do_regWritten(self, moduleName, rw, regAddr, regData):
+        self.mainWindow.appendRegLog("%s, %s, %s, %s"%(moduleName, rw, regAddr, regData))
 
     @Slot('QItemSelection', 'QItemSelection')
     def do_tableView_selectionChanged(self, selected, deselected):
