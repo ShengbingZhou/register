@@ -44,6 +44,7 @@ class QRegDebugTableModel(QStandardItemModel):
         query.next()
         regAddr = QRegisterConst.strToInt(query.value("OffsetAddress"))
 
+        # generate new register value
         if tableName == "Register":
             regValue = QRegisterConst.strToInt(str(value))
             regRow   = index.row()
