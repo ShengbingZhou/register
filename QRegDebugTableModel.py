@@ -98,3 +98,16 @@ class QRegDebugTableModel(QStandardItemModel):
 
         QStandardItemModel.setData(self, index, value, role)
         return True
+    
+    def updateRegDisplayValue(self, index, value):
+        self.setData(index, hex(value), Qt.DisplayRole)
+        regId = index.data(QRegisterConst.RegIdRole)
+        query = self.conn.exec_("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regId)
+        bfRow = index.row() + 1
+        while query.next():
+            bfWidth = int(query.value("Width"))
+            regOff  = QRegisterConst.strToInt(query.value("RegisterOffset"))
+            bfValue = (value >>  regOff) & ((1 << bfWidth) - 1)
+            item = index.model().itemFromIndex(index.sibling(bfRow, 3))
+            bfRow = bfRow + 1
+            item.setData(hex(bfValue), Qt.DisplayRole)        
