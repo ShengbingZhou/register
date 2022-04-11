@@ -11,10 +11,13 @@ class QRegDebugTableModel(QStandardItemModel):
         
     def setRegMapId(self, id):
         self.id = id
+
+    def setConn(self, conn):
+        self.conn = conn
        
     def flags(self, index):
-        flags = QStandardItemModel.flags(self, index)                
-        if index.column() != 3: # value column
+        flags = QStandardItemModel.flags(self, index)               
+        if index.column() != 3: # Value column
             flags &= ~Qt.ItemIsEditable
         return flags
 
@@ -27,16 +30,61 @@ class QRegDebugTableModel(QStandardItemModel):
         return value
 
     def setData(self, index, value, role=Qt.EditRole):
+
+        if role != Qt.EditRole:
+            QStandardItemModel.setData(self, index, value, role)
+    
+        # get table name
         tableName = index.data(QRegisterConst.TableNameRole)
+
+        # get register address
+        regId = index.data(QRegisterConst.RegIdRole)
+        bfId  = None
+        query = self.conn.exec_("SELECT * FROM Register WHERE id=%s"%regId)
+        query.next()
+        regAddr = QRegisterConst.strToInt(query.value("OffsetAddress"))
+
         if tableName == "Register":
-            # TODO: calcuate reg value
-            a = 0
+            regValue = QRegisterConst.strToInt(str(value))
+            regRow   = index.row()
+        if tableName == "Bitfield":
+            regRow = index.row() - 1
+            while index.sibling(regRow, 0).data(QRegisterConst.TableNameRole) != "Register":
+                regRow = regRow - 1
+            regValue = QRegisterConst.strToInt(index.sibling(regRow, 3).data(Qt.DisplayRole))
+            
+            bfId = index.data(QRegisterConst.BfIdRole)
+            query = self.conn.exec_("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regId)
+            while query.next():
+                if bfId == query.value("id"):
+                    bfWidth = int(query.value("Width"))
+                    bfValue = QRegisterConst.strToInt(str(value)) & ((1 << bfWidth) - 1)
+                    regOff  = QRegisterConst.strToInt(query.value("RegisterOffset"))
+                    regValue -= (((1 << bfWidth) - 1) << regOff) & regValue
+                    regValue += bfValue << regOff
+
+        # access hardware
         if QRegisterConst.RegisterAccessDriverClass is not None:
-            if tableName == "Register":
-                QRegisterConst.RegisterAccessDriverClass.writeReg(0x0000, 0x0001)
-                value = hex(QRegisterConst.RegisterAccessDriverClass.readReg(0x0000))
-        if tableName == "Register":
-            # TODO: update bitfield value
-            regId = index.data(QRegisterConst.RegIdRole)
+            QRegisterConst.RegisterAccessDriverClass.writeReg(regAddr, regValue)
+            regValue = hex(QRegisterConst.RegisterAccessDriverClass.readReg(regAddr))
+
+        # update register and bitfield display value
+        value = hex(regValue) # default as reg return value, will be overwritten if it is for bitfield
+        query = self.conn.exec_("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regId)
+        bfRow = regRow + 1
+        while query.next():
+            bfWidth = int(query.value("Width"))
+            regOff  = QRegisterConst.strToInt(query.value("RegisterOffset"))
+            bfValue = (regValue >>  regOff) & ((1 << bfWidth) - 1)
+            item = index.model().itemFromIndex(index.sibling(bfRow, 3))
+            bfRow = bfRow + 1
+            if bfId != None and bfId == query.value("id"):
+                value = hex(bfValue)
+            else:
+                item.setData(hex(bfValue), Qt.DisplayRole)
+        if tableName == "Bitfield":
+            item = index.model().itemFromIndex(index.sibling(regRow, 3))
+            item.setData(hex(regValue), Qt.DisplayRole)
+
         QStandardItemModel.setData(self, index, value, role)
         return True

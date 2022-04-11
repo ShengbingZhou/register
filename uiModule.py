@@ -922,6 +922,7 @@ class uiModuleWindow(QWidget):
                 regMapId = regMapRecord.value("id")
                 debugModel = QRegDebugTableModel()
                 debugModel.setRegMapId(regMapId)
+                debugModel.setConn(self.conn)
                 debugModel.setHorizontalHeaderLabels(["Name", "Address", "Description", "Value"])
                 self.regDebugModels.append(debugModel)
 
@@ -948,6 +949,7 @@ class uiModuleWindow(QWidget):
                 for k in range(bfQueryModel.rowCount()):
                     bfRecord = bfQueryModel.record(k)
                     if QRegisterConst.recordExist(bfRecord) == True:
+                        bfId    = bfRecord.value("id")
                         bfWidth = int(bfRecord.value("Width"))
                         regOff  = QRegisterConst.strToInt(bfRecord.value("RegisterOffset"))
                         if bfWidth > 1:
@@ -962,6 +964,7 @@ class uiModuleWindow(QWidget):
                         for r in bfItems:
                             r.setData("Bitfield", QRegisterConst.TableNameRole)
                             r.setData(regId,      QRegisterConst.RegIdRole)
+                            r.setData(bfId,       QRegisterConst.BfIdRole)
                         debugModel.appendRow(bfItems)
 
     @Slot('QItemSelection', 'QItemSelection')
@@ -1334,6 +1337,7 @@ class uiModuleWindow(QWidget):
                         self.ui.tableView.showColumn(1)
                         self.ui.tableView.showColumn(2)
                         self.ui.tableView.resizeColumnsToContents()
+                        self.ui.tableView.setColumnWidth(3, 200)
                         break
         return
 
