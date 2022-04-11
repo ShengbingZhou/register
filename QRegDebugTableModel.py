@@ -22,18 +22,21 @@ class QRegDebugTableModel(QStandardItemModel):
         value = QStandardItemModel.data(self, index, role)
         if role == Qt.BackgroundColorRole:
             tableName = index.data(QRegisterConst.TableNameRole)
-            #if tableName == "Register":
-            #    value = QColor('lightgrey') # highlight register row
+            if tableName == "Register":
+                value = QColor('lightgrey') # highlight register row
         return value
 
-    def setData(self, index, value, role=Qt.EditRole):        
+    def setData(self, index, value, role=Qt.EditRole):
+        tableName = index.data(QRegisterConst.TableNameRole)
+        if tableName == "Register":
+            # TODO: calcuate reg value
+            a = 0
         if QRegisterConst.RegisterAccessDriverClass is not None:
-            tableName = index.data(QRegisterConst.TableNameRole)
-            if tableName == "Register":            
+            if tableName == "Register":
                 QRegisterConst.RegisterAccessDriverClass.writeReg(0x0000, 0x0001)
                 value = hex(QRegisterConst.RegisterAccessDriverClass.readReg(0x0000))
-            if tableName == "Bitfield":
-                # TODO: calculate register value if curent if bit field
-                a = 0
+        if tableName == "Register":
+            # TODO: update bitfield value
+            regId = index.data(QRegisterConst.RegIdRole)
         QStandardItemModel.setData(self, index, value, role)
         return True

@@ -150,6 +150,16 @@ class QRegisterConst:
         return value
 
     @staticmethod
+    def genRegValueFromBitfields(conn, regId):
+        regValue = 0
+        bfQuery = conn.exec_("SELECT * FROM Bitfield WHERE RegisterId=%s"%(regId))
+        while bfQuery.next():
+            regOff    = QRegisterConst.strToInt(bfQuery.value("RegisterOffset"))
+            bfDefault = QRegisterConst.strToInt(bfQuery.value("DefaultValue"))
+            regValue += bfDefault << regOff
+        return regValue
+
+    @staticmethod
     def exporDocx(parent, conn):
         fileName, filterUsed = QFileDialog.getSaveFileName(parent, "Export Word file", QDir.homePath(), "Word File (*.docx)")
         if fileName == '':           

@@ -919,39 +919,49 @@ class uiModuleWindow(QWidget):
         for i in range(regMapQueryModel.rowCount()):
             regMapRecord = regMapQueryModel.record(i)
             if QRegisterConst.recordExist(regMapRecord) == True:
+                regMapId = regMapRecord.value("id")
                 debugModel = QRegDebugTableModel()
-                debugModel.setRegMapId(regMapRecord.value("id"))
+                debugModel.setRegMapId(regMapId)
                 debugModel.setHorizontalHeaderLabels(["Name", "Address", "Description", "Value"])
                 self.regDebugModels.append(debugModel)
 
             # register
             regQueryModel = QSqlQueryModel()
-            regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
+            regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapId, self.conn)
             for j in range(regQueryModel.rowCount()):
                 regRecord = regQueryModel.record(j)
                 if QRegisterConst.recordExist(regRecord) == True:
+                    regId = regRecord.value("id")
                     regItem0 = QStandardItem(self.regIcon, regRecord.value("name"))
                     regItem1 = QStandardItem(regRecord.value("OffsetAddress"))
                     regItem2 = QStandardItem(regRecord.value("Description"))
-                    regItem3 = QStandardItem(regRecord.value("Value"))
+                    regItem3 = QStandardItem(hex(QRegisterConst.genRegValueFromBitfields(self.conn, regId)))
                     regItems = [regItem0, regItem1, regItem2, regItem3]
                     for r in regItems:
                         r.setData("Register", QRegisterConst.TableNameRole)
+                        r.setData(regId,      QRegisterConst.RegIdRole)
                     debugModel.appendRow(regItems)
 
                 # bitfield
                 bfQueryModel = QSqlQueryModel()
-                bfQueryModel.setQuery("SELECT Name, DefaultValue, Value FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
+                bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regId, self.conn)
                 for k in range(bfQueryModel.rowCount()):
                     bfRecord = bfQueryModel.record(k)
                     if QRegisterConst.recordExist(bfRecord) == True:
+                        bfWidth = int(bfRecord.value("Width"))
+                        regOff  = QRegisterConst.strToInt(bfRecord.value("RegisterOffset"))
+                        if bfWidth > 1:
+                            regBits = "[%s:%s]"%(bfWidth + regOff - 1, regOff)
+                        else:
+                            regBits = "[%s]"%regOff
                         bfItem0 = QStandardItem(" ")
-                        bfItem1 = QStandardItem(" ")
+                        bfItem1 = QStandardItem(regBits)
                         bfItem2 = QStandardItem(bfRecord.value("name"))
-                        bfItem3 = QStandardItem(bfRecord.value("DefaultValue"))
+                        bfItem3 = QStandardItem(hex(QRegisterConst.strToInt(bfRecord.value("DefaultValue"))))
                         bfItems = [bfItem0, bfItem1, bfItem2, bfItem3]
                         for r in bfItems:
-                            r.setData("Bitfield", QRegisterConst.TableNameRole)                        
+                            r.setData("Bitfield", QRegisterConst.TableNameRole)
+                            r.setData(regId,      QRegisterConst.RegIdRole)
                         debugModel.appendRow(bfItems)
 
     @Slot('QItemSelection', 'QItemSelection')
