@@ -10,6 +10,7 @@ from PySide2.QtWidgets import QWidget, QAbstractItemView, QMessageBox, QMenu, QA
 from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QEvent, QDir, QCoreApplication, QRect
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor, QFontMetrics, QPainter, QBrush, QFont
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlQuery
+from QRegisterAccessDriver.QRegisterAccess import QRegisterAccess
 
 # lxml package
 from lxml import etree    
@@ -981,8 +982,8 @@ class uiModuleWindow(QWidget):
                         debugModel.appendRow(bfItems)
 
     @Slot()
-    def do_regWritten(self, moduleName, rw, regAddr, regData):
-        self.mainWindow.appendRegLog("%s, %s, %s, %s"%(moduleName, rw, regAddr, regData))
+    def do_regWritten(self, moduleName, rw, regAddr, regData, comment):
+        self.mainWindow.appendRegLog("%s, %s, %s, %s, %s"%(moduleName, rw, regAddr, regData, comment))
 
     @Slot('QItemSelection', 'QItemSelection')
     def do_tableView_selectionChanged(self, selected, deselected):
@@ -1567,6 +1568,44 @@ class uiModuleWindow(QWidget):
                 self.ui.treeView.selectionModel().setCurrentIndex(item.index(), QItemSelectionModel.ClearAndSelect)
         return
     
+    @Slot()
+    def on_pbReadAll_clicked(self):
+        if QRegisterConst.RegisterAccessDriverClass is None:
+            return
+        if self.view == QRegisterConst.DebugView:
+            debugModel = self.ui.tableView.model()
+            for i in range(debugModel.rowCount()):
+                valueIndex = debugModel.index(i, 3)
+                if valueIndex.data(QRegisterConst.TableNameRole) == "Register":
+                    debugModel.readReg(valueIndex)
+        return
+
+    @Slot()
+    def on_pbReadSelected_clicked(self):
+        if QRegisterConst.RegisterAccessDriverClass is None:
+            return
+        if self.view == QRegisterConst.DebugView:
+            debugModel = self.ui.tableView.model()
+            tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()
+            for index in tableViewCurrents:
+                sibling = index.sibling(index.row(), 3)
+                if sibling.data(QRegisterConst.TableNameRole) == "Register":
+                    debugModel.readReg(sibling)
+        return
+
+    @Slot()
+    def on_pbWriteAll_clicked(self):
+        if QRegisterConst.RegisterAccessDriverClass is None:
+            return
+        if self.view == QRegisterConst.DebugView:
+            debugModel = self.ui.tableView.model()
+            for i in range(debugModel.rowCount()):
+                valueIndex = debugModel.index(i, 3)
+                if valueIndex.data(QRegisterConst.TableNameRole) == "Register":
+                    value = QRegisterConst.strToInt(str(valueIndex.data(Qt.DisplayRole)))
+                    debugModel.setData(valueIndex, value, Qt.EditRole)
+        return
+
     @Slot()
     def do_delete_triggered(self):
         current = self.ui.treeView.selectedIndexes().pop()

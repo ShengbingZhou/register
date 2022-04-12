@@ -2,3 +2,4 @@ __pycache__/*
 ui/__pycache__/*
 build/*
 dist/*
+QRegisterAccessDriver/__pycache__/*

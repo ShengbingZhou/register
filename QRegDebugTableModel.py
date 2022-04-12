@@ -6,7 +6,10 @@ from QRegisterConst import QRegisterConst
 
 class QRegDebugTableModel(QStandardItemModel):
 
-    regWritten = Signal(str, str, str, str)
+    # module name (from info) / 'w' / address / value / comment
+    regWritten = Signal(str, str, str, str, str)
+
+    # module name passed to 'regWritten'
     modName = ""
 
     def __init__(self):
@@ -48,32 +51,44 @@ class QRegDebugTableModel(QStandardItemModel):
         bfId  = None
         query = self.conn.exec_("SELECT * FROM Register WHERE id=%s"%regId)
         query.next()
+        regName = query.value("Name")
         regAddr = QRegisterConst.strToInt(query.value("OffsetAddress"))
-
+        
         # generate new register value
         if tableName == "Register":
+            # get latest reg value
             regValue = QRegisterConst.strToInt(str(value))
             regRow   = index.row()
+
+            # trigger signal
+            self.regWritten.emit(self.modName, "w", "%08x"%(regAddr), "%08x"%(regValue), regName)
+
         if tableName == "Bitfield":
             regRow = index.row() - 1
             while index.sibling(regRow, 0).data(QRegisterConst.TableNameRole) != "Register":
                 regRow = regRow - 1
-            regValue = QRegisterConst.strToInt(index.sibling(regRow, 3).data(Qt.DisplayRole))
-            
+
+            # get current reg value
+            if QRegisterConst.RegisterAccessDriverClass is None:
+                regValue = QRegisterConst.strToInt(index.sibling(regRow, 3).data(Qt.DisplayRole))
+            else:
+                regValue = QRegisterConst.RegisterAccessDriverClass.readReg(self.modName, regAddr)
+
+            # update bitfield value to get latest reg value
             bfId = index.data(QRegisterConst.BfIdRole)
-            query = self.conn.exec_("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regId)
-            while query.next():
-                if bfId == query.value("id"):
-                    bfWidth = int(query.value("Width"))
-                    bfValue = QRegisterConst.strToInt(str(value)) & ((1 << bfWidth) - 1)
-                    regOff  = QRegisterConst.strToInt(query.value("RegisterOffset"))
-                    regValue -= (((1 << bfWidth) - 1) << regOff) & regValue
-                    regValue += bfValue << regOff
+            query = self.conn.exec_("SELECT * FROM Bitfield WHERE id=%s"%bfId)
+            query.next()
+            bfName  = query.value("Name")
+            bfWidth = int(query.value("Width"))
+            bfValue = QRegisterConst.strToInt(str(value)) & ((1 << bfWidth) - 1)
+            regOff  = QRegisterConst.strToInt(query.value("RegisterOffset"))
+            regValue -= (((1 << bfWidth) - 1) << regOff) & regValue
+            regValue += bfValue << regOff
 
-        # trigger signal
-        self.regWritten.emit(self.modName, "w", hex(regAddr), hex(regValue))
+            # trigger signal
+            self.regWritten.emit(self.modName, "w", "%08x"%(regAddr), "%08x"%(regValue), "%s:%s:%08x"%(regName, bfName, bfValue))
 
-        # access hardware
+        # write reg value to hardware, then read latest reg value back
         if QRegisterConst.RegisterAccessDriverClass is not None:
             QRegisterConst.RegisterAccessDriverClass.writeReg(self.modName, regAddr, regValue)
             regValue = QRegisterConst.RegisterAccessDriverClass.readReg(self.modName, regAddr)
@@ -98,8 +113,23 @@ class QRegDebugTableModel(QStandardItemModel):
 
         QStandardItemModel.setData(self, index, value, role)
         return True
-    
-    def updateRegDisplayValue(self, index, value):
+
+    def readReg(self, index):
+        # read hardware then update reg value and bf value belong to this reg on GUI
+
+        if QRegisterConst.RegisterAccessDriverClass is None:
+            return
+        if index.data(QRegisterConst.TableNameRole) != "Register":
+            return
+
+        regId = index.data(QRegisterConst.RegIdRole)
+        query = self.conn.exec_("SELECT * FROM Register WHERE id=%s"%regId)
+        query.next()
+        regAddr = QRegisterConst.strToInt(query.value("OffsetAddress"))
+
+        # read hardware
+        value = QRegisterConst.RegisterAccessDriverClass.readReg(self.modName, regAddr)
+
         self.setData(index, hex(value), Qt.DisplayRole)
         regId = index.data(QRegisterConst.RegIdRole)
         query = self.conn.exec_("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regId)
@@ -110,4 +140,4 @@ class QRegDebugTableModel(QStandardItemModel):
             bfValue = (value >>  regOff) & ((1 << bfWidth) - 1)
             item = index.model().itemFromIndex(index.sibling(bfRow, 3))
             bfRow = bfRow + 1
-            item.setData(hex(bfValue), Qt.DisplayRole)        
+            item.setData(hex(bfValue), Qt.DisplayRole)
