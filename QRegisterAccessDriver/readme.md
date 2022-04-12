@@ -1,4 +1,3 @@
-README
 # How to use sample driver
 
 Steps:
