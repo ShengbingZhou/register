@@ -26,9 +26,12 @@ class QRegisterConst:
     # style file
     StyleFile = os.path.join(BaseDir, "style/style.qss")
 
-    # design file externsion
+    # design file ext
     DesignFileExt = ".reg"
-
+    
+    # reg access log file ext
+    RegLogFileExt = ".reglog"
+    
     # tab type const
     WelcomeTab = 0
     ModuleTab  = 1
@@ -97,6 +100,15 @@ class QRegisterConst:
                 return False
             else:
                 return True
+
+    @staticmethod
+    def findRegAccessDriverClass():
+        if QRegisterConst.RegisterAccessDriverClass is None:
+            if os.path.isfile(QDir.homePath() + "/QRegisterAccessDriver/QRegisterAccess.py"):        
+                DriverPath  = QDir.homePath() + "/QRegisterAccessDriver"
+                sys.path.append(DriverPath)
+                DriverMod   = __import__("QRegisterAccess")
+                QRegisterConst.RegisterAccessDriverClass = getattr(DriverMod, "QRegisterAccess")        
 
     @staticmethod
     def genColoredRegBitsUsage(conn, bfId, regId, regW, fontSize):

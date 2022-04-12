@@ -15,7 +15,7 @@ QListView::Item {
 }
 
 QTabBar::tab {
-    min-width: 160px;
+	min-width: 160px;
 }
 
 QPushButton {
@@ -75,10 +75,12 @@ QPushButton:disabled {
 QMenuBar::item {
 	spacing: 3px;
 	padding: 1px 4px;
+	min-width: 80px;
 	background: transparent;
 }
 
 QMenuBar::item:selected {
+	min-width: 80px;
 	background: rgb(115, 115, 115);
 }
 
@@ -92,11 +94,13 @@ QMenu {
 QMenu::item {
 	spacing: 3px;
 	padding: 3px 15px;
+	min-width: 80px;
 }
 
 QMenu::item:selected {
 	spacing: 3px;
 	padding: 3px 15px;
+	min-width: 80px;
 	background: rgb(115, 115, 115);
 	color: rgb(255, 255, 255);
 	border-width: 1px;

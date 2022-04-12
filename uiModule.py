@@ -126,15 +126,7 @@ class uiModuleWindow(QWidget):
             if (self.view == QRegisterConst.DebugView):
                 self.setupDebugViewModels()
                 if QRegisterConst.RegisterAccessDriverClass is None:
-                    if os.path.isfile(QDir.homePath() + "/QRegisterAccessDriver/QRegisterAccess.py"):        
-                        try:
-                            DriverPath  = QDir.homePath() + "/QRegisterAccessDriver"
-                            sys.path.append(DriverPath)
-                            DriverMod   = __import__("QRegisterAccess")
-                            QRegisterConst.RegisterAccessDriverClass = getattr(DriverMod, "QRegisterAccess")
-                        except BaseException as e:
-                            QRegisterConst.RegisterAccessDriverClass= None
-                            QMessageBox.warning(self, "Error", "Failed to import register access driver. %s"%str(e), QMessageBox.Yes)                
+                    QRegisterConst.findRegAccessDriverClass()
             self.do_treeView_currentChanged(self.ui.treeView.selectedIndexes().pop(), None)
 
     def getNewRowAndDisplayOrder(self, model, row, maxOrder):
