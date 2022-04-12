@@ -938,6 +938,7 @@ class uiModuleWindow(QWidget):
                 debugModel.setRegMapId(regMapId)
                 debugModel.regWritten.connect(self.do_regWritten)
                 debugModel.setHorizontalHeaderLabels(["Name", "Address", "Description", "Value"])
+                QRegisterConst.ValueColumnOfDebugView = 3
                 self.regDebugModels.append(debugModel)
 
             # register
@@ -1575,7 +1576,7 @@ class uiModuleWindow(QWidget):
         if self.view == QRegisterConst.DebugView:
             debugModel = self.ui.tableView.model()
             for i in range(debugModel.rowCount()):
-                valueIndex = debugModel.index(i, 3)
+                valueIndex = debugModel.index(i, QRegisterConst.ValueColumnOfDebugView)
                 if valueIndex.data(QRegisterConst.TableNameRole) == "Register":
                     debugModel.readReg(valueIndex)
         return
@@ -1587,10 +1588,19 @@ class uiModuleWindow(QWidget):
         if self.view == QRegisterConst.DebugView:
             debugModel = self.ui.tableView.model()
             tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()
+            # find register if first selected row is bit field, and read this register
+            if len(tableViewCurrents) > 0:
+                firstSelIndex = tableViewCurrents[0]                
+                if firstSelIndex.data(QRegisterConst.TableNameRole) == "Bitfield":
+                    regRow = firstSelIndex.row() - 1
+                    while firstSelIndex.sibling(regRow, 0).data(QRegisterConst.TableNameRole) != "Register":
+                        regRow = regRow - 1                    
+                    debugModel.readReg(firstSelIndex.sibling(regRow, QRegisterConst.ValueColumnOfDebugView))
+            # read register only for all selected rows
             for index in tableViewCurrents:
-                sibling = index.sibling(index.row(), 3)
-                if sibling.data(QRegisterConst.TableNameRole) == "Register":
-                    debugModel.readReg(sibling)
+                valueSibling = index.sibling(index.row(), QRegisterConst.ValueColumnOfDebugView)
+                if valueSibling.data(QRegisterConst.TableNameRole) == "Register":
+                    debugModel.readReg(valueSibling)
         return
 
     @Slot()
@@ -1600,7 +1610,7 @@ class uiModuleWindow(QWidget):
         if self.view == QRegisterConst.DebugView:
             debugModel = self.ui.tableView.model()
             for i in range(debugModel.rowCount()):
-                valueIndex = debugModel.index(i, 3)
+                valueIndex = debugModel.index(i, QRegisterConst.ValueColumnOfDebugView)
                 if valueIndex.data(QRegisterConst.TableNameRole) == "Register":
                     value = QRegisterConst.strToInt(str(valueIndex.data(Qt.DisplayRole)))
                     debugModel.setData(valueIndex, value, Qt.EditRole)

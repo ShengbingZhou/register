@@ -57,6 +57,9 @@ class QRegisterConst:
 
     # hardware access driver
     RegisterAccessDriverClass= None
+    
+    # value column index in debug view
+    ValueColumnOfDebugView = 3
 
     @staticmethod
     def strToInt(text):

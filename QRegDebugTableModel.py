@@ -25,8 +25,9 @@ class QRegDebugTableModel(QStandardItemModel):
         self.id = id
                
     def flags(self, index):
-        flags = QStandardItemModel.flags(self, index)               
-        if index.column() != 3: # Value column
+        flags = QStandardItemModel.flags(self, index)                       
+        if index.column() != QRegisterConst.ValueColumnOfDebugView:
+            # only allow value column to editable
             flags &= ~Qt.ItemIsEditable
         return flags
 
@@ -70,7 +71,7 @@ class QRegDebugTableModel(QStandardItemModel):
 
             # get current reg value
             if QRegisterConst.RegisterAccessDriverClass is None:
-                regValue = QRegisterConst.strToInt(index.sibling(regRow, 3).data(Qt.DisplayRole))
+                regValue = QRegisterConst.strToInt(index.sibling(regRow, QRegisterConst.ValueColumnOfDebugView).data(Qt.DisplayRole))
             else:
                 regValue = QRegisterConst.RegisterAccessDriverClass.readReg(self.modName, regAddr)
 
@@ -101,21 +102,21 @@ class QRegDebugTableModel(QStandardItemModel):
             bfWidth = int(query.value("Width"))
             regOff  = QRegisterConst.strToInt(query.value("RegisterOffset"))
             bfValue = (regValue >>  regOff) & ((1 << bfWidth) - 1)
-            item = index.model().itemFromIndex(index.sibling(bfRow, 3))
+            item = index.model().itemFromIndex(index.sibling(bfRow, QRegisterConst.ValueColumnOfDebugView))
             bfRow = bfRow + 1
             if bfId != None and bfId == query.value("id"):
                 value = hex(bfValue)
             else:
                 item.setData(hex(bfValue), Qt.DisplayRole)
         if tableName == "Bitfield":
-            item = index.model().itemFromIndex(index.sibling(regRow, 3))
+            item = index.model().itemFromIndex(index.sibling(regRow, QRegisterConst.ValueColumnOfDebugView))
             item.setData(hex(regValue), Qt.DisplayRole)
 
         QStandardItemModel.setData(self, index, value, role)
         return True
 
+    # read hardware then update reg value and bf value belong to this reg on GUI
     def readReg(self, index):
-        # read hardware then update reg value and bf value belong to this reg on GUI
 
         if QRegisterConst.RegisterAccessDriverClass is None:
             return
@@ -138,6 +139,6 @@ class QRegDebugTableModel(QStandardItemModel):
             bfWidth = int(query.value("Width"))
             regOff  = QRegisterConst.strToInt(query.value("RegisterOffset"))
             bfValue = (value >>  regOff) & ((1 << bfWidth) - 1)
-            item = index.model().itemFromIndex(index.sibling(bfRow, 3))
+            item = index.model().itemFromIndex(index.sibling(bfRow, QRegisterConst.ValueColumnOfDebugView))
             bfRow = bfRow + 1
             item.setData(hex(bfValue), Qt.DisplayRole)
