@@ -319,19 +319,21 @@ class uiModuleWindow(QWidget):
         fileName = ''
         if self.newModule == True:
             fileName, filterUsed = QFileDialog.getSaveFileName(self, "Save register file", QDir.homePath(), "Register File (*%s)"%QRegisterConst.DesignFileExt)
-            if fileName !='':
-                if os.path.exists(fileName):                                        
-                    os.remove(fileName)
-                else:
-                    f_name, f_ext = os.path.splitext(fileName)
-                    # add .reg when saving new file
-                    if f_ext != QRegisterConst.DesignFileExt:
-                        fileName += QRegisterConst.DesignFileExt
-                self.conn.commit()
-                shutil.copy(self.newFileName, fileName)
-                self.fileModifiedTime = os.path.getmtime(self.newFileName)
-                self.fileName = fileName
-                self.newModule = False
+            if fileName == '':
+                return fileName
+            if os.path.exists(fileName):
+                os.remove(fileName)
+            else:
+                f_name, f_ext = os.path.splitext(fileName)
+                # add .reg when saving new file
+                if f_ext != QRegisterConst.DesignFileExt:
+                    fileName += QRegisterConst.DesignFileExt
+            self.conn.commit()
+            shutil.copy(self.newFileName, fileName)
+            self.fileModifiedTime = os.path.getmtime(self.newFileName)
+            self.fileName = fileName
+            self.newModule = False
+            QMessageBox.information(self, "Saved", "Design saved.", QMessageBox.Yes)
         else:
             if os.path.isfile(self.newFileName):
                 if os.path.exists(fileName):
@@ -340,6 +342,7 @@ class uiModuleWindow(QWidget):
                 shutil.copy(self.newFileName, self.fileName)
                 self.fileModifiedTime = os.path.getmtime(self.newFileName)
                 fileName = self.fileName
+                QMessageBox.information(self, "Saved", "Design saved.", QMessageBox.Yes)
         return fileName
 
     def importYodaSp1(self, fileName):
@@ -470,6 +473,7 @@ class uiModuleWindow(QWidget):
         except BaseException as e:
             QMessageBox.warning(self, "Error", "Failed to import. \n%s"%str(e), QMessageBox.Yes)
             return False
+        QMessageBox.information(self, "Done", "Imported successfully.", QMessageBox.Yes)
         return True
     
     def importIpxact(self, fileName):
@@ -633,6 +637,7 @@ class uiModuleWindow(QWidget):
         except BaseException as e:
             QMessageBox.warning(self, "Error", "Failed to import. \n%s"%str(e), QMessageBox.Yes)
             return False
+        QMessageBox.information(self, "Done", "Imported successfully.", QMessageBox.Yes)
         return True
 
     def exporIpxact(self):
