@@ -15,9 +15,12 @@ class QRegisterAccess:
     jedec_id = slave.exchange([0x9f], 3)
     
     def readReg(moduleName : str, addr : int) -> int:
-        value = 0xaa55
+        write_buf = [addr & 0xff, 0x00]
+        read_buf = QRegisterAccess.slave.exchange(write_buf, duplex=True)
+        value = read_buf[0]
         return value
 
     def writeReg(moduleName : str, addr : int, value : int) -> int:
-        # write value
+        write_buf = [addr & 0xff, value & 0xff]
+        read_buf = QRegisterAccess.slave.exchange(write_buf, duplex=True)
         return True
