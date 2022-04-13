@@ -1,6 +1,7 @@
 # built-in package
 import sys
 import os
+import time
 
 # pyside2 package
 from PySide2.QtWidgets import QWidget, QMainWindow, QMessageBox, QTabBar, QDesktopWidget, QFileDialog
@@ -33,9 +34,6 @@ class uiMainWindow(QMainWindow):
             style = file.read()
         self.setStyleSheet(style)
         
-        # TODO: add icon for action items?
-        #self.ui.actionNew.setIcon(QIcon(os.path.join(QRegisterConst.BaseDir, "icon/new32.png")))
-        
         # add 1st tab: welcome tab
         self.welcomeWindow = uiWelcomeWindow(self)
         self.welcomeWindow.setAttribute(Qt.WA_DeleteOnClose)
@@ -51,9 +49,21 @@ class uiMainWindow(QMainWindow):
         self.ui.tabWidget.setTabVisible(index, False)
     
     def closeEvent(self, event):
+        # close all tabs
         for i in range(self.ui.tabWidget.count()):
             tab = self.ui.tabWidget.widget(i)
             tab.close()
+        # clean up files in /home/.reg/*.reg (old > 3 days)
+        tmpFolder = QDir.homePath() +  "/.reg/"
+        currentTime = time.time()
+        outDated = 3 * 24 * 60 * 60 # 3 days
+        for file in os.listdir (tmpFolder):
+            fileFullPath = os.path.join(tmpFolder, file)
+            if os.path.isfile(fileFullPath):
+                f, ext = os.path.splitext(fileFullPath)
+                if ext == QRegisterConst.DesignFileExt:
+                    if currentTime - os.path.getmtime(fileFullPath) > outDated:
+                        os.remove(fileFullPath)                   
         event.accept()
 
     def openFile(self, fileName):
