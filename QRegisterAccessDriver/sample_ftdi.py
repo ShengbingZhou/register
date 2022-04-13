@@ -10,9 +10,6 @@ class QRegisterAccess:
 
     # Get a port to a SPI slave w/ /CS on A*BUS3 and SPI mode 0 @ 12MHz
     slave = spi.get_port(cs=0, freq=12000000, mode=0)
-
-    # Request the JEDEC ID from the SPI slave
-    jedec_id = slave.exchange([0x9f], 3)
     
     def readReg(moduleName : str, addr : int) -> int:
         write_buf = [addr & 0xff, 0x00]
