@@ -34,6 +34,12 @@ class uiMainWindow(QMainWindow):
             style = file.read()
         self.setStyleSheet(style)
         
+        # setup toolbar icon
+        self.ui.toolBar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.ui.actionNewDesign.setIcon(QIcon(os.path.join(QRegisterConst.BaseDir,  "icon/new32.png")))
+        self.ui.actionOpenDesign.setIcon(QIcon(os.path.join(QRegisterConst.BaseDir, "icon/open32.png")))        
+        self.ui.actionSaveDesign.setIcon(QIcon(os.path.join(QRegisterConst.BaseDir, "icon/save32.png")))        
+        
         # add 1st tab: welcome tab
         self.welcomeWindow = uiWelcomeWindow(self)
         self.welcomeWindow.setAttribute(Qt.WA_DeleteOnClose)
@@ -104,7 +110,7 @@ class uiMainWindow(QMainWindow):
             if tab.tabType == QRegisterConst.RegLogTab:            
                 self.ui.tabWidget.setTabVisible(i, True)
                 self.ui.tabWidget.setCurrentIndex(i)
-
+             
     @Slot()
     def on_actionNew_triggered(self):
         moduleWindow = uiModuleWindow(self)
@@ -116,11 +122,19 @@ class uiMainWindow(QMainWindow):
         return
 
     @Slot()
+    def on_actionNewDesign_triggered(self):
+        self.on_actionNew_triggered()
+
+    @Slot()
     def on_actionOpen_triggered(self):
         fileName, filterUsed = QFileDialog.getOpenFileName(self, "Open register file", QDir.homePath(), "Register File (*%s)"%QRegisterConst.DesignFileExt)
         if fileName != '':
             self.openFile(fileName)
         return
+
+    @Slot()
+    def on_actionOpenDesign_triggered(self):
+        self.on_actionOpen_triggered()
     
     @Slot()
     def on_actionImportYoda_triggered(self):
@@ -183,6 +197,10 @@ class uiMainWindow(QMainWindow):
                 if self.welcomeWindow != None:
                     self.welcomeWindow.updateRecentFiles(fileName)
         return
+
+    @Slot()
+    def on_actionSaveDesign_triggered(self):
+        self.on_actionSave_triggered()
 
     @Slot()
     def on_actionSave_As_triggered(self):

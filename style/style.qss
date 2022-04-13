@@ -72,6 +72,10 @@ QPushButton:disabled {
 	background-color: rgb(142, 142, 142);
 }
 
+QToolBar {
+	min-height: 50px;
+}
+
 QMenuBar {
 	background: transparent;
 }
