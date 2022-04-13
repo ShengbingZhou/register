@@ -80,13 +80,13 @@ class QRegisterConst:
             text = text.replace("'b", "") # 'b1011
             return int(text, 2)
         if "'h" in text:                  # 16'h1234
-            t = text.split(text, "'h")
+            t = text.split("'h")
             return int(t[1], 16)
         if "'d" in text:                  # 16'd1234
-            t = text.split(text, "'d")
+            t = text.split("'d")
             return int(t[1])
         if "'b" in text:                  # 16'b1011
-            t = text.split(text, "'b")
+            t = text.split("'b")
             return int(t[1], 2)
         return int(text)
 

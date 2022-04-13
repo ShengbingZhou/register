@@ -72,15 +72,18 @@ QPushButton:disabled {
 	background-color: rgb(142, 142, 142);
 }
 
+QMenuBar {
+	background: transparent;
+}
+
 QMenuBar::item {
 	spacing: 3px;
-	padding: 1px 4px;
+	padding: 3px 15px;
 	min-width: 80px;
 	background: transparent;
 }
 
 QMenuBar::item:selected {
-	min-width: 80px;
 	background: rgb(115, 115, 115);
 }
 
