@@ -30,7 +30,7 @@ class QRegisterConst:
     DesignFileExt = ".reg"
     
     # reg access log file ext
-    RegLogFileExt = ".log"
+    RegLogFileExt = ".reglog"
     
     # tab type const
     WelcomeTab = 0

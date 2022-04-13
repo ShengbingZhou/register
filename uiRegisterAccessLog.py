@@ -43,8 +43,8 @@ class uiRegAccessLogWindow(QWidget):
         f_name, f_ext = os.path.splitext(os.path.basename(fileName))
         if f_ext != QRegisterConst.RegLogFileExt:
             fileName += QRegisterConst.RegLogFileExt
-            with open(fileName, 'w') as file:
-                file.write(str(self.ui.txtReg.toPlainText()))            
+        with open(fileName, 'w') as file:
+            file.write(str(self.ui.txtReg.toPlainText()))            
 
     @Slot()
     def on_pbRun_clicked(self):
