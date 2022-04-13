@@ -797,6 +797,7 @@ class uiModuleWindow(QWidget):
     def setupTreeView(self):
         # create standard model for treeview          
         self.treeViewTableModel = QStandardItemModel()
+        self.treeViewTableModel.setHorizontalHeaderLabels([""])
         root = self.treeViewTableModel.invisibleRootItem()
 
         # info
