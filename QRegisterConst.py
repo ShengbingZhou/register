@@ -48,6 +48,9 @@ class QRegisterConst:
     # reg and bf access options
     AccessTypes = ['read-write', 'read-only', 'write-only', 'read-writeOnce', 'writeOnce']
 
+    # reg and bf visibility
+    VisibilityOptions = ['Public', 'Private'] 
+
     # special role for treeview item
     TableNameRole  = Qt.UserRole + 1
     infoIdRole     = Qt.UserRole + 2
@@ -64,6 +67,9 @@ class QRegisterConst:
     
     # value column index in debug view
     ValueColumnOfDebugView = 3
+
+    # visibility column index in register table, this column is calculated based on bitfield automatically, and not allow user to edit
+    RegisterVisibilityColumn = None
 
     @staticmethod
     def strToInt(text):

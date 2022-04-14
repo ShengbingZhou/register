@@ -1,7 +1,7 @@
 from PySide2.QtSql import QSqlTableModel, QSqlQuery
 from PySide2.QtCore import Qt, QRect, QSize
 from PySide2.QtGui import QColor, QTextDocument, QBrush, QFontMetrics
-from PySide2.QtWidgets import QWidget, QStyledItemDelegate, QStyle, QStyleOptionViewItem, QApplication
+from PySide2.QtWidgets import QComboBox, QWidget, QStyledItemDelegate, QItemDelegate, QStyle, QStyleOptionViewItem, QApplication
 from QRegisterConst import QRegisterConst
 
 class QSqlHighlightTableModel(QSqlTableModel):
@@ -17,10 +17,30 @@ class QSqlHighlightTableModel(QSqlTableModel):
         return value
 
     def flags(self, index):
-        return QSqlTableModel.flags(self, index)
+        flags = QSqlTableModel.flags(self, index)
+        tableName = index.model().tableName()
+        if tableName == "Register":
+            if index.column() == QRegisterConst.RegisterVisibilityColumn:
+                flags &= ~Qt.ItemIsEditable
+        return flags
 
     def setParentId(self, id):
         self.parentId = id
+
+class QBfTableColumnDelegate(QItemDelegate):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def createEditor(self, parent: QWidget, option, index):
+        fieldName = index.model().record().fieldName(index.column())
+        combox = None
+        if fieldName == 'Access':
+            combox = QComboBox(parent)
+            combox.addItems(QRegisterConst.AccessTypes)
+        if fieldName == 'Visibility':
+            combox = QComboBox(parent)
+            combox.addItems(QRegisterConst.VisibilityOptions)
+        return combox
 
 class QRegValueDisplayDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
