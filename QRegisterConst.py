@@ -45,8 +45,8 @@ class QRegisterConst:
     RegMap = 0
     RegMod = 1
 
-    # reg access value option
-    RegAccessTypes = ['r', 'w', 'rw', 'rc', 'wc']
+    # reg and bf access options
+    AccessTypes = ['read-write', 'read-only', 'write-only', 'read-writeOnce', 'writeOnce']
 
     # special role for treeview item
     TableNameRole  = Qt.UserRole + 1
