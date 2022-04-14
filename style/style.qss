@@ -7,11 +7,11 @@ QTreeView {
 }
 
 QTreeView::Item {
-	height: 30px;
+	min-height: 25px;
 }
 
 QListView::Item {
-	height: 30px;
+	min-height: 25px;
 }
 
 QTabBar::tab {
