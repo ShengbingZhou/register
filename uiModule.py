@@ -10,7 +10,6 @@ from PySide2.QtWidgets import QWidget, QAbstractItemView, QMessageBox, QMenu, QA
 from PySide2.QtCore import Qt, Slot, QItemSelectionModel, QEvent, QDir, QCoreApplication, QRect
 from PySide2.QtGui import QStandardItemModel, QStandardItem, QIcon, QColor, QFontMetrics, QPainter, QBrush, QFont
 from PySide2.QtSql import QSqlDatabase, QSqlTableModel, QSqlQueryModel, QSqlQuery
-from QRegisterAccessDriver.QRegisterAccess import QRegisterAccess
 
 # lxml package
 from lxml import etree    
