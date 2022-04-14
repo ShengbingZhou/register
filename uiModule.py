@@ -1057,7 +1057,7 @@ class uiModuleWindow(QWidget):
             self.treeViewPopMenu.addAction(addBfEnumAction)
             addBfEnumAction.triggered.connect(self.on_pbAddBfEnum_clicked)
         
-        parent = self.treeViewTableModel.itemFromIndex(index.parent()) if tableName != "MemoryMap" else self.treeViewTableModel.invisibleRootItem()
+        # add delete menu
         if tableName != "info":
             self.treeViewPopMenu.addSeparator()
             delAction = QAction("Delete", self)
@@ -1072,10 +1072,45 @@ class uiModuleWindow(QWidget):
     @Slot()
     def do_tableView_contextMenuRequested(self, point):
         if self.view == QRegisterConst.DesignView:
-            if self.__treeViewCurrentTable == "Register":                            
+            if self.__treeViewCurrentTable == "Register":
                 tableViewCurrents = self.ui.tableViewReg.selectionModel().selectedIndexes()                
             else:
-                tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()        
+                tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()
+                if self.__treeViewCurrentTable == "Bitfield":
+                    if any(item.column() != self.__bfAccessIndex for item in tableViewCurrents) is False:
+                        tablePopMenu = QMenu(self)
+                        for access in QRegisterConst.AccessTypes:
+                            action = QAction(access, self)
+                            action.triggered.connect(self.do_bfAccess_clicked)                        
+                            tablePopMenu.addAction(action)
+                        menuPosition = self.ui.tableView.viewport().mapToGlobal(point)
+                        tablePopMenu.move(menuPosition)
+                        tablePopMenu.show()
+                    elif any(item.column() != self.__bfVisibilityIndex for item in tableViewCurrents) is False:
+                        tablePopMenu = QMenu(self)
+                        for visibility in QRegisterConst.VisibilityOptions:
+                            action = QAction(visibility, self)
+                            action.triggered.connect(self.do_bfVisibility_clicked)                        
+                            tablePopMenu.addAction(action)
+                        menuPosition = self.ui.tableView.viewport().mapToGlobal(point)
+                        tablePopMenu.move(menuPosition)
+                        tablePopMenu.show()                        
+        return
+
+    # @Slot()
+    def do_bfAccess_clicked(self):
+        tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()
+        action = self.sender()
+        for index in tableViewCurrents:                        
+            index.model().setData(index, action.text())
+        return
+
+    # @Slot()
+    def do_bfVisibility_clicked(self):
+        tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()
+        action = self.sender()
+        for index in tableViewCurrents:                        
+            index.model().setData(index, action.text())
         return
 
     @Slot()
