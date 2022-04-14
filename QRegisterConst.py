@@ -18,7 +18,7 @@ from docx.shared import Inches
 class QRegisterConst:
 
     # tool version
-    Version = "0.0.5-(alpha)"
+    Version = "0.1.0-(beta)"
     
     # Base Directory
     BaseDir = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
@@ -45,11 +45,14 @@ class QRegisterConst:
     RegMap = 0
     RegMod = 1
 
-    # reg and bf access options
+    # bf access options
     AccessTypes = ['read-write', 'read-only', 'write-only', 'read-writeOnce', 'writeOnce']
 
-    # reg and bf visibility
-    VisibilityOptions = ['Public', 'Private'] 
+    # visibility options
+    VisibilityOptions = ['public', 'private'] 
+
+    # exist options
+    ExistOptions = ['yes', 'no']
 
     # special role for treeview item
     TableNameRole  = Qt.UserRole + 1

@@ -1,3 +1,6 @@
+v0.1.0-beta
+- quick menu to set multiple bitfields access type and visibility
+
 v0.0.5-alpha
 - update database to include more fields
 - support to add/delete memory map

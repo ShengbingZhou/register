@@ -40,6 +40,9 @@ class QBfTableColumnDelegate(QItemDelegate):
         if fieldName == 'Visibility':
             combox = QComboBox(parent)
             combox.addItems(QRegisterConst.VisibilityOptions)
+        if fieldName == 'Exist':
+            combox = QComboBox(parent)
+            combox.addItems(QRegisterConst.ExistOptions)            
         return combox
 
 class QRegValueDisplayDelegate(QStyledItemDelegate):

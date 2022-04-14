@@ -72,6 +72,7 @@ class uiModuleWindow(QWidget):
         self.__bfValueIndex = None         # bitfield table 'Value' column index which should be hidden, while this column should be visible for other tables
         self.__bfAccessIndex = None        # bitfield table 'Access' column index which should have a delegate
         self.__bfVisibilityIndex = None    # bitfield table 'Visibility' column index which should have a delegate
+        self.__bfExistIndex = None         # bitfield table 'Exist' column index which should have a delegate
         return
     
     def eventFilter(self, obj, event):
@@ -1081,7 +1082,7 @@ class uiModuleWindow(QWidget):
                         tablePopMenu = QMenu(self)
                         for access in QRegisterConst.AccessTypes:
                             action = QAction(access, self)
-                            action.triggered.connect(self.do_bfAccess_clicked)                        
+                            action.triggered.connect(self.do_quickset)                        
                             tablePopMenu.addAction(action)
                         menuPosition = self.ui.tableView.viewport().mapToGlobal(point)
                         tablePopMenu.move(menuPosition)
@@ -1090,23 +1091,24 @@ class uiModuleWindow(QWidget):
                         tablePopMenu = QMenu(self)
                         for visibility in QRegisterConst.VisibilityOptions:
                             action = QAction(visibility, self)
-                            action.triggered.connect(self.do_bfVisibility_clicked)                        
+                            action.triggered.connect(self.do_quickset)                        
                             tablePopMenu.addAction(action)
                         menuPosition = self.ui.tableView.viewport().mapToGlobal(point)
                         tablePopMenu.move(menuPosition)
-                        tablePopMenu.show()                        
+                        tablePopMenu.show()
+                    elif any(item.column() != self.__bfExistIndex for item in tableViewCurrents) is False:
+                        tablePopMenu = QMenu(self)
+                        for exist in QRegisterConst.ExistOptions:
+                            action = QAction(exist, self)
+                            action.triggered.connect(self.do_quickset)                        
+                            tablePopMenu.addAction(action)
+                        menuPosition = self.ui.tableView.viewport().mapToGlobal(point)
+                        tablePopMenu.move(menuPosition)
+                        tablePopMenu.show()                                                
         return
 
     # @Slot()
-    def do_bfAccess_clicked(self):
-        tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()
-        action = self.sender()
-        for index in tableViewCurrents:                        
-            index.model().setData(index, action.text())
-        return
-
-    # @Slot()
-    def do_bfVisibility_clicked(self):
+    def do_quickset(self):
         tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()
         action = self.sender()
         for index in tableViewCurrents:                        
@@ -1224,6 +1226,9 @@ class uiModuleWindow(QWidget):
                     if self.__bfVisibilityIndex != None:
                         self.ui.tableView.setItemDelegateForColumn(self.__bfVisibilityIndex, None)
                         self.__bfVisibilityIndex = None
+                    if self.__bfExistIndex != None:
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfExistIndex, None)
+                        self.__bfExistIndex = None
                     if self.__bfValueIndex != None:
                         self.ui.tableView.showColumn(self.__bfValueIndex)
                         self.__bfValueIndex = None
@@ -1261,6 +1266,9 @@ class uiModuleWindow(QWidget):
                     if self.__bfVisibilityIndex != None:
                         self.ui.tableView.setItemDelegateForColumn(self.__bfVisibilityIndex, None)
                         self.__bfVisibilityIndex = None
+                    if self.__bfExistIndex != None:
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfExistIndex, None)
+                        self.__bfExistIndex = None                        
                     if self.__bfValueIndex != None:
                         self.ui.tableView.showColumn(self.__bfValueIndex)
                         self.__bfValueIndex = None
@@ -1342,9 +1350,11 @@ class uiModuleWindow(QWidget):
                     if self.__bfAccessIndex == None:
                         delegate = QBfTableColumnDelegate()
                         self.__bfAccessIndex = self.bfTableModel.record().indexOf("Access")
-                        self.ui.tableView.setItemDelegateForColumn(self.__bfAccessIndex, delegate)
                         self.__bfVisibilityIndex = self.bfTableModel.record().indexOf("Visibility")
+                        self.__bfExistIndex = self.bfTableModel.record().indexOf("Exist")
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfAccessIndex, delegate)
                         self.ui.tableView.setItemDelegateForColumn(self.__bfVisibilityIndex, delegate)
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfExistIndex, delegate)
                     self.ui.tableView.setModel(self.bfTableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
                     if self.__regMapTypeIndex != None:
@@ -1386,6 +1396,9 @@ class uiModuleWindow(QWidget):
                     if self.__bfVisibilityIndex != None:
                         self.ui.tableView.setItemDelegateForColumn(self.__bfVisibilityIndex, None)
                         self.__bfVisibilityIndex = None
+                    if self.__bfExistIndex != None:
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfExistIndex, None)
+                        self.__bfExistIndex = None                        
                     if self.__bfValueIndex != None:
                         self.ui.tableView.showColumn(self.__bfValueIndex)
                         self.__bfValueIndex = None
