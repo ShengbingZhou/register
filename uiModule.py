@@ -903,6 +903,10 @@ class uiModuleWindow(QWidget):
         self.ui.treeView.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.treeView.customContextMenuRequested.connect(self.do_treeView_contextMenuRequested)
         
+        # connect tableView quick menu slot
+        self.ui.tableView.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.tableView.customContextMenuRequested.connect(self.do_tableView_contextMenuRequested)        
+
         # select memory map node
         if infoItem != None:
             firstMemMapItemIndex = self.treeViewTableModel.indexFromItem(infoItem)
@@ -1063,7 +1067,17 @@ class uiModuleWindow(QWidget):
         menuPosition = self.ui.treeView.viewport().mapToGlobal(point)
         self.treeViewPopMenu.move(menuPosition)
         self.treeViewPopMenu.show()
+        return
     
+    @Slot()
+    def do_tableView_contextMenuRequested(self, point):
+        if self.view == QRegisterConst.DesignView:
+            if self.__treeViewCurrentTable == "Register":                            
+                tableViewCurrents = self.ui.tableViewReg.selectionModel().selectedIndexes()                
+            else:
+                tableViewCurrents = self.ui.tableView.selectionModel().selectedIndexes()        
+        return
+
     @Slot()
     def do_tableView_dataChanged(self, topLeft, bottomRight, roles):
         current = self.ui.treeView.selectedIndexes().pop()
