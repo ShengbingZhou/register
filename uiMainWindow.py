@@ -106,7 +106,7 @@ class uiMainWindow(QMainWindow):
 
     @Slot()
     def on_actionChangelog_triggered(self):
-        changeLog = os.path.join(QRegisterConst.BaseDir, "changelog")
+        changeLog = os.path.join(QRegisterConst.BaseDir, "log/changelog")
         with open (changeLog) as file:
             log = file.read()
             QMessageBox.information(self, "Changelog", log, QMessageBox.Yes)
