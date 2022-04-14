@@ -39,7 +39,7 @@
      <x>0</x>
      <y>0</y>
      <width>1045</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -82,6 +82,7 @@
      <string>Help</string>
     </property>
     <addaction name="actionAbout"/>
+    <addaction name="actionChangelog"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -224,6 +225,11 @@
    </property>
    <property name="toolTip">
     <string>Save a register design</string>
+   </property>
+  </action>
+  <action name="actionChangelog">
+   <property name="text">
+    <string>Changelog</string>
    </property>
   </action>
  </widget>

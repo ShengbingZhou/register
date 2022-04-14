@@ -957,15 +957,16 @@ class uiModuleWindow(QWidget):
                 for k in range(bfQueryModel.rowCount()):
                     bfRecord = bfQueryModel.record(k)
                     if QRegisterConst.recordExist(bfRecord) == True:
-                        bfId    = bfRecord.value("id")
-                        bfWidth = int(bfRecord.value("Width"))
-                        regOff  = QRegisterConst.strToInt(bfRecord.value("RegisterOffset"))
+                        bfId     = bfRecord.value("id")
+                        bfWidth  = int(bfRecord.value("Width"))
+                        bfRdOnly = QRegisterConst.isReadOnly(bfRecord.value("Access"))
+                        regOff   = QRegisterConst.strToInt(bfRecord.value("RegisterOffset"))
                         if bfWidth > 1:
-                            regBits = "[%s:%s]"%(bfWidth + regOff - 1, regOff)
+                            bfBitsLocation = "[%s:%s]"%(bfWidth + regOff - 1, regOff)
                         else:
-                            regBits = "[%s]"%regOff
+                            bfBitsLocation = "[%s]"%regOff
                         bfItem0 = QStandardItem(" ")
-                        bfItem1 = QStandardItem(regBits)
+                        bfItem1 = QStandardItem(bfBitsLocation)
                         bfItem2 = QStandardItem(bfRecord.value("name"))
                         bfItem3 = QStandardItem(hex(QRegisterConst.strToInt(bfRecord.value("DefaultValue"))))
                         bfItems = [bfItem0, bfItem1, bfItem2, bfItem3]
@@ -973,6 +974,7 @@ class uiModuleWindow(QWidget):
                             r.setData("Bitfield", QRegisterConst.TableNameRole)
                             r.setData(regId,      QRegisterConst.RegIdRole)
                             r.setData(bfId,       QRegisterConst.BfIdRole)
+                            r.setData(bfRdOnly,   QRegisterConst.BfReadOnlyRole)
                         debugModel.appendRow(bfItems)
 
     @Slot()

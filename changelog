@@ -1,0 +1,26 @@
+v0.0.5-alpha
+- update database to include more fields
+- support to add/delete memory map
+- allow to edit register design information
+- add register r/w log support
+- add dynamic hardware dongle support
+- remove outdated temp design files when program exits
+- add global try-catch
+- adjust text style of tree view item
+- update qss style
+- add toolbar
+
+v0.0.4-alpha
+- improve bit field graphic display on register table and bit field table
+- support bit field highlight
+
+v0.0.3-alpha
+- use sql to operate database directly to improve speed
+- support ipxact 2009
+- add more fields for some tables
+
+v0.0.2-alpha
+- fix ipxact 2014 import/export
+
+v0.0.1-alpha
+- preview

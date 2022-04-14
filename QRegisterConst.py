@@ -57,6 +57,7 @@ class QRegisterConst:
     BfIdRole       = Qt.UserRole + 6
     BfEnumIdRole   = Qt.UserRole + 7
     RegMapTypeRole = Qt.UserRole + 8
+    BfReadOnlyRole = Qt.UserRole + 9
 
     # hardware access driver
     RegisterAccessDriverClass= None
@@ -100,6 +101,18 @@ class QRegisterConst:
                 return False
             else:
                 return True
+
+    @staticmethod
+    def isReadOnly(value):
+        if value is None:
+            return False
+        valueString = str(value)
+        if valueString is '':
+            return False
+        if 'w' in valueString:
+            return False
+        else:
+            return True
 
     @staticmethod
     def findRegAccessDriverClass():

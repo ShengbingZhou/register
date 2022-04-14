@@ -23,12 +23,15 @@ class QRegDebugTableModel(QStandardItemModel):
 
     def setRegMapId(self, id):
         self.id = id
-               
+
     def flags(self, index):
         flags = QStandardItemModel.flags(self, index)                       
         if index.column() != QRegisterConst.ValueColumnOfDebugView:
-            # only allow value column to editable
-            flags &= ~Qt.ItemIsEditable
+            flags &= ~Qt.ItemIsEditable  # only allow value column to editable
+        else:
+            readOnly = index.data(QRegisterConst.BfReadOnlyRole)
+            if readOnly is not None and readOnly is True:
+                flags &= ~Qt.ItemIsEditable
         return flags
 
     def data(self, index, role):
@@ -36,7 +39,10 @@ class QRegDebugTableModel(QStandardItemModel):
         if role == Qt.BackgroundColorRole:
             tableName = index.data(QRegisterConst.TableNameRole)
             if tableName == "Register":
-                value = QColor('lightgrey') # highlight register row
+                value = QColor('lightgrey')  # highlight register row
+            else:
+                if index.column() ==  QRegisterConst.ValueColumnOfDebugView and self.flags(index) & Qt.ItemIsEditable == 0:
+                    value = QColor('yellow') # highlight readonly row
         return value
 
     def setData(self, index, value, role=Qt.EditRole):

@@ -24,6 +24,7 @@ class uiMainWindow(QMainWindow):
         self.setWindowTitle("Register Tool v%s"%(QRegisterConst.Version))
         self.setWindowIcon(QIcon(os.path.join(QRegisterConst.BaseDir, 'icon/module32.png')))
         self.ui.actionSave_As.setVisible(False)
+        self.ui.actionImportYoda.setVisible(False)
         self.ui.menuEdit.setTitle('')
         self.resize(1600, 900)
         rect = self.frameGeometry()
@@ -102,6 +103,13 @@ class uiMainWindow(QMainWindow):
     @Slot()
     def on_actionAbout_triggered(self):
         QMessageBox.information(self, "About", "Copyright by @ShengbingZhou (shengbingzhou@outlook.com) \n\n Source code link: https://github.dev/ShengbingZhou/register \n\n", QMessageBox.Yes)
+
+    @Slot()
+    def on_actionChangelog_triggered(self):
+        changeLog = os.path.join(QRegisterConst.BaseDir, "changelog")
+        with open (changeLog) as file:
+            log = file.read()
+            QMessageBox.information(self, "Changelog", log, QMessageBox.Yes)
 
     @Slot()
     def on_actionRegister_Access_Log_triggered(self):
