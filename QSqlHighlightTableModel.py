@@ -8,6 +8,7 @@ class QSqlHighlightTableModel(QSqlTableModel):
 
     def __init__(self, parent=None, conn=None):
         super(QSqlHighlightTableModel, self).__init__(parent, conn)
+        self.parentId = None
 
     def data(self, index, role):
         value = QSqlTableModel.data(self, index, role)

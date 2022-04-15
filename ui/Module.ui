@@ -73,11 +73,8 @@
           <property name="bottomMargin">
            <number>0</number>
           </property>
-          <item row="3" column="0">
-           <widget class="QTableView" name="tableViewReg"/>
-          </item>
-          <item row="2" column="0">
-           <widget class="QTableView" name="tableView"/>
+          <item row="4" column="0">
+           <widget class="QTableView" name="tableViewRegMap"/>
           </item>
           <item row="1" column="0">
            <widget class="QFrame" name="frame_4">
@@ -294,6 +291,24 @@
              </item>
             </layout>
            </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QTableView" name="tableViewReg"/>
+          </item>
+          <item row="2" column="0">
+           <widget class="QTableView" name="tableViewInfo"/>
+          </item>
+          <item row="3" column="0">
+           <widget class="QTableView" name="tableViewMemoryMap"/>
+          </item>
+          <item row="6" column="0">
+           <widget class="QTableView" name="tableViewBf"/>
+          </item>
+          <item row="7" column="0">
+           <widget class="QTableView" name="tableViewBfEnum"/>
+          </item>
+          <item row="8" column="0">
+           <widget class="QTableView" name="tableViewDebug"/>
           </item>
          </layout>
         </widget>

@@ -47,15 +47,10 @@ class Ui_ModuleWindow(object):
         self.gridLayout_2 = QGridLayout(self.frame_3)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.tableViewReg = QTableView(self.frame_3)
-        self.tableViewReg.setObjectName(u"tableViewReg")
+        self.tableViewRegMap = QTableView(self.frame_3)
+        self.tableViewRegMap.setObjectName(u"tableViewRegMap")
 
-        self.gridLayout_2.addWidget(self.tableViewReg, 3, 0, 1, 1)
-
-        self.tableView = QTableView(self.frame_3)
-        self.tableView.setObjectName(u"tableView")
-
-        self.gridLayout_2.addWidget(self.tableView, 2, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.tableViewRegMap, 4, 0, 1, 1)
 
         self.frame_4 = QFrame(self.frame_3)
         self.frame_4.setObjectName(u"frame_4")
@@ -160,6 +155,36 @@ class Ui_ModuleWindow(object):
 
 
         self.gridLayout_2.addWidget(self.frame_4, 1, 0, 1, 1)
+
+        self.tableViewReg = QTableView(self.frame_3)
+        self.tableViewReg.setObjectName(u"tableViewReg")
+
+        self.gridLayout_2.addWidget(self.tableViewReg, 5, 0, 1, 1)
+
+        self.tableViewInfo = QTableView(self.frame_3)
+        self.tableViewInfo.setObjectName(u"tableViewInfo")
+
+        self.gridLayout_2.addWidget(self.tableViewInfo, 2, 0, 1, 1)
+
+        self.tableViewMemoryMap = QTableView(self.frame_3)
+        self.tableViewMemoryMap.setObjectName(u"tableViewMemoryMap")
+
+        self.gridLayout_2.addWidget(self.tableViewMemoryMap, 3, 0, 1, 1)
+
+        self.tableViewBf = QTableView(self.frame_3)
+        self.tableViewBf.setObjectName(u"tableViewBf")
+
+        self.gridLayout_2.addWidget(self.tableViewBf, 6, 0, 1, 1)
+
+        self.tableViewBfEnum = QTableView(self.frame_3)
+        self.tableViewBfEnum.setObjectName(u"tableViewBfEnum")
+
+        self.gridLayout_2.addWidget(self.tableViewBfEnum, 7, 0, 1, 1)
+
+        self.tableViewDebug = QTableView(self.frame_3)
+        self.tableViewDebug.setObjectName(u"tableViewDebug")
+
+        self.gridLayout_2.addWidget(self.tableViewDebug, 8, 0, 1, 1)
 
 
         self.verticalLayout.addWidget(self.frame_3)
