@@ -79,14 +79,8 @@ class uiModuleWindow(QWidget):
         self.newFileName = ''
 
         # default value
-        self.__treeViewCurrentTable = None # selected table name by treeView
-        self.__treeViewCurrentRow = None   # curent row index on treeView
-        self.__regMapTypeIndex = None      # regmap table 'Type' column index which should be hidden, while this column should be visible for other tables
-        self.__bfValueIndex = None         # bitfield table 'Value' column index which should be hidden, while this column should be visible for other tables
-        self.__bfAccessIndex = None        # bitfield table 'Access' column index which should have a delegate
-        self.__bfVisibilityIndex = None    # bitfield table 'Visibility' column index which should have a delegate
-        self.__bfExistIndex = None         # bitfield table 'Exist' column index which should have a delegate
-        self.__bfResetTypeIndex = None     # bitfield table 'ResetType' column index which should have a delegate
+        self.__treeViewCurrentTable = None # selected table name of treeView
+        self.__treeViewCurrentRow   = None # curent row index on treeView
         return
     
     def eventFilter(self, obj, event):
@@ -926,7 +920,7 @@ class uiModuleWindow(QWidget):
         self.ui.tableViewMemoryMap.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.tableViewMemoryMap.customContextMenuRequested.connect(self.do_tableView_contextMenuRequested)        
         self.ui.tableViewRegMap.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui.tableViewRegMap.customContextMenuRequested.connect(self.do_tableView_contextMenuRequested)   
+        self.ui.tableViewRegMap.customContextMenuRequested.connect(self.do_tableView_contextMenuRequested)
         self.ui.tableViewBf.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.tableViewBf.customContextMenuRequested.connect(self.do_tableView_contextMenuRequested)   
         self.ui.tableViewBfEnum.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -1121,6 +1115,27 @@ class uiModuleWindow(QWidget):
             elif self.__treeViewCurrentTable == "BitfieldEnum":
                 tableViewCurrents = self.ui.tableViewBfEnum.selectionModel().selectedIndexes()  
 
+            tablePopMenu = None
+            menuPosition = None
+
+            if self.__treeViewCurrentTable == "MemoryMap":
+                if any(item.column() != self.__memMapExistIndex for item in tableViewCurrents) is False:
+                    tablePopMenu = QMenu(self)
+                    for exist in QRegisterConst.ExistOptions:
+                        action = QAction(exist, self)
+                        action.triggered.connect(self.do_quickset)                        
+                        tablePopMenu.addAction(action)
+                    menuPosition = self.ui.tableViewMemoryMap.viewport().mapToGlobal(point)
+
+            if self.__treeViewCurrentTable == "RegisterMap":
+                if any(item.column() != self.__regMapExistIndex for item in tableViewCurrents) is False:
+                    tablePopMenu = QMenu(self)
+                    for exist in QRegisterConst.ExistOptions:
+                        action = QAction(exist, self)
+                        action.triggered.connect(self.do_quickset)                        
+                        tablePopMenu.addAction(action)
+                    menuPosition = self.ui.tableViewRegMap.viewport().mapToGlobal(point)
+
             if self.__treeViewCurrentTable == "Bitfield":
                 if any(item.column() != self.__bfAccessIndex for item in tableViewCurrents) is False:
                     tablePopMenu = QMenu(self)
@@ -1129,8 +1144,6 @@ class uiModuleWindow(QWidget):
                         action.triggered.connect(self.do_quickset)                        
                         tablePopMenu.addAction(action)
                     menuPosition = self.ui.tableViewBf.viewport().mapToGlobal(point)
-                    tablePopMenu.move(menuPosition)
-                    tablePopMenu.show()
                 elif any(item.column() != self.__bfVisibilityIndex for item in tableViewCurrents) is False:
                     tablePopMenu = QMenu(self)
                     for visibility in QRegisterConst.VisibilityOptions:
@@ -1138,17 +1151,13 @@ class uiModuleWindow(QWidget):
                         action.triggered.connect(self.do_quickset)                        
                         tablePopMenu.addAction(action)
                     menuPosition = self.ui.tableViewBf.viewport().mapToGlobal(point)
-                    tablePopMenu.move(menuPosition)
-                    tablePopMenu.show()
                 elif any(item.column() != self.__bfExistIndex for item in tableViewCurrents) is False:
                     tablePopMenu = QMenu(self)
                     for exist in QRegisterConst.ExistOptions:
                         action = QAction(exist, self)
                         action.triggered.connect(self.do_quickset)                        
                         tablePopMenu.addAction(action)
-                    menuPosition = self.ui.tableViewBf.viewport().mapToGlobal(point)
-                    tablePopMenu.move(menuPosition)
-                    tablePopMenu.show()        
+                    menuPosition = self.ui.tableViewBf.viewport().mapToGlobal(point)   
                 elif any(item.column() != self.__bfResetTypeIndex for item in tableViewCurrents) is False:
                     tablePopMenu = QMenu(self)
                     for exist in QRegisterConst.ResetTypes:
@@ -1156,8 +1165,10 @@ class uiModuleWindow(QWidget):
                         action.triggered.connect(self.do_quickset)                        
                         tablePopMenu.addAction(action)
                     menuPosition = self.ui.tableViewBf.viewport().mapToGlobal(point)
-                    tablePopMenu.move(menuPosition)
-                    tablePopMenu.show()                                          
+
+            if tablePopMenu is not None:
+                tablePopMenu.move(menuPosition)
+                tablePopMenu.show()                                          
         return
 
     # @Slot()
@@ -1288,6 +1299,7 @@ class uiModuleWindow(QWidget):
                 if self.ui.tableViewMemoryMap.model() != self.memMapTableModel:
                     self.ui.tableViewMemoryMap.setModel(self.memMapTableModel)
                     self.ui.tableViewMemoryMap.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    self.__memMapExistIndex = self.memMapTableModel.record().indexOf("Exist")
                     self.ui.tableViewMemoryMap.hideColumn(0) # id
                     self.ui.tableViewMemoryMap.hideColumn(1) # order
                     self.ui.tableViewMemoryMap.resizeColumnsToContents()
@@ -1315,11 +1327,11 @@ class uiModuleWindow(QWidget):
                 if self.ui.tableViewRegMap.model() != self.regMapTableModel:
                     self.ui.tableViewRegMap.setModel(self.regMapTableModel)
                     self.ui.tableViewRegMap.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
-                    self.__regMapTypeIndex = self.regMapTableModel.record().indexOf("Type")
+                    self.__regMapExistIndex = self.regMapTableModel.record().indexOf("Exist")
                     self.ui.tableViewRegMap.hideColumn(0) # id
                     self.ui.tableViewRegMap.hideColumn(1) # memmap id
                     self.ui.tableViewRegMap.hideColumn(2) # order
-                    self.ui.tableViewRegMap.hideColumn(self.__regMapTypeIndex)
+                    self.ui.tableViewRegMap.hideColumn(self.regMapTableModel.record().indexOf("Type"))
                 if  memMapId != self.regMapTableModel.parentId or self.__treeViewCurrentTable != "RegisterMap":
                     self.regMapTableModel.setParentId(memMapId)
                     self.regMapTableModel.setFilter("MemoryMapId=%s"%memMapId)
@@ -1408,7 +1420,6 @@ class uiModuleWindow(QWidget):
                     self.__bfVisibilityIndex = self.bfTableModel.record().indexOf("Visibility")
                     self.__bfResetTypeIndex  = self.bfTableModel.record().indexOf("ResetType")
                     self.__bfExistIndex      = self.bfTableModel.record().indexOf("Exist")
-                    self.__bfValueIndex      = self.bfTableModel.record().indexOf("Value")
                     self.ui.tableViewBf.setItemDelegateForColumn(self.__bfAccessIndex,     delegate)
                     self.ui.tableViewBf.setItemDelegateForColumn(self.__bfVisibilityIndex, delegate)
                     self.ui.tableViewBf.setItemDelegateForColumn(self.__bfResetTypeIndex,  delegate)
@@ -1416,7 +1427,7 @@ class uiModuleWindow(QWidget):
                     self.ui.tableViewBf.hideColumn(0) # id
                     self.ui.tableViewBf.hideColumn(1) # regid
                     self.ui.tableViewBf.hideColumn(2) # order
-                    self.ui.tableViewBf.hideColumn(self.__bfValueIndex)
+                    self.ui.tableViewBf.hideColumn(self.bfTableModel.record().indexOf("Value"))
                 if regId != self.bfTableModel.parentId or self.__treeViewCurrentTable != "Bitfield":
                     self.bfTableModel.setParentId(regId)
                     self.bfTableModel.setFilter("RegisterId=%s"%regId)
