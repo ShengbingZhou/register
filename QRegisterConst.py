@@ -48,8 +48,11 @@ class QRegisterConst:
     # bf access options
     AccessTypes = ['read-write', 'read-only', 'write-only', 'read-writeOnce', 'writeOnce']
 
+    # bf reset types
+    ResetTypes = ['async', 'sync']
+
     # visibility options
-    VisibilityOptions = ['public', 'private'] 
+    VisibilityOptions = ['public', 'private']
 
     # exist options
     ExistOptions = ['yes', 'no']

@@ -42,7 +42,7 @@ class QRegDebugTableModel(QStandardItemModel):
                 value = QColor('lightgrey')  # highlight register row
             else:
                 if index.column() ==  QRegisterConst.ValueColumnOfDebugView and self.flags(index) & Qt.ItemIsEditable == 0:
-                    value = QColor('yellow') # highlight readonly row
+                    value = QColor(0xffde24) # highlight readonly row
         return value
 
     def setData(self, index, value, role=Qt.EditRole):

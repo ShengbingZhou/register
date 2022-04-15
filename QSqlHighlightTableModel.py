@@ -10,10 +10,18 @@ class QSqlHighlightTableModel(QSqlTableModel):
         super(QSqlHighlightTableModel, self).__init__(parent, conn)
 
     def data(self, index, role):
-        value = QSqlTableModel.data(self, index, role) 
+        value = QSqlTableModel.data(self, index, role)
+
         if role == Qt.BackgroundColorRole:
             if QRegisterConst.recordExist(QSqlTableModel.record(self, index.row())) == False:
                 value = QColor('grey')
+
+        if role == Qt.DisplayRole:
+            tableName = index.model().tableName()
+            if tableName == "Register":
+                if index.column() == QRegisterConst.RegisterVisibilityColumn:
+                    a = 0 # TODO: check bitfields values
+
         return value
 
     def flags(self, index):
@@ -37,10 +45,13 @@ class QBfTableColumnDelegate(QItemDelegate):
         if fieldName == 'Access':
             combox = QComboBox(parent)
             combox.addItems(QRegisterConst.AccessTypes)
-        if fieldName == 'Visibility':
+        elif fieldName == 'Visibility':
             combox = QComboBox(parent)
             combox.addItems(QRegisterConst.VisibilityOptions)
-        if fieldName == 'Exist':
+        elif fieldName == 'ResetType':
+            combox = QComboBox(parent)
+            combox.addItems(QRegisterConst.ResetTypes)
+        elif fieldName == 'Exist':
             combox = QComboBox(parent)
             combox.addItems(QRegisterConst.ExistOptions)            
         return combox

@@ -73,6 +73,7 @@ class uiModuleWindow(QWidget):
         self.__bfAccessIndex = None        # bitfield table 'Access' column index which should have a delegate
         self.__bfVisibilityIndex = None    # bitfield table 'Visibility' column index which should have a delegate
         self.__bfExistIndex = None         # bitfield table 'Exist' column index which should have a delegate
+        self.__bfResetTypeIndex = None     # bitfield table 'ResetType' column index which should have a delegate
         return
     
     def eventFilter(self, obj, event):
@@ -1104,7 +1105,16 @@ class uiModuleWindow(QWidget):
                             tablePopMenu.addAction(action)
                         menuPosition = self.ui.tableView.viewport().mapToGlobal(point)
                         tablePopMenu.move(menuPosition)
-                        tablePopMenu.show()                                                
+                        tablePopMenu.show()        
+                    elif any(item.column() != self.__bfResetTypeIndex for item in tableViewCurrents) is False:
+                        tablePopMenu = QMenu(self)
+                        for exist in QRegisterConst.ResetTypes:
+                            action = QAction(exist, self)
+                            action.triggered.connect(self.do_quickset)                        
+                            tablePopMenu.addAction(action)
+                        menuPosition = self.ui.tableView.viewport().mapToGlobal(point)
+                        tablePopMenu.move(menuPosition)
+                        tablePopMenu.show()                                          
         return
 
     # @Slot()
@@ -1187,14 +1197,16 @@ class uiModuleWindow(QWidget):
                         self.ui.tableView.showColumn(self.__regMapTypeIndex)
                         self.__regMapTypeIndex = None
                     if self.__bfAccessIndex != None:
-                        self.ui.tableView.setItemDelegateForColumn(self.__bfAccessIndex, None)
-                        self.__bfAccessIndex = None
-                    if self.__bfVisibilityIndex != None:
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfAccessIndex,     None)
                         self.ui.tableView.setItemDelegateForColumn(self.__bfVisibilityIndex, None)
-                        self.__bfVisibilityIndex = None
-                    if self.__bfValueIndex != None:
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfExistIndex,      None)
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfResetTypeIndex,  None)
                         self.ui.tableView.showColumn(self.__bfValueIndex)
-                        self.__bfValueIndex = None
+                        self.__bfAccessIndex     = None
+                        self.__bfVisibilityIndex = None
+                        self.__bfValueIndex = None      
+                        self.__bfExistIndex = None
+                        self.__bfResetTypeIndex  = None
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.hideColumn(1) # offset
                     self.ui.tableView.hideColumn(2) # last update
@@ -1207,6 +1219,7 @@ class uiModuleWindow(QWidget):
                 self.ui.pbAddBf.setEnabled(False)
                 self.ui.pbAddBfEnum.setEnabled(False)
                 self.ui.labelDescription.setText("Tips: Click <font color=\"red\">%s</font> to add new memory map."%self.ui.pbAddMemMap.text())
+
             elif tableName == "MemoryMap": # mem map selected, show mem map table
                 self.ui.tableView.setVisible(True)
                 self.ui.tableViewReg.setVisible(False)    
@@ -1221,17 +1234,16 @@ class uiModuleWindow(QWidget):
                         self.ui.tableView.showColumn(self.__regMapTypeIndex)
                         self.__regMapTypeIndex = None
                     if self.__bfAccessIndex != None:
-                        self.ui.tableView.setItemDelegateForColumn(self.__bfAccessIndex, None)
-                        self.__bfAccessIndex = None
-                    if self.__bfVisibilityIndex != None:
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfAccessIndex,     None)
                         self.ui.tableView.setItemDelegateForColumn(self.__bfVisibilityIndex, None)
-                        self.__bfVisibilityIndex = None
-                    if self.__bfExistIndex != None:
-                        self.ui.tableView.setItemDelegateForColumn(self.__bfExistIndex, None)
-                        self.__bfExistIndex = None
-                    if self.__bfValueIndex != None:
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfExistIndex,      None)
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfResetTypeIndex,  None)
                         self.ui.tableView.showColumn(self.__bfValueIndex)
-                        self.__bfValueIndex = None
+                        self.__bfAccessIndex     = None
+                        self.__bfVisibilityIndex = None
+                        self.__bfValueIndex = None      
+                        self.__bfExistIndex = None
+                        self.__bfResetTypeIndex  = None
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.hideColumn(1) # order
                     self.ui.tableView.showColumn(2) # offset address
@@ -1260,22 +1272,22 @@ class uiModuleWindow(QWidget):
                     self.regMapTableModel.select()
                     self.ui.tableView.setModel(self.regMapTableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    if self.__regMapTypeIndex is None:
+                        self.__regMapTypeIndex = self.regMapTableModel.record().indexOf("Type")
                     if self.__bfAccessIndex != None:
-                        self.ui.tableView.setItemDelegateForColumn(self.__bfAccessIndex, None)
-                        self.__bfAccessIndex = None
-                    if self.__bfVisibilityIndex != None:
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfAccessIndex,     None)
                         self.ui.tableView.setItemDelegateForColumn(self.__bfVisibilityIndex, None)
-                        self.__bfVisibilityIndex = None
-                    if self.__bfExistIndex != None:
-                        self.ui.tableView.setItemDelegateForColumn(self.__bfExistIndex, None)
-                        self.__bfExistIndex = None                        
-                    if self.__bfValueIndex != None:
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfExistIndex,      None)
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfResetTypeIndex,  None)
                         self.ui.tableView.showColumn(self.__bfValueIndex)
-                        self.__bfValueIndex = None
+                        self.__bfAccessIndex     = None
+                        self.__bfVisibilityIndex = None
+                        self.__bfValueIndex = None      
+                        self.__bfExistIndex = None
+                        self.__bfResetTypeIndex  = None
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.hideColumn(1) # memmap id
                     self.ui.tableView.hideColumn(2) # order
-                    self.__regMapTypeIndex = self.regMapTableModel.record().indexOf("Type")
                     self.ui.tableView.hideColumn(self.__regMapTypeIndex)
                     self.ui.tableView.resizeColumnsToContents()
                     self.ui.tableView.resizeColumnsToContents()
@@ -1306,13 +1318,16 @@ class uiModuleWindow(QWidget):
                     self.regTableModel.setFilter("RegisterMapId=%s"%regMapId)
                     self.regTableModel.select()                    
                     if self.ui.tableViewReg.model() != self.regTableModel:
-                        self.__regValueIndex = self.regTableModel.record().indexOf("Value")
-                        self.ui.tableViewReg.setItemDelegateForColumn(self.__regValueIndex, QRegValueDisplayDelegate())
-                        self.regTableModel.setHeaderData(self.__regValueIndex, Qt.Horizontal, "Bits")
-                        QRegisterConst.RegisterVisibilityColumn = self.regTableModel.record().indexOf("Visibility")
+                        # update table model
                         self.ui.tableViewReg.setModel(self.regTableModel)
                         self.ui.tableViewReg.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
-                        regMapWidth = 8 # bits width
+                        # visibility column
+                        QRegisterConst.RegisterVisibilityColumn = self.regTableModel.record().indexOf("Visibility")
+                        # value column
+                        regValueIndex = self.regTableModel.record().indexOf("Value")
+                        self.ui.tableViewReg.setItemDelegateForColumn(regValueIndex, QRegValueDisplayDelegate())
+                        self.regTableModel.setHeaderData(regValueIndex, Qt.Horizontal, "Bits")
+                        regMapWidth = 8 # default register width
                         regMapQ = QSqlQuery("SELECT Width FROM RegisterMap WHERE id=%s"%(regMapId), self.conn)
                         if regMapQ.next():
                             w = regMapQ.value("Width")
@@ -1320,11 +1335,11 @@ class uiModuleWindow(QWidget):
                                 regMapWidth = int(w)
                         pixelsWide = QFontMetrics(self.ui.tableViewReg.font()).width(" ZB ") + 1
                         w = pixelsWide * regMapWidth + 10 # bitwidth*bits + 2*margin 
-                        self.ui.tableViewReg.setColumnWidth(self.__regValueIndex, w)
+                        self.ui.tableViewReg.setColumnWidth(regValueIndex, w)
                     self.ui.tableViewReg.hideColumn(0) # id
                     self.ui.tableViewReg.hideColumn(1) # regmap id
                     self.ui.tableViewReg.hideColumn(2) # order
-                    #self.ui.tableViewReg.resizeColumnToContents(self.__regValueIndex) # slow, half time of resizeColumnsToContents()
+                    #self.ui.tableViewReg.resizeColumnToContents(regValueIndex) # slow, half time of resizeColumnsToContents()
                     #self.ui.tableViewReg.resizeColumnsToContents() # very slow, xxx ms.
 
                 # update tips
@@ -1347,23 +1362,25 @@ class uiModuleWindow(QWidget):
                     self.bfTableModel.setParentId(regId)
                     self.bfTableModel.setFilter("RegisterId=%s"%regId)
                     self.bfTableModel.select()
-                    if self.__bfAccessIndex == None:
-                        delegate = QBfTableColumnDelegate()
-                        self.__bfAccessIndex = self.bfTableModel.record().indexOf("Access")
-                        self.__bfVisibilityIndex = self.bfTableModel.record().indexOf("Visibility")
-                        self.__bfExistIndex = self.bfTableModel.record().indexOf("Exist")
-                        self.ui.tableView.setItemDelegateForColumn(self.__bfAccessIndex, delegate)
-                        self.ui.tableView.setItemDelegateForColumn(self.__bfVisibilityIndex, delegate)
-                        self.ui.tableView.setItemDelegateForColumn(self.__bfExistIndex, delegate)
                     self.ui.tableView.setModel(self.bfTableModel)
                     self.ui.tableView.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
                     if self.__regMapTypeIndex != None:
                         self.ui.tableView.showColumn(self.__regMapTypeIndex)
                         self.__regMapTypeIndex = None
+                    if self.__bfAccessIndex == None:
+                        delegate = QBfTableColumnDelegate()
+                        self.__bfAccessIndex     = self.bfTableModel.record().indexOf("Access")
+                        self.__bfVisibilityIndex = self.bfTableModel.record().indexOf("Visibility")
+                        self.__bfResetTypeIndex  = self.bfTableModel.record().indexOf("ResetType")
+                        self.__bfExistIndex      = self.bfTableModel.record().indexOf("Exist")
+                        self.__bfValueIndex      = self.bfTableModel.record().indexOf("Value")
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfAccessIndex,     delegate)
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfVisibilityIndex, delegate)
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfExistIndex,      delegate)
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfResetTypeIndex,  delegate)
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.hideColumn(1) # regid
                     self.ui.tableView.hideColumn(2) # order
-                    self.__bfValueIndex = self.bfTableModel.record().indexOf("Value")
                     self.ui.tableView.hideColumn(self.__bfValueIndex)
                     self.ui.tableView.resizeColumnsToContents()
                     
@@ -1391,17 +1408,16 @@ class uiModuleWindow(QWidget):
                         self.ui.tableView.showColumn(self.__regMapTypeIndex)
                         self.__regMapTypeIndex = None
                     if self.__bfAccessIndex != None:
-                        self.ui.tableView.setItemDelegateForColumn(self.__bfAccessIndex, None)
-                        self.__bfAccessIndex = None
-                    if self.__bfVisibilityIndex != None:
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfAccessIndex,     None)
                         self.ui.tableView.setItemDelegateForColumn(self.__bfVisibilityIndex, None)
-                        self.__bfVisibilityIndex = None
-                    if self.__bfExistIndex != None:
-                        self.ui.tableView.setItemDelegateForColumn(self.__bfExistIndex, None)
-                        self.__bfExistIndex = None                        
-                    if self.__bfValueIndex != None:
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfExistIndex,      None)
+                        self.ui.tableView.setItemDelegateForColumn(self.__bfResetTypeIndex,  None)
                         self.ui.tableView.showColumn(self.__bfValueIndex)
-                        self.__bfValueIndex = None
+                        self.__bfAccessIndex     = None
+                        self.__bfVisibilityIndex = None
+                        self.__bfValueIndex = None      
+                        self.__bfExistIndex = None
+                        self.__bfResetTypeIndex  = None
                     self.ui.tableView.hideColumn(0) # id
                     self.ui.tableView.hideColumn(1) # bfid
                     self.ui.tableView.hideColumn(2) # order
