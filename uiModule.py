@@ -17,7 +17,7 @@ from lxml import etree
 # local package
 from ui.Module import Ui_ModuleWindow
 from QRegisterConst import QRegisterConst
-from QSqlHighlightTableModel import QSqlHighlightTableModel, QBfTableColumnDelegate, QRegValueDisplayDelegate
+from QSqlHighlightTableModel import QSqlHighlightTableModel, QRegTableColumnDelegate, QNoEditorColumnDelegate
 from QRegDebugTableModel import QRegDebugTableModel
 
 class uiModuleWindow(QWidget):
@@ -921,6 +921,8 @@ class uiModuleWindow(QWidget):
         self.ui.tableViewMemoryMap.customContextMenuRequested.connect(self.do_tableView_contextMenuRequested)        
         self.ui.tableViewRegMap.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.tableViewRegMap.customContextMenuRequested.connect(self.do_tableView_contextMenuRequested)
+        self.ui.tableViewReg.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.tableViewReg.customContextMenuRequested.connect(self.do_tableView_contextMenuRequested)        
         self.ui.tableViewBf.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.tableViewBf.customContextMenuRequested.connect(self.do_tableView_contextMenuRequested)   
         self.ui.tableViewBfEnum.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -1136,6 +1138,15 @@ class uiModuleWindow(QWidget):
                         tablePopMenu.addAction(action)
                     menuPosition = self.ui.tableViewRegMap.viewport().mapToGlobal(point)
 
+            if self.__treeViewCurrentTable == "Register":
+                if any(item.column() != self.__regExistIndex for item in tableViewCurrents) is False:
+                    tablePopMenu = QMenu(self)
+                    for exist in QRegisterConst.ExistOptions:
+                        action = QAction(exist, self)
+                        action.triggered.connect(self.do_quickset)                        
+                        tablePopMenu.addAction(action)
+                    menuPosition = self.ui.tableViewReg.viewport().mapToGlobal(point)
+
             if self.__treeViewCurrentTable == "Bitfield":
                 if any(item.column() != self.__bfAccessIndex for item in tableViewCurrents) is False:
                     tablePopMenu = QMenu(self)
@@ -1165,6 +1176,22 @@ class uiModuleWindow(QWidget):
                         action.triggered.connect(self.do_quickset)                        
                         tablePopMenu.addAction(action)
                     menuPosition = self.ui.tableViewBf.viewport().mapToGlobal(point)
+
+            if self.__treeViewCurrentTable == "BitfieldEnum":
+                if any(item.column() != self.__bfEnumVisibilityIndex for item in tableViewCurrents) is False:
+                    tablePopMenu = QMenu(self)
+                    for visibility in QRegisterConst.VisibilityOptions:
+                        action = QAction(visibility, self)
+                        action.triggered.connect(self.do_quickset)                        
+                        tablePopMenu.addAction(action)
+                    menuPosition = self.ui.tableViewBfEnum.viewport().mapToGlobal(point)                
+                elif any(item.column() != self.__bfEnumExistIndex for item in tableViewCurrents) is False:
+                    tablePopMenu = QMenu(self)
+                    for exist in QRegisterConst.ExistOptions:
+                        action = QAction(exist, self)
+                        action.triggered.connect(self.do_quickset)                        
+                        tablePopMenu.addAction(action)
+                    menuPosition = self.ui.tableViewBfEnum.viewport().mapToGlobal(point)
 
             if tablePopMenu is not None:
                 tablePopMenu.move(menuPosition)
@@ -1298,8 +1325,10 @@ class uiModuleWindow(QWidget):
                 self.regMapTableModel.select()
                 if self.ui.tableViewMemoryMap.model() != self.memMapTableModel:
                     self.ui.tableViewMemoryMap.setModel(self.memMapTableModel)
-                    self.ui.tableViewMemoryMap.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    self.ui.tableViewMemoryMap.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)                    
+                    delegate = QNoEditorColumnDelegate()
                     self.__memMapExistIndex = self.memMapTableModel.record().indexOf("Exist")
+                    self.ui.tableViewMemoryMap.setItemDelegateForColumn(self.__memMapExistIndex, delegate)                      
                     self.ui.tableViewMemoryMap.hideColumn(0) # id
                     self.ui.tableViewMemoryMap.hideColumn(1) # order
                     self.ui.tableViewMemoryMap.resizeColumnsToContents()
@@ -1326,8 +1355,10 @@ class uiModuleWindow(QWidget):
                 self.regTableModel.select()
                 if self.ui.tableViewRegMap.model() != self.regMapTableModel:
                     self.ui.tableViewRegMap.setModel(self.regMapTableModel)
-                    self.ui.tableViewRegMap.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    self.ui.tableViewRegMap.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)                    
+                    delegate = QNoEditorColumnDelegate()
                     self.__regMapExistIndex = self.regMapTableModel.record().indexOf("Exist")
+                    self.ui.tableViewRegMap.setItemDelegateForColumn(self.__regMapExistIndex, delegate)                                        
                     self.ui.tableViewRegMap.hideColumn(0) # id
                     self.ui.tableViewRegMap.hideColumn(1) # memmap id
                     self.ui.tableViewRegMap.hideColumn(2) # order
@@ -1367,12 +1398,15 @@ class uiModuleWindow(QWidget):
                     # update table model
                     self.ui.tableViewReg.setModel(self.regTableModel)
                     self.ui.tableViewReg.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
-                    # visibility column
-                    QRegisterConst.RegisterVisibilityColumn = self.regTableModel.record().indexOf("Visibility")
+                    # column delegate
+                    self.__regVisibilityIndex = self.regTableModel.record().indexOf("Visibility")
+                    self.__regValueIndex = self.regTableModel.record().indexOf("Value")
+                    self.__regExistIndex = self.regTableModel.record().indexOf("Exist")                    
+                    delegate = QRegTableColumnDelegate()
+                    self.ui.tableViewReg.setItemDelegateForColumn(self.__regValueIndex, delegate)
+                    self.ui.tableViewReg.setItemDelegateForColumn(self.__regExistIndex, delegate)
                     # value column
-                    regValueIndex = self.regTableModel.record().indexOf("Value")
-                    self.ui.tableViewReg.setItemDelegateForColumn(regValueIndex, QRegValueDisplayDelegate())
-                    self.regTableModel.setHeaderData(regValueIndex, Qt.Horizontal, "Bits")
+                    self.regTableModel.setHeaderData(self.__regValueIndex, Qt.Horizontal, "Bits")
                     regMapWidth = 8 # default register width
                     regMapQ = QSqlQuery("SELECT Width FROM RegisterMap WHERE id=%s"%(regMapId), self.conn)
                     if regMapQ.next():
@@ -1381,11 +1415,12 @@ class uiModuleWindow(QWidget):
                             regMapWidth = int(w)
                     pixelsWide = QFontMetrics(self.ui.tableViewReg.font()).width(" ZB ") + 1
                     w = pixelsWide * regMapWidth + 10 # bitwidth*bits + 2*margin 
-                    self.ui.tableViewReg.setColumnWidth(regValueIndex, w)
+                    self.ui.tableViewReg.setColumnWidth(self.__regValueIndex, w)
                 self.ui.tableViewReg.hideColumn(0) # id
                 self.ui.tableViewReg.hideColumn(1) # regmap id
                 self.ui.tableViewReg.hideColumn(2) # order
-                #self.ui.tableViewReg.resizeColumnToContents(regValueIndex) # slow, half time of resizeColumnsToContents()
+                self.ui.tableViewReg.hideColumn(self.__regVisibilityIndex)
+                #self.ui.tableViewReg.resizeColumnToContents(self.__regValueIndex) # slow, half time of resizeColumnsToContents()
                 #self.ui.tableViewReg.resizeColumnsToContents() # very slow, xxx ms.
                 if regMapId != self.regTableModel.parentId or self.__treeViewCurrentTable != "Register":                    
                     self.regTableModel.setParentId(regMapId)
@@ -1415,7 +1450,7 @@ class uiModuleWindow(QWidget):
                 if self.ui.tableViewBf.model() != self.bfTableModel:
                     self.ui.tableViewBf.setModel(self.bfTableModel)
                     self.ui.tableViewBf.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
-                    delegate = QBfTableColumnDelegate()
+                    delegate = QNoEditorColumnDelegate()
                     self.__bfAccessIndex     = self.bfTableModel.record().indexOf("Access")
                     self.__bfVisibilityIndex = self.bfTableModel.record().indexOf("Visibility")
                     self.__bfResetTypeIndex  = self.bfTableModel.record().indexOf("ResetType")
@@ -1454,7 +1489,12 @@ class uiModuleWindow(QWidget):
                 bfId = int(current.data(QRegisterConst.BfIdRole))
                 if self.ui.tableViewBfEnum.model() != self.bfEnumTableModel:
                     self.ui.tableViewBfEnum.setModel(self.bfEnumTableModel)
-                    self.ui.tableViewBfEnum.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)
+                    self.ui.tableViewBfEnum.selectionModel().selectionChanged.connect(self.do_tableView_selectionChanged)                    
+                    delegate = QNoEditorColumnDelegate()
+                    self.__bfEnumExistIndex = self.bfEnumTableModel.record().indexOf("Exist")
+                    self.__bfEnumVisibilityIndex = self.bfEnumTableModel.record().indexOf("Visibility")
+                    self.ui.tableViewBfEnum.setItemDelegateForColumn(self.__bfEnumExistIndex, delegate)
+                    self.ui.tableViewBfEnum.setItemDelegateForColumn(self.__bfEnumVisibilityIndex, delegate)
                     self.ui.tableViewBfEnum.hideColumn(0) # id
                     self.ui.tableViewBfEnum.hideColumn(1) # bfid
                     self.ui.tableViewBfEnum.hideColumn(2) # order

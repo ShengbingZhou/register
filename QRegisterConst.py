@@ -74,9 +74,6 @@ class QRegisterConst:
     # value column index in debug view
     ValueColumnOfDebugView = 3
 
-    # visibility column index in register table, this column is calculated based on bitfield automatically, and not allow user to edit
-    RegisterVisibilityColumn = None
-
     @staticmethod
     def strToInt(text):
         if text is None:
