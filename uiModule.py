@@ -1123,7 +1123,7 @@ class uiModuleWindow(QWidget):
             if self.__treeViewCurrentTable == "MemoryMap":
                 if any(item.column() != self.__memMapExistIndex for item in tableViewCurrents) is False:
                     tablePopMenu = QMenu(self)
-                    for exist in QRegisterConst.ExistOptions:
+                    for exist in QRegisterConst.BoolOptions:
                         action = QAction(exist, self)
                         action.triggered.connect(self.do_quickset)                        
                         tablePopMenu.addAction(action)
@@ -1132,7 +1132,7 @@ class uiModuleWindow(QWidget):
             if self.__treeViewCurrentTable == "RegisterMap":
                 if any(item.column() != self.__regMapExistIndex for item in tableViewCurrents) is False:
                     tablePopMenu = QMenu(self)
-                    for exist in QRegisterConst.ExistOptions:
+                    for exist in QRegisterConst.BoolOptions:
                         action = QAction(exist, self)
                         action.triggered.connect(self.do_quickset)                        
                         tablePopMenu.addAction(action)
@@ -1141,7 +1141,7 @@ class uiModuleWindow(QWidget):
             if self.__treeViewCurrentTable == "Register":
                 if any(item.column() != self.__regExistIndex for item in tableViewCurrents) is False:
                     tablePopMenu = QMenu(self)
-                    for exist in QRegisterConst.ExistOptions:
+                    for exist in QRegisterConst.BoolOptions:
                         action = QAction(exist, self)
                         action.triggered.connect(self.do_quickset)                        
                         tablePopMenu.addAction(action)
@@ -1162,9 +1162,23 @@ class uiModuleWindow(QWidget):
                         action.triggered.connect(self.do_quickset)                        
                         tablePopMenu.addAction(action)
                     menuPosition = self.ui.tableViewBf.viewport().mapToGlobal(point)
+                elif any(item.column() != self.__bfVolatileIndex for item in tableViewCurrents) is False:
+                    tablePopMenu = QMenu(self)
+                    for exist in QRegisterConst.BoolOptions:
+                        action = QAction(exist, self)
+                        action.triggered.connect(self.do_quickset)                        
+                        tablePopMenu.addAction(action)
+                    menuPosition = self.ui.tableViewBf.viewport().mapToGlobal(point)   
+                elif any(item.column() != self.__bfTestableIndex for item in tableViewCurrents) is False:
+                    tablePopMenu = QMenu(self)
+                    for exist in QRegisterConst.BoolOptions:
+                        action = QAction(exist, self)
+                        action.triggered.connect(self.do_quickset)                        
+                        tablePopMenu.addAction(action)
+                    menuPosition = self.ui.tableViewBf.viewport().mapToGlobal(point)   
                 elif any(item.column() != self.__bfExistIndex for item in tableViewCurrents) is False:
                     tablePopMenu = QMenu(self)
-                    for exist in QRegisterConst.ExistOptions:
+                    for exist in QRegisterConst.BoolOptions:
                         action = QAction(exist, self)
                         action.triggered.connect(self.do_quickset)                        
                         tablePopMenu.addAction(action)
@@ -1187,7 +1201,7 @@ class uiModuleWindow(QWidget):
                     menuPosition = self.ui.tableViewBfEnum.viewport().mapToGlobal(point)                
                 elif any(item.column() != self.__bfEnumExistIndex for item in tableViewCurrents) is False:
                     tablePopMenu = QMenu(self)
-                    for exist in QRegisterConst.ExistOptions:
+                    for exist in QRegisterConst.BoolOptions:
                         action = QAction(exist, self)
                         action.triggered.connect(self.do_quickset)                        
                         tablePopMenu.addAction(action)
@@ -1454,10 +1468,14 @@ class uiModuleWindow(QWidget):
                     self.__bfAccessIndex     = self.bfTableModel.record().indexOf("Access")
                     self.__bfVisibilityIndex = self.bfTableModel.record().indexOf("Visibility")
                     self.__bfResetTypeIndex  = self.bfTableModel.record().indexOf("ResetType")
+                    self.__bfTestableIndex   = self.bfTableModel.record().indexOf("Testable")
+                    self.__bfVolatileIndex   = self.bfTableModel.record().indexOf("Volatile")
                     self.__bfExistIndex      = self.bfTableModel.record().indexOf("Exist")
                     self.ui.tableViewBf.setItemDelegateForColumn(self.__bfAccessIndex,     delegate)
                     self.ui.tableViewBf.setItemDelegateForColumn(self.__bfVisibilityIndex, delegate)
                     self.ui.tableViewBf.setItemDelegateForColumn(self.__bfResetTypeIndex,  delegate)
+                    self.ui.tableViewBf.setItemDelegateForColumn(self.__bfTestableIndex,   delegate)
+                    self.ui.tableViewBf.setItemDelegateForColumn(self.__bfVolatileIndex,   delegate)
                     self.ui.tableViewBf.setItemDelegateForColumn(self.__bfExistIndex,      delegate)
                     self.ui.tableViewBf.hideColumn(0) # id
                     self.ui.tableViewBf.hideColumn(1) # regid

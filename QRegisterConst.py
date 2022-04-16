@@ -54,8 +54,8 @@ class QRegisterConst:
     # visibility options
     VisibilityOptions = ['public', 'private']
 
-    # exist options
-    ExistOptions = ['yes', 'no']
+    # bool options
+    BoolOptions = ['true', 'false']
 
     # special role for treeview item
     TableNameRole  = Qt.UserRole + 1
@@ -106,7 +106,7 @@ class QRegisterConst:
         if exist is None:
             return True
         else:
-            if exist == '0' or exist == "n" or exist == 'no':
+            if exist == 'false' or exist == '0' or exist == "n" or exist == 'no':
                 return False
             else:
                 return True

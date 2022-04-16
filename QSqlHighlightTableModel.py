@@ -18,13 +18,14 @@ class QSqlHighlightTableModel(QSqlTableModel):
             tableName = index.model().tableName()
             if tableName == "Register":
                 fieldName = index.model().record().fieldName(index.column())
+        if role == Qt.CheckStateRole:
+            tableName = index.model().tableName()
+            if tableName == "Bitfield":
+                fieldName = index.model().record().fieldName(index.column())
         return value
 
     def flags(self, index):
         flags = QSqlTableModel.flags(self, index)
-        tableName = index.model().tableName()
-        if tableName == "Register":
-            fieldName = index.model().record().fieldName(index.column())
         return flags
 
     def setParentId(self, id):
