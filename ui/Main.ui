@@ -59,6 +59,7 @@
      </property>
      <addaction name="actionExportIP_XACT"/>
      <addaction name="actionExportDocx"/>
+     <addaction name="actionExportVerilog"/>
     </widget>
     <addaction name="actionNew"/>
     <addaction name="actionOpen"/>
@@ -230,6 +231,11 @@
   <action name="actionChangelog">
    <property name="text">
     <string>Changelog</string>
+   </property>
+  </action>
+  <action name="actionExportVerilog">
+   <property name="text">
+    <string>verilog</string>
    </property>
   </action>
  </widget>

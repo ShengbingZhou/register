@@ -652,112 +652,112 @@ class uiModuleWindow(QWidget):
         fileName, filterUsed = QFileDialog.getSaveFileName(self, "Export ipxact file", QDir.homePath(), "ipxact File (*.xml)")
         if fileName == '':
             return
-        try:
-            f_name, f_ext = os.path.splitext(os.path.basename(fileName))
-            # add .xml when saving ipxact file
-            if f_ext != ".xml":
-                fileName += ".xml"               
-            ipxactFile = open(fileName, "w")
-            ipxactFile.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-            ipxactFile.write("<ipxact:component xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ipxact=\"http://www.accellera.org/XMLSchema/IPXACT/1685-2014\" xsi:schemaLocation=\"http://www.accellera.org/XMLSchema/IPXACT/1685-2014 http://www.accellera.org/XMLSchema/IPXACT/1685-2014/index.xsd\">\n")
 
-            # info
-            infoQueryModel = QSqlQueryModel()
-            infoQueryModel.setQuery("SELECT * FROM info", self.conn)
-            infoRecord = infoQueryModel.record(0)
-            ipxactFile.write("  <ipxact:vendor>%s</ipxact:vendor>\n"%infoRecord.value("Vendor"))
-            ipxactFile.write("  <ipxact:library>%s</ipxact:library>\n"%infoRecord.value("Library"))
-            ipxactFile.write("  <ipxact:name>%s</ipxact:name>\n"%infoRecord.value("Name"))
-            ipxactFile.write("  <ipxact:version>%s</ipxact:version>\n"%infoRecord.value("Version"))
-            ipxactFile.write("  <ipxact:memoryMaps>\n")
+        f_name, f_ext = os.path.splitext(os.path.basename(fileName))
+        if f_ext != ".xml":
+            fileName += ".xml"               
+        ipxactFile = open(fileName, "w")
+        ipxactFile.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+        ipxactFile.write("<ipxact:component xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:ipxact=\"http://www.accellera.org/XMLSchema/IPXACT/1685-2014\" xsi:schemaLocation=\"http://www.accellera.org/XMLSchema/IPXACT/1685-2014 http://www.accellera.org/XMLSchema/IPXACT/1685-2014/index.xsd\">\n")
 
-            # memory map
-            memoryMapQueryModel = QSqlQueryModel()
-            memoryMapQueryModel.setQuery("SELECT * FROM MemoryMap", self.conn)
-            for i in range(memoryMapQueryModel.rowCount()):
-                memMapRecord = memoryMapQueryModel.record(i)
-                ipxactFile.write("    <ipxact:memoryMap>\n")
-                ipxactFile.write("      <ipxact:name>%s</ipxact:name>\n"%memMapRecord.value("Name"))
-                ipxactFile.write("      <ipxact:description>%s</ipxact:description>\n"%memMapRecord.value("description"))
-                
-                # register map
-                regMapQueryModel = QSqlQueryModel()
-                regMapQueryModel.setQuery("SELECT * FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memMapRecord.value("id"), self.conn)
-                for j in range(regMapQueryModel.rowCount()):
-                    regMapRecord = regMapQueryModel.record(j)
-                    ipxactFile.write("      <ipxact:addressBlock>\n")
-                    ipxactFile.write("        <ipxact:name>%s</ipxact:name>\n"%(regMapRecord.value("Name")))
-                    ipxactFile.write("        <ipxact:description>%s</ipxact:description>\n"%(regMapRecord.value("Description")))
-                    ipxactFile.write("        <ipxact:baseAddress>%s</ipxact:baseAddress>\n"%(regMapRecord.value("OffsetAddress")).replace("0x", "'h"))
-                    ipxactFile.write("        <ipxact:range>%s</ipxact:range>\n"%(regMapRecord.value("Range")))
-                    ipxactFile.write("        <ipxact:width>%s</ipxact:width>\n"%(regMapRecord.value("Width")))
+        # info
+        infoQueryModel = QSqlQueryModel()
+        infoQueryModel.setQuery("SELECT * FROM info", self.conn)
+        infoRecord = infoQueryModel.record(0)
+        ipxactFile.write("  <ipxact:vendor>%s</ipxact:vendor>\n"%infoRecord.value("Vendor"))
+        ipxactFile.write("  <ipxact:library>%s</ipxact:library>\n"%infoRecord.value("Library"))
+        ipxactFile.write("  <ipxact:name>%s</ipxact:name>\n"%infoRecord.value("Name"))
+        ipxactFile.write("  <ipxact:version>%s</ipxact:version>\n"%infoRecord.value("Version"))
+        ipxactFile.write("  <ipxact:memoryMaps>\n")
 
-                    # register
-                    regQueryModel = QSqlQueryModel()
-                    regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
-                    for k in range(regQueryModel.rowCount()):
-                        regRecord = regQueryModel.record(k)
-                        regRe     = re.compile('\d+:\d+')  
-                        regMatch  = regRe.match(regRecord.value("Array"))
-                        if regMatch is None:
-                            regWidth = 0
-                            start = 0
-                            end   = 0
+        # memory map
+        memoryMapQueryModel = QSqlQueryModel()
+        memoryMapQueryModel.setQuery("SELECT * FROM MemoryMap", self.conn)
+        for i in range(memoryMapQueryModel.rowCount()):
+            memMapRecord = memoryMapQueryModel.record(i)
+            ipxactFile.write("    <ipxact:memoryMap>\n")
+            ipxactFile.write("      <ipxact:name>%s</ipxact:name>\n"%memMapRecord.value("Name"))
+            ipxactFile.write("      <ipxact:description>%s</ipxact:description>\n"%memMapRecord.value("description"))
+            
+            # register map
+            regMapQueryModel = QSqlQueryModel()
+            regMapQueryModel.setQuery("SELECT * FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memMapRecord.value("id"), self.conn)
+            for j in range(regMapQueryModel.rowCount()):
+                regMapRecord = regMapQueryModel.record(j)
+                ipxactFile.write("      <ipxact:addressBlock>\n")
+                ipxactFile.write("        <ipxact:name>%s</ipxact:name>\n"%(regMapRecord.value("Name")))
+                ipxactFile.write("        <ipxact:description>%s</ipxact:description>\n"%(regMapRecord.value("Description")))
+                ipxactFile.write("        <ipxact:baseAddress>%s</ipxact:baseAddress>\n"%(regMapRecord.value("OffsetAddress")).replace("0x", "'h"))
+                ipxactFile.write("        <ipxact:range>%s</ipxact:range>\n"%(regMapRecord.value("Range")))
+                ipxactFile.write("        <ipxact:width>%s</ipxact:width>\n"%(regMapRecord.value("Width")))
+
+                # register
+                regQueryModel = QSqlQueryModel()
+                regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), self.conn)
+                for k in range(regQueryModel.rowCount()):
+                    regRecord = regQueryModel.record(k)
+                    regRe     = re.compile('\d+:\d+')  
+                    regMatch  = regRe.match(regRecord.value("Array"))
+                    if regMatch is None:
+                        regWidth = 0
+                        start = 0
+                        end   = 0
+                    else:
+                        regWidth = QRegisterConst.strToInt(regRecord.value("Width"))
+                        regArray = regMatch.string.split(':')
+                        regArray0 = int(regArray[0])
+                        regArray1 = int(regArray[1])
+                        start = min(regArray0, regArray1)
+                        end   = max(regArray0, regArray1)
+
+                    for regI in range(start, end + 1):
+                        regAddr = hex(QRegisterConst.strToInt(regRecord.value("OffsetAddress")) + int(regWidth * (regI - start) / 8))
+                        if regMatch is None:                                
+                            ipxactFile.write("        <ipxact:register>\n")
+                            ipxactFile.write("          <ipxact:name>%s</ipxact:name>\n"%(regRecord.value("Name")))
+                            ipxactFile.write("          <ipxact:description>%s</ipxact:description>\n"%(regRecord.value("Description")))
+                            ipxactFile.write("          <ipxact:addressOffset>%s</ipxact:addressOffset>\n"%(regAddr.replace("0x", "'h")))
+                            ipxactFile.write("          <ipxact:size>%s</ipxact:size>\n"%(regRecord.value("Width")))
                         else:
-                            regWidth = QRegisterConst.strToInt(regRecord.value("Width"))
-                            regArray = regMatch.string.split(':')
-                            regArray0 = int(regArray[0])
-                            regArray1 = int(regArray[1])
-                            start = min(regArray0, regArray1)
-                            end   = max(regArray0, regArray1)
+                            ipxactFile.write("        <ipxact:register>\n")
+                            ipxactFile.write("          <ipxact:name>%s%s</ipxact:name>\n"%(regRecord.value("Name"), regI))
+                            ipxactFile.write("          <ipxact:description>%s</ipxact:description>\n"%(regRecord.value("Description")))
+                            ipxactFile.write("          <ipxact:addressOffset>%s</ipxact:addressOffset>\n"%(regAddr.replace("0x", "'h")))
+                            ipxactFile.write("          <ipxact:size>%s</ipxact:size>\n"%(regRecord.value("Width")))
 
-                        for regI in range(start, end + 1):
-                            regAddr = hex(QRegisterConst.strToInt(regRecord.value("OffsetAddress")) + int(regWidth * (regI - start) / 8))
-                            if regMatch is None:                                
-                                ipxactFile.write("        <ipxact:register>\n")
-                                ipxactFile.write("          <ipxact:name>%s</ipxact:name>\n"%(regRecord.value("Name")))
-                                ipxactFile.write("          <ipxact:description>%s</ipxact:description>\n"%(regRecord.value("Description")))
-                                ipxactFile.write("          <ipxact:addressOffset>%s</ipxact:addressOffset>\n"%(regAddr.replace("0x", "'h")))
-                                ipxactFile.write("          <ipxact:size>%s</ipxact:size>\n"%(regRecord.value("Width")))
-                            else:
-                                ipxactFile.write("        <ipxact:register>\n")
-                                ipxactFile.write("          <ipxact:name>%s%s</ipxact:name>\n"%(regRecord.value("Name"), regI))
-                                ipxactFile.write("          <ipxact:description>%s</ipxact:description>\n"%(regRecord.value("Description")))
-                                ipxactFile.write("          <ipxact:addressOffset>%s</ipxact:addressOffset>\n"%(regAddr.replace("0x", "'h")))
-                                ipxactFile.write("          <ipxact:size>%s</ipxact:size>\n"%(regRecord.value("Width")))
-
-                            # bitfield
-                            bfQueryModel = QSqlQueryModel()
-                            bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
-                            for m in range(bfQueryModel.rowCount()):
-                                bfRecord = bfQueryModel.record(m)
-                                bfDefaultValue = hex(QRegisterConst.strToInt(bfRecord.value("DefaultValue")))
-                                ipxactFile.write("          <ipxact:field>\n")
-                                ipxactFile.write("            <ipxact:name>%s</ipxact:name>\n"%(bfRecord.value("Name")))
-                                ipxactFile.write("            <ipxact:bitOffset>%s</ipxact:bitOffset>\n"%(bfRecord.value("RegisterOffset")))
-                                ipxactFile.write("            <ipxact:bitWidth>%s</ipxact:bitWidth>\n"%(bfRecord.value("Width")))
-                                ipxactFile.write("            <ipxact:access>%s</ipxact:access>\n"%("read-write"))
-                                ipxactFile.write("            <ipxact:volatile>%s</ipxact:volatile>\n"%("true"))
-                                ipxactFile.write("            <ipxact:resets>\n")
-                                ipxactFile.write("              <ipxact:reset>\n")
-                                ipxactFile.write("                <ipxact:value>%s</ipxact:value>\n"%(bfDefaultValue.replace("0x", "'h")))
-                                ipxactFile.write("              </ipxact:reset>\n")
-                                ipxactFile.write("            </ipxact:resets>\n")
-                                ipxactFile.write("          </ipxact:field>\n")
-                            ipxactFile.write("        </ipxact:register>\n")
-                    ipxactFile.write("      </ipxact:addressBlock>\n")
-                ipxactFile.write("    </ipxact:memoryMap>\n")
-            ipxactFile.write("  </ipxact:memoryMaps>\n")
-            ipxactFile.write("</ipxact:component>\n")
-            ipxactFile.close()
-        except BaseException as e:
-            QMessageBox.warning(self, "Exporting ipxact", str(e), QMessageBox.Yes)
-            return
+                        # bitfield
+                        bfQueryModel = QSqlQueryModel()
+                        bfQueryModel.setQuery("SELECT * FROM Bitfield WHERE RegisterId=%s ORDER BY DisplayOrder ASC"%regRecord.value("id"), self.conn)
+                        for m in range(bfQueryModel.rowCount()):
+                            bfRecord = bfQueryModel.record(m)
+                            bfDefaultValue = hex(QRegisterConst.strToInt(bfRecord.value("DefaultValue")))
+                            ipxactFile.write("          <ipxact:field>\n")
+                            ipxactFile.write("            <ipxact:name>%s</ipxact:name>\n"%(bfRecord.value("Name")))
+                            ipxactFile.write("            <ipxact:bitOffset>%s</ipxact:bitOffset>\n"%(bfRecord.value("RegisterOffset")))
+                            ipxactFile.write("            <ipxact:bitWidth>%s</ipxact:bitWidth>\n"%(bfRecord.value("Width")))
+                            ipxactFile.write("            <ipxact:access>%s</ipxact:access>\n"%("read-write"))
+                            ipxactFile.write("            <ipxact:volatile>%s</ipxact:volatile>\n"%("true"))
+                            ipxactFile.write("            <ipxact:resets>\n")
+                            ipxactFile.write("              <ipxact:reset>\n")
+                            ipxactFile.write("                <ipxact:value>%s</ipxact:value>\n"%(bfDefaultValue.replace("0x", "'h")))
+                            ipxactFile.write("              </ipxact:reset>\n")
+                            ipxactFile.write("            </ipxact:resets>\n")
+                            ipxactFile.write("          </ipxact:field>\n")
+                        ipxactFile.write("        </ipxact:register>\n")
+                ipxactFile.write("      </ipxact:addressBlock>\n")
+            ipxactFile.write("    </ipxact:memoryMap>\n")
+        ipxactFile.write("  </ipxact:memoryMaps>\n")
+        ipxactFile.write("</ipxact:component>\n")
+        ipxactFile.close()
         QMessageBox.information(self, "Exporting ipxact", "Done!", QMessageBox.Yes)
         return
 
     def exporDocx(self):
         QRegisterConst.exporDocx(self, self.conn)
+        return
+
+    def exportVerilog(self):
+        QRegisterConst.exportVerilog(self, self.conn)
         return
 
     def setupDesignViewModels(self, fileName):  

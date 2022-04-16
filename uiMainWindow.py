@@ -193,6 +193,15 @@ class uiMainWindow(QMainWindow):
         return        
 
     @Slot()
+    def on_actionExportVerilog_triggered(self):
+        if self.ui.tabWidget.currentIndex() < 0:
+            return
+        tab = self.ui.tabWidget.widget(self.ui.tabWidget.currentIndex())
+        if tab.tabType == QRegisterConst.ModuleTab:
+            tab.exportVerilog()
+        return    
+
+    @Slot()
     def on_actionSave_triggered(self):
         if self.ui.tabWidget.currentIndex() < 0:
             return
