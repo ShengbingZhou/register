@@ -1405,7 +1405,7 @@ class uiModuleWindow(QWidget):
                     delegate = QRegTableColumnDelegate()
                     self.ui.tableViewReg.setItemDelegateForColumn(self.__regValueIndex, delegate)
                     self.ui.tableViewReg.setItemDelegateForColumn(self.__regExistIndex, delegate)
-                    # value column
+                    # value column width
                     self.regTableModel.setHeaderData(self.__regValueIndex, Qt.Horizontal, "Bits")
                     regMapWidth = 8 # default register width
                     regMapQ = QSqlQuery("SELECT Width FROM RegisterMap WHERE id=%s"%(regMapId), self.conn)
@@ -1414,18 +1414,18 @@ class uiModuleWindow(QWidget):
                         if w is not None and w != "":
                             regMapWidth = int(w)
                     pixelsWide = QFontMetrics(self.ui.tableViewReg.font()).width(" ZB ") + 1
-                    w = pixelsWide * regMapWidth + 10 # bitwidth*bits + 2*margin 
+                    w = pixelsWide * regMapWidth + 10  # bitwidth*bits + 2*margin
                     self.ui.tableViewReg.setColumnWidth(self.__regValueIndex, w)
-                self.ui.tableViewReg.hideColumn(0) # id
-                self.ui.tableViewReg.hideColumn(1) # regmap id
-                self.ui.tableViewReg.hideColumn(2) # order
-                self.ui.tableViewReg.hideColumn(self.__regVisibilityIndex)
-                #self.ui.tableViewReg.resizeColumnToContents(self.__regValueIndex) # slow, half time of resizeColumnsToContents()
-                #self.ui.tableViewReg.resizeColumnsToContents() # very slow, xxx ms.
+                    self.ui.tableViewReg.hideColumn(0) # id
+                    self.ui.tableViewReg.hideColumn(1) # regmap id
+                    self.ui.tableViewReg.hideColumn(2) # order
+                    self.ui.tableViewReg.hideColumn(self.__regVisibilityIndex)
                 if regMapId != self.regTableModel.parentId or self.__treeViewCurrentTable != "Register":                    
                     self.regTableModel.setParentId(regMapId)
                     self.regTableModel.setFilter("RegisterMapId=%s"%regMapId)
                     self.regTableModel.select()    
+                    #self.ui.tableViewReg.resizeColumnToContents(self.__regValueIndex) # slow, half time of resizeColumnsToContents()
+                    #self.ui.tableViewReg.resizeColumnsToContents() # very slow, xxx ms.                    
                 # update tips
                 self.ui.pbAddMemMap.setEnabled(False)
                 self.ui.pbAddRegMap.setEnabled(False)
