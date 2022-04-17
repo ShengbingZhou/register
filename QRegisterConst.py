@@ -365,7 +365,8 @@ class QRegisterConst:
 
             svHeaderFileName = folder + "/" + memMapName  + "_sv.h"
             svHeaderFile = open(svHeaderFileName, "w")
-            
+            svHeaderLines = []
+
             # register map
             regMapQueryModel = QSqlQueryModel()
             regMapQueryModel.setQuery("SELECT * FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memMapRecord.value("id"), conn)
@@ -390,8 +391,8 @@ class QRegisterConst:
                     regMatch  = regRe.match(regRecord.value("Array"))
                     if regMatch is None:
                         regAddrSV = hex(regAddrSV)
-                        svHeaderFile.write("`define %-80s %s\n"%(regNameSV + "_ADDR", regAddrSV.replace("0x", "'h")))
-                        svHeaderFile.write("`define %-80s %s\n"%(regNameSV + "_RST",  hex(regDefault).replace("0x", "'h")))
+                        svHeaderLines.append("`define %s %s\n"%(regNameSV + "_ADDR", regAddrSV.replace("0x", "'h")))
+                        svHeaderLines.append("`define %s %s\n"%(regNameSV + "_RST",  hex(regDefault).replace("0x", "'h")))
                     else:
                         regWidth = QRegisterConst.strToInt(regRecord.value("Width"))
                         regArray = regMatch.string.split(':')
@@ -401,8 +402,8 @@ class QRegisterConst:
                         end   = max(regArray0, regArray1)
                         for regI in range(start, end + 1):
                             regAddrSV = hex(regAddrSV + int(regWidth * (regI - start) / 8))
-                            svHeaderFile.write("`define %-80s %s\n"%(regNameSV + regI + "_ADDR", regAddrSV.replace("0x", "'h")))
-                            svHeaderFile.write("`define %-80s %s\n"%(regNameSV + regI + "_RST",  hex(regDefault).replace("0x", "'h")))
+                            svHeaderLines.append("`define %s %s\n"%(regNameSV + regI + "_ADDR", regAddrSV.replace("0x", "'h")))
+                            svHeaderLines.append("`define %s %s\n"%(regNameSV + regI + "_RST",  hex(regDefault).replace("0x", "'h")))
 
                     # bitfield
                     bfQueryModel = QSqlQueryModel()
@@ -411,11 +412,32 @@ class QRegisterConst:
                         bfRecord  = bfQueryModel.record(m)
                         bfName    = bfRecord.value("Name")
                         bfDefault = QRegisterConst.strToInt(bfRecord.value("DefaultValue"))
+                        bfWidth   = QRegisterConst.strToInt(bfRecord.value("Width"))
+                        regOffset = QRegisterConst.strToInt(bfRecord.value("RegisterOffset"))
+                        bfMask    = ((1 << bfWidth) - 1) << regOffset
                         bfNameSV = "BF_%s_%s_%s_%s"%(memMapName.upper(), regMapName.upper(), regName.upper(), bfName.upper())
-                        svHeaderFile.write("`define %-80s %s\n"%(bfNameSV + "_RST", hex(bfDefault).replace("0x", "'h")))
+                        svHeaderLines.append("`define %s %s\n"%(bfNameSV + "_RST", hex(bfDefault).replace("0x", "'h")))
+                        svHeaderLines.append("`define %s %s\n"%(bfNameSV + "_OFS", hex(regOffset).replace("0x", "'h")))
+                        svHeaderLines.append("`define %s %s\n"%(bfNameSV + "_W",   hex(bfWidth).replace("0x", "'h")))
+                        svHeaderLines.append("`define %s %s\n"%(bfNameSV + "_MSK", hex(bfMask).replace("0x", "'h")))
 
                     # insert empty line between each register
-                    svHeaderFile.write(" \n")
+                    svHeaderLines.append("\n")
 
+            # write sv header file
+            maxNameLen = 0
+            for line in svHeaderLines:
+                seg = line.split(' ')
+                if len(seg) > 1 and len(seg[1]) > maxNameLen:
+                    maxNameLen = len(seg[1])
+            f = "{0} {1:<%d} {2}"%maxNameLen
+            for line in svHeaderLines:
+                seg = line.split(' ')
+                if len(seg) == 3:
+                    svHeaderFile.write(f.format(*seg))
+                else:
+                    svHeaderFile.write(line)
             svHeaderFile.close()
+
+        QMessageBox.information(parent, "Exporting verilog", "Done!", QMessageBox.Yes)
         return
