@@ -159,7 +159,7 @@ class uiModuleWindow(QWidget):
     def newInfoRow(self, model, date):
         r = model.record()
         r.remove(r.indexOf('id'))
-        r.setValue("Name", "NoName Module")
+        r.setValue("Name", "NoNameModule")
         r.setValue("Version", "1.0")
         r.setValue("Author", os.getlogin())
         r.setValue("LastUpdateDate", date)

@@ -355,17 +355,68 @@ class QRegisterConst:
         if os.path.exists(folder) is False:
             return
 
+        if parent.newModule is True:
+            f_name, f_ext = os.path.splitext(os.path.basename(parent.newFileName))
+        else:
+            f_name, f_ext = os.path.splitext(os.path.basename(parent.fileName))
+        svUVMTopFileName = folder + "/" + f_name + "_top_model.sv"
+        svUvmTopFile = open(svUVMTopFileName, "w")
+
+        # info
+        infoQueryModel = QSqlQueryModel()
+        infoQueryModel.setQuery("SELECT * FROM info", conn)
+        infoRecord = infoQueryModel.record(0)
+
         # memory map
         memoryMapQueryModel = QSqlQueryModel()
         memoryMapQueryModel.setQuery("SELECT * FROM MemoryMap", conn)
+
+        # output uvm top
+        for i in range(memoryMapQueryModel.rowCount()):
+            memMapRecord = memoryMapQueryModel.record(i)
+            memMapName   = memMapRecord.value("Name")
+            svUVMFileBaseName = f_name + "_" + memMapName  + ".sv"
+            svUvmTopFile.write("`include \"%s\"\n"%(svUVMFileBaseName))
+        svUvmTopFile.write("class %s extends uvm_reg_block;\n"%(infoRecord.value("Name")))
+        for i in range(memoryMapQueryModel.rowCount()):
+            svUvmTopFile.write("    uvm_reg_map default_map_%s;\n"%(i))
+        for i in range(memoryMapQueryModel.rowCount()):
+            memMapRecord = memoryMapQueryModel.record(i)
+            memMapName   = memMapRecord.value("Name")
+            svUvmTopFile.write("    rand %s %s_inst;\n"%(memMapName, memMapName))
+        svUvmTopFile.write("    virtual function void build();\n")
+        svUvmTopFile.write("        default_map = create_map(\"default_map\");\n")
+        for i in range(memoryMapQueryModel.rowCount()):
+            svUvmTopFile.write("        default_map_%s = create_map(\"default_map_%s\");\n"%(i, i))
+        for i in range(memoryMapQueryModel.rowCount()):
+            memMapRecord = memoryMapQueryModel.record(i)
+            memMapName   = memMapRecord.value("Name")
+            svUvmTopFile.write("        %s_inst = %s::type_id::create(\"%s_inst\");\n"%(memMapName, memMapName, memMapName))
+            svUvmTopFile.write("        %s_inst.configure(this, \"\");\n"%(memMapName))
+            svUvmTopFile.write("        %s_inst.build();\n"%(memMapName))
+            svUvmTopFile.write("        default_map.add_submap(%s_inst.default_map, 0)\n"%(memMapName))
+            svUvmTopFile.write("        default_map_%s.add_submap(%s_inst.default_map_%s, 0)\n"%(i, memMapName, i))
+            svUvmTopFile.write("        %s_inst.lock_model();\n"%(memMapName))
+        svUvmTopFile.write("    endfunction;\n")
+        svUvmTopFile.write("    `uvm_object_utils(%s);\n"%(infoRecord.value("Name")))
+        svUvmTopFile.write("    function new(input string name = \"%s\");\n"%(infoRecord.value("Name")))
+        svUvmTopFile.write("        super.new(name, UVM_NO_COVERAGE);\n")
+        svUvmTopFile.write("    endfunction;\n")
+        svUvmTopFile.write("endclass;\n")
+
+        # output uvm module and sv header
         for i in range(memoryMapQueryModel.rowCount()):
             memMapRecord = memoryMapQueryModel.record(i)
             memMapName   = memMapRecord.value("Name")
             memMapAddr   = memMapRecord.value("OffsetAddress")
 
-            svHeaderFileName = folder + "/" + memMapName  + "_sv.h"
+            svHeaderFileName = folder + "/" + f_name + "_" + memMapName  + "_sv.h"
             svHeaderFile = open(svHeaderFileName, "w")
             svHeaderLines = []
+
+            svUVMFileBaseName = f_name + "_" + memMapName  + ".sv"
+            svUVMFileName = folder + "/" + svUVMFileBaseName
+            svUvmFile = open(svUVMFileName, "w")
 
             # register map
             regMapQueryModel = QSqlQueryModel()
@@ -437,7 +488,9 @@ class QRegisterConst:
                     svHeaderFile.write(f.format(*seg))
                 else:
                     svHeaderFile.write(line)
-            svHeaderFile.close()
 
+            svHeaderFile.close()
+            svUvmFile.close()
+        svUvmTopFile.close()
         QMessageBox.information(parent, "Exporting verilog", "Done!", QMessageBox.Yes)
         return
