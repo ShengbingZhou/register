@@ -459,7 +459,7 @@ class QRegisterConst:
                     regRecord  = regQueryModel.record(k)
                     regName    = regRecord.value("Name")
                     regNameUvm = "rg_%s_%s_%s"%(memMapName, regMapName, regName)
-                    svUvmMemMapFile.write("    rand %s ral_%s;\n"%(regNameUvm.lower(), regName.lower()))
+                    svUvmMemMapFile.write("    rand %s %s;\n"%(regNameUvm.lower(), regName.lower()))
                 svUvmMemMapFile.write("    virutal function void build();\n")
 
                 for k in range(regQueryModel.rowCount()):
@@ -486,10 +486,10 @@ class QRegisterConst:
                         svHeaderLines.append("`define %s %s\n"%(regNameSV + "_RST",  hex(regDefault).replace("0x", "'h")))
 
                         # uvm memmap block
-                        svUvmMemMapFile.write("        ral_%s = %s::type_id::create(\"%s\");\n"%(regName.lower(), regNameUvm.lower(), regName.lower()))
-                        svUvmMemMapFile.write("        ral_%s.configure(this, null, \"%s[%s:0]\");\n"%(regName.lower(), regName.lower(), regWidth - 1))
-                        svUvmMemMapFile.write("        ral_%s.build();\n"%(regName.lower()))
-                        svUvmMemMapFile.write("        ral_%s.configure(ral_%s);\n"%(regName.lower(), regName.lower()))
+                        svUvmMemMapFile.write("        %s = %s::type_id::create(\"%s\");\n"%(regName.lower(), regNameUvm.lower(), regName.lower()))
+                        svUvmMemMapFile.write("        %s.configure(this, null, \"%s[%s:0]\");\n"%(regName.lower(), regName.lower(), regWidth - 1))
+                        svUvmMemMapFile.write("        %s.build();\n"%(regName.lower()))
+                        svUvmMemMapFile.write("        %s.configure(%s);\n"%(regName.lower(), regName.lower()))
                         svUvmMemMapFile.write("\n")
 
                         # regmap block
@@ -520,6 +520,7 @@ class QRegisterConst:
                         end   = max(regArray0, regArray1)
                         for regI in range(start, end + 1):
                             regAddrSVI = regAddrSV + int(regWidth * (regI - start) / 8)
+                            regNameI   = regName + str(regI)
                             regNameSVI = regNameUvm + str(regI)
 
                             # sv header
@@ -527,10 +528,10 @@ class QRegisterConst:
                             svHeaderLines.append("`define %s %s\n"%(regNameSVI + "_RST",  hex(regDefault).replace("0x", "'h")))
 
                             # uvm memmap block
-                            svUvmMemMapFile.write("        ral_%s = %s::type_id::create(\"%s\");\n"%(regNameSVI.lower(), regNameSVI.lower(), regNameSVI.lower()))
-                            svUvmMemMapFile.write("        ral_%s.configure(this, null, \"%s[%s:0]\");\n"%(regNameSVI.lower(), regNameSVI.lower(), regWidth - 1))
-                            svUvmMemMapFile.write("        ral_%s.build();\n"%(regNameSVI.lower()))
-                            svUvmMemMapFile.write("        ral_%s.configure(ral_%s);\n"%(regNameUvm.lower(), regNameSVI.lower()))
+                            svUvmMemMapFile.write("        %s = %s::type_id::create(\"%s\");\n"%(regNameI.lower(), regNameSVI.lower(), regNameI.lower()))
+                            svUvmMemMapFile.write("        %s.configure(this, null, \"%s[%s:0]\");\n"%(regNameI.lower(), regNameI.lower(), regWidth - 1))
+                            svUvmMemMapFile.write("        %s.build();\n"%(regNameI.lower()))
+                            svUvmMemMapFile.write("        %s.configure(%s);\n"%(regNameI.lower(), regNameI.lower()))
                             svUvmMemMapFile.write("\n")
 
                             # regmap block
