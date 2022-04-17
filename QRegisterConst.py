@@ -456,10 +456,23 @@ class QRegisterConst:
 
                 # uvm memmap block
                 for k in range(regQueryModel.rowCount()):
-                    regRecord  = regQueryModel.record(k)
-                    regName    = regRecord.value("Name")
-                    regNameUvm = "rg_%s_%s_%s"%(memMapName, regMapName, regName)
-                    svUvmMemMapFile.write("    rand %s %s;\n"%(regNameUvm.lower(), regName.lower()))
+                    regRecord = regQueryModel.record(k)
+                    regName   = regRecord.value("Name")
+                    regNameSV = "rg_%s_%s_%s"%(memMapName, regMapName, regName)
+                    regRe     = re.compile('\d+:\d+')  
+                    regMatch  = regRe.match(regRecord.value("Array"))
+                    if regMatch is None:                    
+                        svUvmMemMapFile.write("    rand %s %s;\n"%(regNameSV.lower(), regName.lower()))
+                    else:
+                        regArray = regMatch.string.split(':')
+                        regArray0 = int(regArray[0])
+                        regArray1 = int(regArray[1])
+                        start = min(regArray0, regArray1)
+                        end   = max(regArray0, regArray1)
+                        for regI in range(start, end + 1):
+                            regNameI   = regName   + str(regI)
+                            regNameSVI = regNameSV + str(regI)                        
+                            svUvmMemMapFile.write("    rand %s %s;\n"%(regNameSVI.lower(), regNameI.lower()))
                 svUvmMemMapFile.write("    virutal function void build();\n")
 
                 for k in range(regQueryModel.rowCount()):
@@ -470,9 +483,8 @@ class QRegisterConst:
                     regWidth   = QRegisterConst.strToInt(regRecord.value("Width"))
                     regDefault = QRegisterConst.genRegValueFromBitfields(conn, regId)
 
-                    regNameSV = "RG_%s_%s_%s"%(memMapName.upper(), regMapName.upper(), regName.upper())
+                    regNameSV = "rg_%s_%s_%s"%(memMapName, regMapName, regName)
                     regAddrSV = QRegisterConst.strToInt(memMapAddr) + QRegisterConst.strToInt(regMapAddr) + QRegisterConst.strToInt(regAddr)
-                    regNameUvm = "rg_%s_%s_%s"%(memMapName, regMapName, regName)
 
                     # bitfield
                     bfQueryModel = QSqlQueryModel()
@@ -482,32 +494,30 @@ class QRegisterConst:
                     regMatch  = regRe.match(regRecord.value("Array"))
                     if regMatch is None:
                         # sv header
-                        svHeaderLines.append("`define %s %s\n"%(regNameSV + "_ADDR", hex(regAddrSV).replace("0x", "'h")))
-                        svHeaderLines.append("`define %s %s\n"%(regNameSV + "_RST",  hex(regDefault).replace("0x", "'h")))
+                        svHeaderLines.append("`define %s %s\n"%(regNameSV.upper() + "_ADDR", hex(regAddrSV).replace("0x", "'h")))
+                        svHeaderLines.append("`define %s %s\n"%(regNameSV.upper() + "_RST",  hex(regDefault).replace("0x", "'h")))
 
                         # uvm memmap block
-                        svUvmMemMapFile.write("        %s = %s::type_id::create(\"%s\");\n"%(regName.lower(), regNameUvm.lower(), regName.lower()))
+                        svUvmMemMapFile.write("        %s = %s::type_id::create(\"%s\");\n"%(regName.lower(), regNameSV.lower(), regName.lower()))
                         svUvmMemMapFile.write("        %s.configure(this, null, \"%s[%s:0]\");\n"%(regName.lower(), regName.lower(), regWidth - 1))
                         svUvmMemMapFile.write("        %s.build();\n"%(regName.lower()))
                         svUvmMemMapFile.write("        %s.configure(%s);\n"%(regName.lower(), regName.lower()))
                         svUvmMemMapFile.write("\n")
 
                         # regmap block
-                        svUvmRegMapFile.write("class %s extends uvm_reg;\n"%(regNameUvm.lower()))
+                        svUvmRegMapFile.write("class %s extends uvm_reg;\n"%(regNameSV.lower()))
                         for m in range(bfQueryModel.rowCount()):
                             bfRecord  = bfQueryModel.record(m)
                             bfName    = bfRecord.value("Name")
-                            bfNameUvm = "bf_%s_%s_%s_%s"%(memMapName, regMapName, regName, bfName)
                             svUvmRegMapFile.write("    rand uvm_reg_field %s;\n"%(bfName.lower()))
                         svUvmRegMapFile.write("    virtual function void build();\n")
                         for m in range(bfQueryModel.rowCount()):
                             bfRecord  = bfQueryModel.record(m)
                             bfName    = bfRecord.value("Name")
-                            bfNameUvm = "bf_%s_%s_%s_%s"%(memMapName, regMapName, regName, bfName)
                             svUvmRegMapFile.write("        %s = uvm_reg_field::type_id::create(\"%s\");\n"%(bfName.lower(), bfName.lower()))
                         svUvmRegMapFile.write("    endfunction\n")
-                        svUvmRegMapFile.write("    `uvm_object_utils(%s);\n"%(regNameUvm.lower()))
-                        svUvmRegMapFile.write("    function new(input string name = \"%s\");\n"%(regNameUvm.lower()))
+                        svUvmRegMapFile.write("    `uvm_object_utils(%s);\n"%(regNameSV.lower()))
+                        svUvmRegMapFile.write("    function new(input string name = \"%s\");\n"%(regNameSV.lower()))
                         svUvmRegMapFile.write("        super.new(name, UVM_NO_COVERAGE);\n")
                         svUvmRegMapFile.write("    endfunction\n")
                         svUvmRegMapFile.write("endclass\n")
@@ -520,12 +530,12 @@ class QRegisterConst:
                         end   = max(regArray0, regArray1)
                         for regI in range(start, end + 1):
                             regAddrSVI = regAddrSV + int(regWidth * (regI - start) / 8)
-                            regNameI   = regName + str(regI)
-                            regNameSVI = regNameUvm + str(regI)
+                            regNameI   = regName   + str(regI)
+                            regNameSVI = regNameSV + str(regI)
 
                             # sv header
-                            svHeaderLines.append("`define %s %s\n"%(regNameSVI + "_ADDR", hex(regAddrSVI).replace("0x", "'h")))
-                            svHeaderLines.append("`define %s %s\n"%(regNameSVI + "_RST",  hex(regDefault).replace("0x", "'h")))
+                            svHeaderLines.append("`define %s %s\n"%(regNameSVI.upper() + "_ADDR", hex(regAddrSVI).replace("0x", "'h")))
+                            svHeaderLines.append("`define %s %s\n"%(regNameSVI.upper() + "_RST",  hex(regDefault).replace("0x", "'h")))
 
                             # uvm memmap block
                             svUvmMemMapFile.write("        %s = %s::type_id::create(\"%s\");\n"%(regNameI.lower(), regNameSVI.lower(), regNameI.lower()))
@@ -539,14 +549,12 @@ class QRegisterConst:
                             for m in range(bfQueryModel.rowCount()):
                                 bfRecord  = bfQueryModel.record(m)
                                 bfName    = bfRecord.value("Name")
-                                bfNameUvm = "bf_%s_%s_%s_%s"%(memMapName, regMapName, regName, bfName)
-                                svUvmRegMapFile.write("    rand uvm_reg_field %s;\n"%(bfNameUvm.lower()))
+                                svUvmRegMapFile.write("    rand uvm_reg_field %s;\n"%(bfName.lower()))
                             svUvmRegMapFile.write("    virtual function void build();\n")
                             for m in range(bfQueryModel.rowCount()):
                                 bfRecord  = bfQueryModel.record(m)
                                 bfName    = bfRecord.value("Name")
-                                bfNameUvm = "bf_%s_%s_%s_%s"%(memMapName, regMapName, regName, bfName)
-                                svUvmRegMapFile.write("        %s = uvm_reg_field::type_id::create(\"%s\");\n"%(bfNameUvm.lower(), bfNameUvm.lower()))
+                                svUvmRegMapFile.write("        %s = uvm_reg_field::type_id::create(\"%s\");\n"%(bfName.lower(), bfName.lower()))
                             svUvmRegMapFile.write("    endfunction\n")
                             svUvmRegMapFile.write("    `uvm_object_utils(%s);\n"%(regNameSVI.lower()))
                             svUvmRegMapFile.write("    function new(input string name = \"%s\");\n"%(regNameSVI.lower()))
@@ -563,11 +571,11 @@ class QRegisterConst:
                         bfWidth   = QRegisterConst.strToInt(bfRecord.value("Width"))
                         regOffset = QRegisterConst.strToInt(bfRecord.value("RegisterOffset"))
                         bfMask    = ((1 << bfWidth) - 1) << regOffset
-                        bfNameSV = "BF_%s_%s_%s_%s"%(memMapName.upper(), regMapName.upper(), regName.upper(), bfName.upper())
-                        svHeaderLines.append("`define %s %s\n"%(bfNameSV + "_RST", hex(bfDefault).replace("0x", "'h")))
-                        svHeaderLines.append("`define %s %s\n"%(bfNameSV + "_OFS", hex(regOffset).replace("0x", "'h")))
-                        svHeaderLines.append("`define %s %s\n"%(bfNameSV + "_W",   hex(bfWidth).replace("0x", "'h")))
-                        svHeaderLines.append("`define %s %s\n"%(bfNameSV + "_MSK", hex(bfMask).replace("0x", "'h")))
+                        bfNameSV = "bf_%s_%s_%s_%s"%(memMapName, regMapName, regName, bfName)
+                        svHeaderLines.append("`define %s %s\n"%(bfNameSV.upper() + "_RST", hex(bfDefault).replace("0x", "'h")))
+                        svHeaderLines.append("`define %s %s\n"%(bfNameSV.upper() + "_OFS", hex(regOffset).replace("0x", "'h")))
+                        svHeaderLines.append("`define %s %s\n"%(bfNameSV.upper() + "_W",   hex(bfWidth).replace("0x", "'h")))
+                        svHeaderLines.append("`define %s %s\n"%(bfNameSV.upper() + "_MSK", hex(bfMask).replace("0x", "'h")))
 
                     # insert empty line between each register
                     svHeaderLines.append("\n")
