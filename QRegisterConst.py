@@ -382,17 +382,17 @@ class QRegisterConst:
         svUvmTopFile.write("\n")
         svUvmTopFile.write("class %s extends uvm_reg_block;\n"%(moduleName.lower()))
         for i in range(memoryMapQueryModel.rowCount()):
-            memMapRecord  = memoryMapQueryModel.record(i)
-            memMapName    = memMapRecord.value("Name")
-            memMapNameUvm = "mm_" + memMapName
-            svUvmTopFile.write("    rand %s %s;\n"%(memMapNameUvm.lower(), memMapName.lower()))
+            memMapRecord = memoryMapQueryModel.record(i)
+            memMapName   = memMapRecord.value("Name")
+            memMapNameSV = "mm_" + memMapName
+            svUvmTopFile.write("    rand %s %s;\n"%(memMapNameSV.lower(), memMapName.lower()))
         svUvmTopFile.write("    virtual function void build();\n")
         svUvmTopFile.write("        default_map = create_map(\"default_map\", 0, 4, UVM_LITTLE_ENDIAN, 1);\n") # TODO: param is not meaningful for top memory map?
         for i in range(memoryMapQueryModel.rowCount()):
-            memMapRecord  = memoryMapQueryModel.record(i)
-            memMapName    = memMapRecord.value("Name")
-            memMapNameUvm = "mm_" + memMapName
-            svUvmTopFile.write("        %s = %s::type_id::create(\"%s\");\n"%(memMapName.lower(), memMapNameUvm.lower(), memMapName.lower()))
+            memMapRecord = memoryMapQueryModel.record(i)
+            memMapName   = memMapRecord.value("Name")
+            memMapNameSV = "mm_" + memMapName
+            svUvmTopFile.write("        %s = %s::type_id::create(\"%s\");\n"%(memMapName.lower(), memMapNameSV.lower(), memMapName.lower()))
             svUvmTopFile.write("        %s.configure(this, \"\");\n"%(memMapName.lower()))
             svUvmTopFile.write("        %s.build();\n"%(memMapName.lower()))
             svUvmTopFile.write("        default_map.add_submap(%s.default_map, 0);\n"%(memMapName.lower()))
@@ -409,7 +409,7 @@ class QRegisterConst:
         for i in range(memoryMapQueryModel.rowCount()):
             memMapRecord   = memoryMapQueryModel.record(i)
             memMapName     = memMapRecord.value("Name")
-            memMapNameUvm  = "mm_" + memMapName
+            memMapNameSV   = "mm_" + memMapName
             memMapAddr     = memMapRecord.value("OffsetAddress")
             memMapEndian   = memMapRecord.value("Endianness")
             memMapAddrUnit = memMapRecord.value("AddressUnitBits")
@@ -421,7 +421,7 @@ class QRegisterConst:
             svHeaderFile = open(svHeaderFileName, "w")
             svHeaderLines = []
 
-            # uvm memmap block
+            # uvm memmap file
             svUVMMemMapBaseFileName = moduleName.lower() + "_" + memMapName.lower()  + ".sv"
             svUVMMemMapFileName = folder + "/" + svUVMMemMapBaseFileName
             svUvmMemMapFile = open(svUVMMemMapFileName, "w")
@@ -430,7 +430,7 @@ class QRegisterConst:
             regMapQueryModel = QSqlQueryModel()
             regMapQueryModel.setQuery("SELECT * FROM RegisterMap WHERE memoryMapId=%s ORDER BY DisplayOrder ASC"%memMapRecord.value("id"), conn)
 
-            # uvm memap block to include all regblocks
+            # uvm memap block to include all regmaps
             for j in range(regMapQueryModel.rowCount()):
                 regMapRecord = regMapQueryModel.record(j)
                 regMapName   = regMapRecord.value("Name")
@@ -441,25 +441,15 @@ class QRegisterConst:
             for j in range(regMapQueryModel.rowCount()):
                 regMapRecord = regMapQueryModel.record(j)
                 regMapName   = regMapRecord.value("Name")
+                regMapNameSV = "rm_%s_%s"%(memMapName, regMapName)
                 regMapAddr   = regMapRecord.value("OffsetAddress")
-
-                # add regmap cleass in uvm memmap block
-                regMapNameUvm = "rm_%s_%s"%(memMapName, regMapName)
-                svUvmMemMapFile.write("class %s extends uvm_reg_block;\n"%(regMapNameUvm.lower()))
-
-                # create uvm regmap block file
-                svUVMRegMapBaseFileName = moduleName.lower() + "_" + memMapName.lower() + "_" + regMapName.lower() + ".sv"
-                svUVMRegMapFileName = folder + "/" + svUVMRegMapBaseFileName
-                svUvmRegMapFile = open(svUVMRegMapFileName, "w")
-                svUvmRegMapFile.write("`ifndef __%s__\n"%(svUVMRegMapBaseFileName.replace(".", "_")))
-                svUvmRegMapFile.write("`define __%s__\n"%(svUVMRegMapBaseFileName.replace(".", "_")))
-                svUvmRegMapFile.write("\n")
 
                 # register
                 regQueryModel = QSqlQueryModel()
                 regQueryModel.setQuery("SELECT * FROM Register WHERE RegisterMapId=%s ORDER BY DisplayOrder ASC"%regMapRecord.value("id"), conn)
 
-                # add regmap class content int ouvm memmap block
+                # create regmap class, define reg variable in regmap class in memmap file
+                svUvmMemMapFile.write("class %s extends uvm_reg_block;\n"%(regMapNameSV.lower()))
                 for k in range(regQueryModel.rowCount()):
                     regRecord = regQueryModel.record(k)
                     regName   = regRecord.value("Name")
@@ -480,6 +470,14 @@ class QRegisterConst:
                             svUvmMemMapFile.write("    rand %s %s;\n"%(regNameSVI.lower(), regNameI.lower()))
                 svUvmMemMapFile.write("    virutal function void build();\n")
                 svUvmMemMapFile.write("        default_map = create_map(\"default_map\", 0, 4, UVM_LITTLE_ENDIAN, 1);\n") # TODO: param is not meaningful for top memory map?
+
+                # create regmap file
+                svUVMRegMapBaseFileName = moduleName.lower() + "_" + memMapName.lower() + "_" + regMapName.lower() + ".sv"
+                svUVMRegMapFileName = folder + "/" + svUVMRegMapBaseFileName
+                svUvmRegMapFile = open(svUVMRegMapFileName, "w")
+                svUvmRegMapFile.write("`ifndef __%s__\n"%(svUVMRegMapBaseFileName.replace(".", "_")))
+                svUvmRegMapFile.write("`define __%s__\n"%(svUVMRegMapBaseFileName.replace(".", "_")))
+                svUvmRegMapFile.write("\n")
 
                 for k in range(regQueryModel.rowCount()):
                     regRecord  = regQueryModel.record(k)
@@ -503,15 +501,34 @@ class QRegisterConst:
                         svHeaderLines.append("`define %s %s\n"%(regNameSV.upper() + "_ADDR", hex(regAddrSV).replace("0x", "'h")))
                         svHeaderLines.append("`define %s %s\n"%(regNameSV.upper() + "_RST",  hex(regDefault).replace("0x", "'h")))
 
-                        # uvm memmap block
+                        # create register variable to regmap class of memmap file
                         svUvmMemMapFile.write("        %s = %s::type_id::create(\"%s\");\n"%(regName.lower(), regNameSV.lower(), regName.lower()))
-                        svUvmMemMapFile.write("        %s.configure(this, null, \"%s[%s:0]\");\n"%(regName.lower(), regName.lower(), regWidth - 1))
-                        svUvmMemMapFile.write("        %s.build();\n"%(regName.lower()))
-                        svUvmMemMapFile.write("        %s.configure(%s);\n"%(regName.lower(), regName.lower()))
+                        if bfQueryModel.rowCount() == 1:
+                            bfRecord  = bfQueryModel.record(0)
+                            bfName    = bfRecord.value("Name")
+                            bfWidth   = QRegisterConst.strToInt(bfRecord.value("Width"))
+                            regOffset = QRegisterConst.strToInt(bfRecord.value("RegisterOffset"))
+                            bfDefault = QRegisterConst.strToInt(bfRecord.value("DefaultValue"))
+                            svUvmMemMapFile.write("        %s.configure(this, null, \"%s[%s:0]\");\n"%(regName.lower(), bfName.lower(), bfWidth - 1))
+                            svUvmMemMapFile.write("        %s.build();\n"%(regName.lower()))
+                            # (parent, size, lsb_pos, access, volatile, reset, has_reset, is_rand, individually_accessible)
+                            svUvmMemMapFile.write("        %s.%s.configure(%s, %s, %s, \"RW\", 1, %s, 1, 1, 1);\n"%(regName.lower(), bfName.lower(), regName.lower(), bfWidth, regOffset, hex(bfDefault).replace("0x", "'h"))) 
+                        else:
+                            svUvmMemMapFile.write("        %s.configure(this, null, \"\");\n"%(regName.lower()))
+                            svUvmMemMapFile.write("        %s.build();\n"%(regName.lower()))
+                            for m in range(bfQueryModel.rowCount()):
+                                bfRecord  = bfQueryModel.record(m)
+                                bfName    = bfRecord.value("Name")
+                                bfWidth   = QRegisterConst.strToInt(bfRecord.value("Width"))
+                                regOffset = QRegisterConst.strToInt(bfRecord.value("RegisterOffset"))
+                                bfDefault = QRegisterConst.strToInt(bfRecord.value("DefaultValue"))
+                                # (parent, size, lsb_pos, access, volatile, reset, has_reset, is_rand, individually_accessible)
+                                svUvmMemMapFile.write("        %s.%s.configure(%s, %s, %s, \"RW\", 1, %s, 1, 1, 1);\n"%(regName.lower(), bfName.lower(), regName.lower(), bfWidth, regOffset, hex(bfDefault).replace("0x", "'h"))) 
+                                svUvmMemMapFile.write("        %s.add_hdl_path_slice(\"%s[%s:0]\", %s, %s);\n"%(regName.lower(), bfName.lower(), bfWidth - 1, regOffset, bfWidth))
                         svUvmMemMapFile.write("        default_map.add_reg(%s, %s);\n"%(regName.lower(), hex(regAddrSV).replace("0x", "'h")))
                         svUvmMemMapFile.write("\n")
 
-                        # regmap block
+                        # add reg class in regmap file, and define/create bitfield variables
                         svUvmRegMapFile.write("class %s extends uvm_reg;\n"%(regNameSV.lower()))
                         for m in range(bfQueryModel.rowCount()):
                             bfRecord  = bfQueryModel.record(m)
@@ -589,8 +606,8 @@ class QRegisterConst:
 
                 # memmap file
                 svUvmMemMapFile.write("    endfunction\n")
-                svUvmMemMapFile.write("    `uvm_object_utils(%s);\n"%(regMapNameUvm.lower()))
-                svUvmMemMapFile.write("    function new(input string name = \"%s\");\n"%(regMapNameUvm.lower()))
+                svUvmMemMapFile.write("    `uvm_object_utils(%s);\n"%(regMapNameSV.lower()))
+                svUvmMemMapFile.write("    function new(input string name = \"%s\");\n"%(regMapNameSV.lower()))
                 svUvmMemMapFile.write("        super.new(name, UVM_NO_COVERAGE);\n")
                 svUvmMemMapFile.write("    endfunction\n")
                 svUvmMemMapFile.write("endclass\n")
@@ -615,27 +632,27 @@ class QRegisterConst:
                     svHeaderFile.write(line)
 
             # memmap file
-            svUvmMemMapFile.write("class %s extends uvm_reg_block;\n"%(memMapNameUvm.lower()))
+            svUvmMemMapFile.write("class %s extends uvm_reg_block;\n"%(memMapNameSV.lower()))
             for j in range(regMapQueryModel.rowCount()):
-                regMapRecord  = regMapQueryModel.record(j)
-                regMapName    = regMapRecord.value("Name")
-                regMapNameUvm = "rm_%s_%s"%(memMapName, regMapName)
-                svUvmMemMapFile.write("    rand %s %s;\n"%(regMapNameUvm.lower(), regMapName.lower()))
+                regMapRecord = regMapQueryModel.record(j)
+                regMapName   = regMapRecord.value("Name")
+                regMapNameSV = "rm_%s_%s"%(memMapName, regMapName)
+                svUvmMemMapFile.write("    rand %s %s;\n"%(regMapNameSV.lower(), regMapName.lower()))
             svUvmMemMapFile.write("    virtual function void build();\n")
             svUvmMemMapFile.write("        default_map = create_map(\"default_map\", 0, 4, UVM_LITTLE_ENDIAN, 1);\n") # TODO: param is not meaningful for top memory map?
             for j in range(regMapQueryModel.rowCount()):
-                regMapRecord  = regMapQueryModel.record(j)
-                regMapName    = regMapRecord.value("Name")
-                regMapNameUvm = "rm_%s_%s"%(memMapName, regMapName)
-                svUvmMemMapFile.write("        %s = %s::type_id::create(\"%s\");\n"%(regMapName.lower(), regMapNameUvm.lower(), regMapName.lower()))
+                regMapRecord = regMapQueryModel.record(j)
+                regMapName   = regMapRecord.value("Name")
+                regMapNameSV = "rm_%s_%s"%(memMapName, regMapName)
+                svUvmMemMapFile.write("        %s = %s::type_id::create(\"%s\");\n"%(regMapName.lower(), regMapNameSV.lower(), regMapName.lower()))
                 svUvmMemMapFile.write("        %s.configure(this, \"\");\n"%(regMapName.lower()))
                 svUvmMemMapFile.write("        %s.build();\n"%(regMapName.lower()))
                 svUvmMemMapFile.write("        default_map.add_submap(%s.default_map, 0);\n"%(regMapName.lower()))
                 svUvmMemMapFile.write("        %s.lock_model();\n"%(regMapName.lower()))
                 svUvmMemMapFile.write("\n")
             svUvmMemMapFile.write("    endfunction\n")
-            svUvmMemMapFile.write("    `uvm_object_utils(%s);\n"%(memMapNameUvm.lower()))
-            svUvmMemMapFile.write("    function new(input string name = \"%s\");\n"%(memMapNameUvm.lower()))
+            svUvmMemMapFile.write("    `uvm_object_utils(%s);\n"%(memMapNameSV.lower()))
+            svUvmMemMapFile.write("    function new(input string name = \"%s\");\n"%(memMapNameSV.lower()))
             svUvmMemMapFile.write("        super.new(name, UVM_NO_COVERAGE);\n")
             svUvmMemMapFile.write("    endfunction\n")
             svUvmMemMapFile.write("endclass\n")
