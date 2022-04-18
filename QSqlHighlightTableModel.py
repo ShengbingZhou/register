@@ -11,7 +11,10 @@ class QSqlHighlightTableModel(QSqlTableModel):
 
     def data(self, index, role):
         value = QSqlTableModel.data(self, index, role)
-        if role == Qt.BackgroundColorRole:
+        #if role == Qt.BackgroundColorRole:
+        #    if QRegisterConst.recordExist(QSqlTableModel.record(self, index.row())) == False:
+        #        value = QColor('grey')
+        if role == Qt.TextColorRole:
             if QRegisterConst.recordExist(QSqlTableModel.record(self, index.row())) == False:
                 value = QColor('grey')
         if role == Qt.DisplayRole:
